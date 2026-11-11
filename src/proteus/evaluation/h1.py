@@ -39,6 +39,7 @@ def malicious_mask(df: pd.DataFrame) -> np.ndarray:
     return (~df["family"].isin(NOT_MALICIOUS)).to_numpy()
 EXPORT_TIMEOUT_S = 120.0  # CICFlowMeter flow timeout in both datasets (max duration 120 s)
 CAMPAIGN_GAP_S = 600.0
+REUSE_SAFE = ("fbytes", "n_src", "n_dport", "n_dhost", "n_dsvc", "n_dhost_nr")
 
 
 # ---------------------------------------------------------------- data
@@ -256,6 +257,10 @@ def detectors(specs: dict[str, str], flow_cols: list[str]) -> dict[str, tuple[li
 
     both = rules + src_rules
     both_long = long_rules + src_long
+    # Evidence that connection reuse (many requests in one connection) cannot lower
+    # either: payload bytes and distinct counts. Per-connection counts (flows, resets,
+    # unanswered) and packets (handshakes saved) can drop under reuse.
+    reuse_long = [k for k in long_rules if k.split("__")[1] in REUSE_SAFE]
     return {
         "core_mono_dst": (raw, hgb(cst(raw))),
         # Excess over the entity's own baseline, without the baseline itself: rarity
@@ -270,6 +275,7 @@ def detectors(specs: dict[str, str], flow_cols: list[str]) -> dict[str, tuple[li
                                             (src_rules, hgb(cst(src_rules)))])),
         "core_both_cert": (both_long, MaxCore(both_long, [(long_rules, hgb(cst(long_rules))),
                                                           (src_long, hgb(cst(src_long)))])),
+        "core_cert_r": (reuse_long, hgb(cst(reuse_long))),
         "core_mono_dst_b": (with_b, hgb(cst(with_b))),
         "core_free_dst_b": (with_b, hgb(None)),
         "rate_rules": (rules, RateRules()),
