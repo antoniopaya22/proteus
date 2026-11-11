@@ -22,7 +22,6 @@ flows is then exact). Random combinations of the free operations of
 from __future__ import annotations
 
 import argparse
-import pickle
 from pathlib import Path
 
 import numpy as np
@@ -74,13 +73,7 @@ def main() -> None:
     ap.add_argument("--seed", type=int, default=0)
     args = ap.parse_args()
     rng = np.random.default_rng(args.seed)
-    import __main__
-
-    from proteus.baselines.rate_rules import RateRules
-
-    __main__.RateRules = RateRules  # pickles written before RateRules had its own module
-    with open(args.run / "models.pkl", "rb") as fh:
-        models = {n: m for n, m in pickle.load(fh).items() if n in args.models}
+    models = {n: m for n, m in h1.load_models(args.run).items() if n in args.models}
     _, specs = h1.evidence_b(args.test, h1.days(args.test)[0], columns=["clean"])
     delta = h1.EXPORT_TIMEOUT_S
     baselines = Baselines(args.test)

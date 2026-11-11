@@ -18,7 +18,6 @@ evasion (``aml_feature``) by K gives the number of sources it burns.
 from __future__ import annotations
 
 import argparse
-import pickle
 from pathlib import Path
 
 import numpy as np
@@ -49,8 +48,7 @@ def main() -> None:
     ap.add_argument("--model", default="flow_clf")
     ap.add_argument("--block", type=float, default=0.5, help="shell score that blocks a flow")
     args = ap.parse_args()
-    with open(args.run / "models.pkl", "rb") as fh:
-        cols, model = pickle.load(fh)[args.model]
+    cols, model = h1.load_models(args.run)[args.model]
     hours, fp_rows, stats = 0.0, [], []
     for day in h1.days(args.test):
         ev, _ = h1.evidence_b(args.test, day, columns=["t_start", "t_end", "src_ip", "clean",

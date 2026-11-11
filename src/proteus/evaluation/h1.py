@@ -303,6 +303,16 @@ def campaigns(df: pd.DataFrame) -> pd.DataFrame:
     return rows
 
 
+def load_models(run: Path) -> dict:
+    """``models.pkl`` of a run. Pickles written before ``RateRules`` moved to its own
+    module reference it as ``__main__.RateRules``."""
+    import __main__
+
+    __main__.RateRules = RateRules
+    with open(Path(run) / "models.pkl", "rb") as fh:
+        return pickle.load(fh)
+
+
 def alert_side(model, cols: list[str], X: np.ndarray) -> np.ndarray:
     """True where an alert would be about the flow's source host rather than its
     destination: the source sub-core gives the maximum (``MaxCore``), or the model only

@@ -18,7 +18,6 @@ description) and prints a summary.
 from __future__ import annotations
 
 import argparse
-import pickle
 from pathlib import Path
 
 import numpy as np
@@ -53,8 +52,7 @@ def main() -> None:
     ap.add_argument("--bucket-min", type=int, default=10)
     ap.add_argument("--top", type=int, default=25)
     args = ap.parse_args()
-    with open(args.run / "models.pkl", "rb") as fh:
-        models = pickle.load(fh)
+    models = h1.load_models(args.run)
     days = [d for d in h1.days(args.test) if args.days is None or d.stem in args.days]
     for name in args.models:
         cols, model = models[name]

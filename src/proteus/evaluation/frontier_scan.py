@@ -13,7 +13,6 @@ distinct destinations per minute, plus the rate the real bot used.
 from __future__ import annotations
 
 import argparse
-import pickle
 from pathlib import Path
 
 import numpy as np
@@ -39,8 +38,7 @@ def main() -> None:
     ap.add_argument("--seed", type=int, default=0)
     args = ap.parse_args()
     rng = np.random.default_rng(args.seed)
-    with open(args.run / "models.pkl", "rb") as fh:
-        cols, model = pickle.load(fh)[args.model]
+    cols, model = h1.load_models(args.run)[args.model]
     _, specs = h1.evidence_b(args.test, h1.days(args.test)[0], columns=["clean"])
     baselines = Baselines(args.test)
     rows = []
