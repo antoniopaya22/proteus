@@ -70,3 +70,17 @@ def test_frontier_brackets_the_alert():
                     r_max=5.0, iters=14, delta_s=120.0)
     # The certified frontier lets the attacker go at least as fast.
     assert cert["bounded"] != "ok" or cert["rate"] >= res["rate"]
+
+
+def test_source_side_scenario_keeps_destinations_and_one_source():
+    rng = np.random.default_rng(1)
+    sc = scenario(rng)
+    n = 400
+    sc.template = sc.template.sample(n, replace=True, random_state=0).reset_index(drop=True)
+    sc.template["dst_ip"] = pd.array([f"10.0.2.{i % 200}" for i in range(n)], dtype="string")
+    sc.template["dst_port"] = np.int32(445)
+    sc.src_ip, sc.keep_dst, sc.keep_ports = "198.51.100.7", True, True
+    a = nested_attack(sc, 0.1, np.random.default_rng(0))
+    assert set(a["src_ip"]) == {"198.51.100.7"}
+    assert set(a["dst_ip"]) <= set(sc.template["dst_ip"]) and a["dst_ip"].nunique() > 50
+    assert set(a["dst_port"]) == {445}

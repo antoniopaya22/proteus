@@ -12,8 +12,16 @@ The certified frontier scores worst-case features (``proteus.core.certify``): it
 bounds what the attacker can reach even when combining the rate with any free
 operation.
 
-The core only uses destination entities, so only flows towards the target host
-are needed.
+Two shapes of scenario:
+
+* destination side (DoS, brute force, vertical scan): every attack flow goes to one
+  target; the background is the real traffic towards that target;
+* source side (horizontal scan): one fresh source replays the real probes, keeping
+  their destinations and ports (``src_ip`` set, ``keep_dst``); the background is the
+  real traffic towards those destinations.
+
+The features of an attack flow depend only on flows that share its service, its
+destination host or its source, so this background is exact for the attack flows.
 """
 
 from __future__ import annotations
@@ -41,22 +49,29 @@ class Scenario:
     duration_s: float
     n_sources: int = 1
     keep_ports: bool = False  # scans: keep each probe's destination port
+    src_ip: str | None = None  # source-side scenario: one fixed attacker source
+    keep_dst: bool = False  # source-side scenario: keep each probe's destination host
 
 
 def nested_attack(sc: Scenario, r_max: float, rng: np.random.Generator) -> pd.DataFrame:
     """Attack flows at rate r_max (flows/s) with a nesting mark ``u``."""
     n = int(rng.poisson(r_max * sc.duration_s))
-    rows = sc.template.sample(n=n, replace=True, random_state=int(rng.integers(2**31)))
+    rows = sc.template.sample(n=n, replace=(not sc.keep_dst) or n > len(sc.template),
+                              random_state=int(rng.integers(2**31)))
     rows = rows.reset_index(drop=True)
     offs = np.sort(rng.uniform(0, sc.duration_s, n))
     start = sc.start + pd.to_timedelta(offs, unit="s")
     rows["t_start"] = start.astype("datetime64[us]")
     rows["t_end"] = rows["t_start"] + pd.to_timedelta(rows["duration_us"], unit="us")
-    rows["dst_ip"] = pd.array([sc.target_ip] * n, dtype=sc.background["dst_ip"].dtype)
-    if not sc.keep_ports:
-        rows["dst_port"] = np.int32(sc.target_port)
-    rows["proto"] = np.int16(sc.proto)
-    srcs = [f"203.0.113.{i % 250 + 1}" for i in range(sc.n_sources)]  # TEST-NET-3
+    if sc.keep_dst:
+        rows["dst_ip"] = rows["dst_ip"].astype(sc.background["dst_ip"].dtype)
+    else:
+        rows["dst_ip"] = pd.array([sc.target_ip] * n, dtype=sc.background["dst_ip"].dtype)
+        if not sc.keep_ports:
+            rows["dst_port"] = np.int32(sc.target_port)
+        rows["proto"] = np.int16(sc.proto)
+    srcs = ([sc.src_ip] if sc.src_ip is not None
+            else [f"203.0.113.{i % 250 + 1}" for i in range(sc.n_sources)])  # TEST-NET-3
     rows["src_ip"] = pd.array(rng.choice(srcs, n), dtype=sc.background["src_ip"].dtype)
     rows["src_port"] = rng.integers(1024, 65536, n).astype(np.int32)
     rows["u"] = rng.random(n)
