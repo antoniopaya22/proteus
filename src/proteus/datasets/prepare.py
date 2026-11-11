@@ -9,16 +9,20 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+from . import ctu13
 from .cic import convert
 
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--dataset", required=True, choices=["cicids2017", "csecicids2018"])
+    ap.add_argument("--dataset", required=True, choices=["cicids2017", "csecicids2018", "ctu13"])
     ap.add_argument("--raw", type=Path, required=True)
     ap.add_argument("--out", type=Path, required=True)
     args = ap.parse_args()
-    summary = convert(args.raw, args.out, args.dataset)
+    if args.dataset == "ctu13":
+        summary = ctu13.convert(args.raw, args.out)
+    else:
+        summary = convert(args.raw, args.out, args.dataset)
     summary.to_csv(args.out / "summary.csv", index=False)
     print(summary.to_string())
 

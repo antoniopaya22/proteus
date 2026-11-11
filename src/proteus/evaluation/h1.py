@@ -29,6 +29,13 @@ DATA = Path("data/processed")
 META = ["dataset", "day", "t_start", "t_end", "src_ip", "dst_ip", "dst_port", "proto",
         "attack", "family", "attempted", "is_attack"]
 FPRS = (1e-3, 1e-4)
+# Families that are not attack traffic: labelled benign and unlabelled real background
+# (CTU-13). Everything else, including "Attempted" attack flows, is malicious.
+NOT_MALICIOUS = ("benign", "background")
+
+
+def malicious_mask(df: pd.DataFrame) -> np.ndarray:
+    return (~df["family"].isin(NOT_MALICIOUS)).to_numpy()
 EXPORT_TIMEOUT_S = 120.0  # CICFlowMeter flow timeout in both datasets (max duration 120 s)
 CAMPAIGN_GAP_S = 600.0
 
@@ -92,7 +99,7 @@ def prepare_baselines(ds: str) -> None:
         ev, specs = evidence(ds, day)
         cols = bl.baseline_columns(list(specs))
         keys = bl.entity_keys(ev)
-        malicious = ((ev["family"] != "benign").to_numpy()
+        malicious = (malicious_mask(ev)
                      if BASELINE["mask"] == "labels" else None)
         minutes = int(np.ceil((ev["t_end"].max() - ev["t_start"].min()).total_seconds() / 60))
         tables[day] = {}
@@ -128,7 +135,8 @@ def flow_features(day: Path) -> pd.DataFrame:
 
 
 def clean_benign(df: pd.DataFrame) -> np.ndarray:
-    """Benign flows whose hosts are not involved in any attack within +-1 minute.
+    """Non-attack flows (benign or unlabelled background) whose hosts are not involved
+    in any attack within +-1 minute.
 
     Benign traffic to a host under attack is legitimately part of an alerted
     entity; it is neither a true nor a false alarm and is left out of both.
@@ -137,7 +145,7 @@ def clean_benign(df: pd.DataFrame) -> np.ndarray:
     n = len(df)
     src, dst = ips[:n].astype(np.int64), ips[n:].astype(np.int64)
     minute = (df["t_start"].astype("int64") // 60_000_000).to_numpy()
-    malicious = (df["family"] != "benign").to_numpy()
+    malicious = malicious_mask(df)
     keys = []
     for d in (-1, 0, 1):
         m = minute[malicious] + d

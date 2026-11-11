@@ -43,7 +43,7 @@ class Baselines:
             ev, specs = h1.evidence(ds, day)
             self.cols = bl.baseline_columns(list(specs))
             keys = bl.entity_keys(ev)
-            mal = ((ev["family"] != "benign").to_numpy()
+            mal = (h1.malicious_mask(ev)
                    if h1.BASELINE["mask"] == "labels" else None)
             minutes = int(np.ceil((ev["t_end"].max() - ev["t_start"].min()).total_seconds() / 60))
             self.tables[day] = {}
