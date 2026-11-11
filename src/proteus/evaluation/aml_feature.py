@@ -41,8 +41,8 @@ FUNCTIONAL = [
     "f_fwd_act_data_pkts", "fwd_pkts", "f_subflow_fwd_packets", "bwd_pkts",
 ]
 EPS = (0.01, 0.05, 0.1, 0.25, 0.5, 1.0)
-BUDGETS = {"hsja": {"max_iter": 20, "max_eval": 1000, "init_eval": 100},
-           "zoo": {"max_iter": 100, "nb_parallel": 16, "binary_search_steps": 3}}
+BUDGETS = {"hsja": {"max_iter": 10, "max_eval": 500, "init_eval": 100},
+           "zoo": {"max_iter": 50, "nb_parallel": 16, "binary_search_steps": 2}}
 
 
 class Scaled:
@@ -83,8 +83,8 @@ def prepare(ds: str, seed: int, cap_attack: int, cap_benign: int):
             te["attack"].astype(str).to_numpy(), cols)
 
 
-def build_models(Xtr, ytr, seed, n_adv=300):
-    from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
+def build_models(Xtr, ytr, seed):
+    from sklearn.ensemble import RandomForestClassifier
 
     from proteus.baselines.apollon import ApollonMAB, ApollonV1Code
     from proteus.shell import flow as shell
@@ -95,17 +95,30 @@ def build_models(Xtr, ytr, seed, n_adv=300):
         "apollon_v1_code": ApollonV1Code(random_state=seed).fit(Xtr, ytr),
         "apollon_fixed": ApollonMAB(random_state=seed).fit(Xtr, ytr),
     }
-    # Adversarial training in the style of APELID+: add HSJA examples crafted against
-    # the undefended model on a subset of training attacks, labelled as attacks.
-    base = models["shell"]
+    return models
+
+
+def adversarial_training(Xtr, ytr, base, seed, n_adv, pool, state_dir):
+    """APELID+-style: add HSJA examples crafted against the undefended model on a subset
+    of training attacks, labelled as attacks, and retrain. Generation runs in the pool."""
+    import pickle
+
+    from sklearn.ensemble import HistGradientBoostingClassifier
+
     atk = Xtr[ytr == 1]
     idx = np.random.default_rng(seed).choice(len(atk), min(n_adv, len(atk)), replace=False)
-    adv = run_attack("hsja", base, atk[idx], np.arange(Xtr.shape[1]), [])
+    path = state_dir / "advtrain_state.pkl"
+    with open(path, "wb") as fh:
+        pickle.dump({"models": {"base": base}, "X": atk[idx], "functional": [],
+                     "modifiable": list(range(Xtr.shape[1]))}, fh)
+    chunks = np.array_split(np.arange(len(idx)), 32)
+    advs = list(pool.map(_job, [("base", "hsja", path, c) for c in chunks if len(c)]))
+    adv = np.vstack([a for _, _, a, _ in advs])
+    path.unlink()
     Xa, ya = np.vstack([Xtr, adv]), np.concatenate([ytr, np.ones(len(adv), dtype=int)])
-    models["advtrain"] = HistGradientBoostingClassifier(
+    return HistGradientBoostingClassifier(
         max_iter=400, learning_rate=0.1, max_leaf_nodes=63, l2_regularization=1.0,
         class_weight="balanced", random_state=seed).fit(Xa, ya)
-    return models
 
 
 def run_attack(name, model, X, modifiable, functional):
@@ -127,14 +140,24 @@ def run_attack(name, model, X, modifiable, functional):
     return adv
 
 
+_CACHE: dict = {}
+
+
 def _job(args):
-    name, attack, path, _ = args
+    """Attack rows ``rows`` (None = all) of the stored set with model ``name``."""
+    name, attack, path, rows = args
     import pickle
 
-    with open(path, "rb") as fh:
-        data = pickle.load(fh)
+    key = str(path)
+    if key not in _CACHE:
+        with open(path, "rb") as fh:
+            _CACHE.clear()
+            _CACHE[key] = pickle.load(fh)
+    data = _CACHE[key]
     model, X, functional, modifiable = (data["models"][name], data["X"], data["functional"],
                                         data["modifiable"])
+    if rows is not None:
+        X = X[rows]
     t0 = time.time()
     adv = run_attack(attack, model, X, modifiable, functional)
     return name, attack, adv, time.time() - t0
@@ -160,7 +183,7 @@ def main() -> None:
     ap.add_argument("--cap-attack", type=int, default=30_000)
     ap.add_argument("--cap-benign", type=int, default=150_000)
     ap.add_argument("--workers", type=int, default=12)
-    ap.add_argument("--n-adv", type=int, default=300,
+    ap.add_argument("--n-adv", type=int, default=320,
                     help="HSJA examples added by adversarial training")
     ap.add_argument("--out", type=Path, default=Path("experiments/outputs/aml_feature"))
     args = ap.parse_args()
@@ -175,7 +198,14 @@ def main() -> None:
     modifiable = [i for i, c in enumerate(cols) if c not in FUNCTIONAL]
     print(f"data ready: train {len(Xtr):,}, test {len(Xte):,}, {len(cols)} features "
           f"({len(functional)} functional) at {time.time() - t0:.0f}s", flush=True)
-    models = build_models(Xtr, ytr, args.seed, args.n_adv)
+    models = build_models(Xtr, ytr, args.seed)  # all threads in the main process
+    # Workers: one thread each (set before they are spawned; OpenMP in this process is
+    # already initialised). spawn, not fork: forking after OpenMP threads exist deadlocks.
+    os.environ["OMP_NUM_THREADS"] = "1"
+    ctx = multiprocessing.get_context("spawn")
+    pool = ProcessPoolExecutor(max_workers=args.workers, mp_context=ctx)
+    models["advtrain"] = adversarial_training(Xtr, ytr, models["shell"], args.seed, args.n_adv,
+                                              pool, out)
     print(f"models trained at {time.time() - t0:.0f}s", flush=True)
 
     # Clean metrics on the test sample and the attacked set: test attack flows detected
@@ -197,17 +227,21 @@ def main() -> None:
                      "modifiable": modifiable}, fh)
     print(f"attacking {len(X)} flows ({per_type} per type) at {time.time() - t0:.0f}s", flush=True)
 
-    os.environ.setdefault("OMP_NUM_THREADS", "1")
-    jobs = [(n, a, path, args.seed) for n in models for a in ("hsja", "zoo")]
+    # Each (model, attack) is split in chunks of rows so all workers stay busy.
+    chunks = [c for c in np.array_split(np.arange(len(X)), max(1, args.workers // 2)) if len(c)]
+    jobs = [(n, a, path, c) for n in models for a in ("hsja", "zoo") for c in chunks]
+    parts: dict = {}
+    for name, attack, adv, secs in pool.map(_job, jobs):
+        parts.setdefault((name, attack), []).append((adv, secs))
+    pool.shutdown()
     advs, results = {}, []
-    # spawn, not fork: forking after OpenMP threads exist (gradient boosting) deadlocks.
-    ctx = multiprocessing.get_context("spawn")
-    with ProcessPoolExecutor(max_workers=args.workers, mp_context=ctx) as ex:
-        for name, attack, adv, secs in ex.map(_job, jobs):
-            advs[(name, attack)] = adv
-            s, _ = summarize(models[name], X, adv)
-            results.append({"model": name, "attack": attack, "seconds": round(secs), **s})
-            print(json.dumps(results[-1]), flush=True)
+    for (name, attack), lst in parts.items():
+        adv = np.vstack([a for a, _ in lst])
+        advs[(name, attack)] = adv
+        s_, _ = summarize(models[name], X, adv)
+        results.append({"model": name, "attack": attack,
+                        "seconds": round(sum(t for _, t in lst)), **s_})
+        print(json.dumps(results[-1]), flush=True)
 
     # Transfer matrix: examples crafted against one model, evaluated on every model.
     transfer = []

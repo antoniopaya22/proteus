@@ -60,7 +60,8 @@ def evidence(ds: str, day: Path) -> tuple[pd.DataFrame, dict[str, str]]:
                                                "bwd_bytes", "f_bwd_rst_flags", "duration_us"])
     feats, specs = build(df)
     out = pd.concat([df[META], feats], axis=1)
-    out["clean"] = clean_benign(out)
+    out["suspect"] = suspected_scanners(df)
+    out["clean"] = clean_benign(out) & ~out["suspect"].to_numpy()
     cache.parent.mkdir(parents=True, exist_ok=True)
     out.to_parquet(cache, index=False)
     spec_map = {s.name: s.conservation for s in specs}
@@ -133,6 +134,30 @@ def flow_features(day: Path) -> pd.DataFrame:
     keep = [c for c in cols if c.startswith("f_")] + [
         "dst_port", "proto", "duration_us", "fwd_pkts", "bwd_pkts", "fwd_bytes", "bwd_bytes"]
     return pd.read_parquet(day, columns=keep).astype("float32")
+
+
+SUSPECT_MIN_DSTS = 100
+SUSPECT_MIN_NO_REPLY = 0.5
+
+
+def suspected_scanners(df: pd.DataFrame) -> np.ndarray:
+    """Unlabelled background flows from sources that behave like scanners.
+
+    Real captures (CTU-13) label most traffic "background" (unknown), and it contains
+    real Internet scanners. A source is suspected when, over the capture, its
+    background flows reach at least SUSPECT_MIN_DSTS distinct destinations and at
+    least SUSPECT_MIN_NO_REPLY of them get no reply. Its flows are left out of the
+    false-alarm count and of threshold calibration, and detections are reported
+    separately. Labelled flows are never marked.
+    """
+    bg = (df["family"] == "background").to_numpy()
+    if not bg.any():
+        return np.zeros(len(df), dtype=bool)
+    b = df.loc[bg, ["src_ip", "dst_ip"]].assign(no_reply=(df.loc[bg, "bwd_pkts"] == 0))
+    g = b.groupby("src_ip", observed=True).agg(dsts=("dst_ip", "nunique"),
+                                               no_reply=("no_reply", "mean"))
+    sus = g.index[(g["dsts"] >= SUSPECT_MIN_DSTS) & (g["no_reply"] >= SUSPECT_MIN_NO_REPLY)]
+    return bg & df["src_ip"].isin(sus).to_numpy()
 
 
 def clean_benign(df: pd.DataFrame) -> np.ndarray:
@@ -262,6 +287,9 @@ def evaluate(test: pd.DataFrame, scores: dict[str, np.ndarray], thresholds: dict
         for _, g in test.groupby("day", observed=True)
     )
     clean = test["clean"].to_numpy()
+    suspect = (test["suspect"].to_numpy() if "suspect" in test
+               else np.zeros(len(test), dtype=bool))
+    sus_src = test.loc[suspect, "src_ip"]
     rows = []
     for (model, fpr, kind), thr in thresholds.items():
         s = scores[model]
@@ -270,7 +298,9 @@ def evaluate(test: pd.DataFrame, scores: dict[str, np.ndarray], thresholds: dict
         alarm_groups = fa.groupby(["day", "dst_ip", fa["t_start"].dt.floor("min")],
                                   observed=True).ngroups
         base = {"model": model, "target_fpr": fpr, "threshold": kind,
-                "benign_fpr": alert[clean].mean(), "alarms_per_hour": alarm_groups / hours}
+                "benign_fpr": alert[clean].mean(), "alarms_per_hour": alarm_groups / hours,
+                "suspect_sources": int(sus_src.nunique()),
+                "suspect_detected": int(sus_src[alert[suspect]].nunique())}
         for day, attack, idx in camp:
             hit = alert[test.index.get_indexer(idx)]
             start = test.loc[idx, "t_start"].min()
@@ -349,7 +379,6 @@ def main() -> None:
     local_cols = models["rate_rules_local"][0] if "rate_rules_local" in models else []
     ev_cols = sorted({c for cols, _ in models.values() for c in cols if not c.startswith("flow__")}
                      | set(META) | {"clean"})
-    meta_cols = [*META, "clean"]
     day_scores, benign_sample, benign_feats = {}, {}, {}
     for day in test_days:
         ev, _ = evidence_b(args.test, day, columns=ev_cols)
@@ -376,6 +405,11 @@ def main() -> None:
             benign_feats[day] = ev[local_cols].to_numpy(np.float32)[pick[:200_000]]
         print(f"  scored {args.test}/{day.stem} at {time.time() - t0:.0f}s", flush=True)
         del ev, flow
+
+    # Caches written before the "suspect" column existed do not have it.
+    import pyarrow.parquet as pq
+    has_suspect = "suspect" in pq.read_schema(_bdir(args.test) / test_days[0].name).names
+    meta_cols = [*META, "clean"] + (["suspect"] if has_suspect else [])
 
     # Pass 2: "local" thresholds come from clean benign flows of the *other* days of
     # the test network (no attack labels needed in deployment, only benign traffic).
@@ -414,7 +448,10 @@ def main() -> None:
     )
     summary.to_csv(out / "summary.csv", index=False)
     fa = (res.groupby(["model", "target_fpr", "threshold", "day"], observed=True)
-          [["benign_fpr", "alarms_per_hour"]].first().groupby(level=[0, 1, 2]).mean())
+          [["benign_fpr", "alarms_per_hour", "suspect_sources", "suspect_detected"]]
+          .first().groupby(level=[0, 1, 2]).agg({"benign_fpr": "mean", "alarms_per_hour": "mean",
+                                                  "suspect_sources": "sum",
+                                                  "suspect_detected": "sum"}))
     fa.to_csv(out / "false_alarms.csv")
     print(summary.to_string())
     print(fa.to_string())

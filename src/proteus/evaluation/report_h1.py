@@ -5,7 +5,8 @@
 
 from __future__ import annotations
 
-import sys
+import argparse
+import re
 from pathlib import Path
 
 import pandas as pd
@@ -17,8 +18,22 @@ MODELS = ["core_mono_strict", "core_mono_dst", "core_mono_dst@cert", "core_mono_
           "rate_rules", "rate_rules_local", "flow_clf"]
 
 
-def report(run: Path, threshold: str = "local") -> str:
+def _family(attack: str) -> str:
+    """CTU-13 campaigns are named ctu<scenario>_<behaviour>: group by behaviour."""
+    m = re.match(r"ctu\d+_(\w+)$", attack)
+    return m.group(1) if m else attack
+
+
+def report(run: Path, threshold: str = "local", by_family: bool = False,
+           models: list[str] | None = None) -> str:
     s = pd.read_csv(run / "summary.csv")
+    if by_family:
+        s = (s.assign(attack=s["attack"].map(_family))
+             .groupby(["model", "target_fpr", "threshold", "attack"], as_index=False)
+             .agg(campaigns=("campaigns", "sum"), detected=("detected", "sum"),
+                  flow_recall=("flow_recall", "mean")))
+    if models:
+        s = s[s["model"].isin(models)]
     fa = pd.read_csv(run / "false_alarms.csv")
     lines = [f"== {run.name}  (threshold: {threshold})"]
     for fpr in sorted(s["target_fpr"].unique(), reverse=True):
@@ -26,17 +41,31 @@ def report(run: Path, threshold: str = "local") -> str:
         cell = sub.assign(v=sub["detected"].astype(str) + "/" + sub["campaigns"].astype(str)
                           + " " + sub["flow_recall"].map("{:.2f}".format))
         tab = cell.pivot(index="attack", columns="model", values="v")
-        tab = tab[[m for m in MODELS if m in tab.columns]]
+        order = models or MODELS
+        tab = tab[[m for m in order if m in tab.columns]]
         f = fa[(fa["target_fpr"] == fpr) & (fa["threshold"] == threshold)].set_index("model")
         tab.loc["benign FPR"] = [f"{f.loc[m, 'benign_fpr']:.1e}" for m in tab.columns]
         tab.loc["alarms/hour"] = [f"{f.loc[m, 'alarms_per_hour']:.1f}" for m in tab.columns]
+        if "suspect_sources" in f.columns and f["suspect_sources"].max() > 0:
+            tab.loc["suspect src det."] = [
+                f"{int(f.loc[m, 'suspect_detected'])}/{int(f.loc[m, 'suspect_sources'])}"
+                for m in tab.columns]
         lines += [f"-- target FPR {fpr:g}  (campaigns detected | mean flow recall)",
                   tab.to_string(), ""]
     return "\n".join(lines)
 
 
 if __name__ == "__main__":
-    root = Path(sys.argv[1])
-    for run in sorted(p for p in root.iterdir() if p.is_dir()):
-        for th in ("local", "train"):
-            print(report(run, th))
+    ap = argparse.ArgumentParser()
+    ap.add_argument("runs", type=Path, nargs="+",
+                    help="run directories, or a parent directory holding them")
+    ap.add_argument("--threshold", default="local")
+    ap.add_argument("--by-family", action="store_true")
+    ap.add_argument("--models", nargs="*", default=None)
+    a = ap.parse_args()
+    runs = []
+    for r in a.runs:
+        runs += [r] if (r / "summary.csv").exists() else sorted(
+            p for p in r.iterdir() if (p / "summary.csv").exists())
+    for run in runs:
+        print(report(run, a.threshold, a.by_family, a.models))

@@ -243,3 +243,34 @@ Lectura:
   2017 recibe ~1.000 flujos benignos en 2 horas y su línea base es casi 0. Con una
   víctima ocupada la frontera será mucho más alta. Hay que medirla en 2018 y con
   tráfico real (UGR'16).
+
+## 6.7 Primer contacto con tráfico real: CTU-13 (2026-11-11)
+
+CTU-13 (red universitaria real, 2011; 19,6 M flujos; 13 escenarios de botnet). Los
+flujos "Background" son tráfico real **sin etiquetar**, no benigno.
+
+1. **Núcleo entrenado en CIC-IDS-2017, probado en CTU-13:** DDoS detectado solo en
+   parte (4/14 campañas) y **ningún escaneo** (0/64). El umbral local tampoco se
+   cumple (FPR pedido 10⁻³, real 10⁻²): los escenarios son capturas de días y
+   semanas distintos.
+2. **Los escaneos de las botnets no dejan huella en el destino:** el bot del escenario
+   3 toca 26.725 destinos con un flujo cada uno. La evidencia está en el origen. Se
+   añade un **núcleo de origen** y se combina con el de destino por máximo
+   (`proteus.core.combine.MaxCore`; el máximo de funciones monótonas es monótono, la
+   garantía se conserva; test en `tests/test_combine.py`).
+3. **Ni con el núcleo de origen, ni entrenando dentro de CTU-13, se detectan los
+   escaneos.** Diagnóstico: el bot escanea despacio (~30 destinos/min) y en el
+   "fondo" hay orígenes con más evidencia. Los 38.583 flujos de fondo por encima del
+   bot vienen de **35 orígenes, 34 externos**, que barren 665–970 destinos de la
+   universidad buscando MSSQL (1433), SSH (22), Radmin (4899)…, con 70–100 % de
+   conexiones sin respuesta. **Son escáneres reales de Internet sin etiquetar.**
+   - Inflan el FPR: Proteus "falla" al detectar ataques reales.
+   - Inflan el umbral: se calibra con ese "benigno".
+4. **Corrección declarada:** los orígenes de fondo con ≥ 100 destinos distintos y
+   ≥ 50 % de conexiones sin respuesta se marcan como `suspect` (ataque probable sin
+   etiquetar). Sus flujos quedan fuera de falsas alarmas y calibración, y se informa
+   aparte cuántos detecta cada modelo (`suspect src det.` en las tablas).
+
+Lección para el paper: evaluar en tráfico real exige tratar el fondo como no
+etiquetado; cualquier detector sobre CTU-13 sufre este sesgo. Es un argumento a favor
+de medir alarmas por entidad y describirlas, no solo FPR por flujo.
