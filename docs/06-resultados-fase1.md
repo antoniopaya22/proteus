@@ -351,3 +351,31 @@ Lectura:
   2. **Calibración por flujo:** un FPR por flujo da más peso a los hosts con más
      flujos. Hace falta ver qué entidades saturan (`alarms.py`) y, si son unas
      pocas, calibrar por alarmas de entidad por hora.
+
+## 6.10 Alarmas por entidad en CTU-13 (2026-11-11)
+
+`python -m proteus.evaluation.alarms`. Cada alerta se atribuye al lado (origen o
+destino) cuyo subnúcleo da el máximo y a la entidad de ese lado; una alarma es un par
+(entidad, ventana de 10 min). Fold B (entrenado en B, probado en A: 89 h), FPR 10⁻³,
+solo tráfico limpio y no sospechoso.
+
+| Modelo | Alarmas/h por entidad | Métrica de h1 (destino, minuto) | Entidades alertadas |
+|---|---|---|---|
+| `core_both_x` | 0,12 (origen 0,11) | 16,4 | 11 |
+| `core_both_cert` | 0,08 | 8,0 | 2 |
+| `core_mono_dst_x` | 0,04 | 0,09 | 3 |
+
+Lectura:
+
+- **La métrica de h1 sobrestimaba las alarmas del núcleo de origen en dos órdenes de
+  magnitud**: un escáner alertado contaba una vez por cada destino y minuto. Las
+  cifras de alarmas/h del núcleo de origen en §6.7 (≈ 13/h) deben leerse así. h1
+  añade ahora la columna `entity_alarms_per_hour` con esta atribución.
+- **Las entidades alertadas son casi todas atacantes reales sin etiquetar** que el
+  criterio de sospechoso no captó: escáneres SSH externos (245 destinos en el
+  puerto 22, varios orígenes), uno de RDP (3389), uno web (80), y flujos masivos de un
+  origen a un destino en puertos altos (Microsoft, probablemente P2P/Skype). El
+  único destino alertado legítimo es el DNS de la universidad.
+- El FPR por flujo medido (hasta 2,9 % con objetivo 10⁻³) confirma la saturación:
+  muchos flujos empatan en la puntuación máxima y el cuantil no los separa. El FPR por
+  flujo no es una buena medida para un detector de entidades.
