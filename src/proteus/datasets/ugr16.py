@@ -80,12 +80,14 @@ def _keep(df: pd.DataFrame, rate: float, salt: int) -> np.ndarray:
 
 def convert_week(path: Path, out_dir: Path, sample_rate: float = 0.01,
                  window_s: float = 3600.0, warmup_s: float = 1800.0, salt: int = 0,
-                 max_hours: float | None = None) -> list[dict]:
+                 max_hours: float | None = None, start: float | None = None) -> list[dict]:
     ds = pads.dataset(path, format="parquet")
     md = pq.ParquetFile(path).metadata
     ci = md.schema.to_arrow_schema().names.index("ts_end")
     st = [md.row_group(i).column(ci).statistics for i in range(md.num_row_groups)]
     t_min, t_max = min(x.min for x in st), max(x.max for x in st)
+    if start is not None:  # resume: windows start here, the warm-up still reads before it
+        t_min = max(t_min, start)
     if max_hours is not None:
         t_max = min(t_max, t_min + max_hours * 3600)
     ev_dir = out_dir / "evidence"
@@ -97,7 +99,9 @@ def convert_week(path: Path, out_dir: Path, sample_rate: float = 0.01,
     while t <= t_max:
         lo, hi = t, t + window_s
         f = (pads.field("ts_end") >= lo - warmup_s) & (pads.field("ts_end") < hi)
-        df = _frame(ds.to_table(columns=COLS, filter=f))
+        tbl = ds.to_table(columns=COLS, filter=f)
+        df = _frame(tbl)
+        del tbl
         if len(df):
             feats, specs = build(df, DEFAULT_TAUS)
             own = (df["t_end"] >= pd.Timestamp(lo, unit="s")).to_numpy()
@@ -109,6 +113,7 @@ def convert_week(path: Path, out_dir: Path, sample_rate: float = 0.01,
             stats.append({"window": pd.Timestamp(lo, unit="s").isoformat(), "flows": int(own.sum()),
                           "stored": int(keep.sum()), "attacks": int(df.loc[own, "is_attack"].sum())})
             print(f"  {stats[-1]}", flush=True)
+            del df, feats, part
         t = hi
         # Flush days that can no longer receive flows (strictly before the window start).
         for day in [d for d in buffers if pd.Timestamp(d) + pd.Timedelta(days=1)

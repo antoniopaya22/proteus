@@ -20,6 +20,9 @@ def main() -> None:
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--sample-rate", type=float, default=0.01, help="ugr16: background kept")
     ap.add_argument("--max-hours", type=float, default=None, help="ugr16: smoke tests")
+    ap.add_argument("--weeks", nargs="*", default=None, help="ugr16: week files to convert")
+    ap.add_argument("--start", default=None,
+                    help="ugr16: resume at this UTC time (days before it must already be written)")
     args = ap.parse_args()
     if args.dataset == "ctu13":
         summary = ctu13.convert(args.raw, args.out)
@@ -36,10 +39,15 @@ def main() -> None:
         import pandas as pd
 
         rows = []
-        for week in sorted(args.raw.glob("*.parquet")):
+        weeks = sorted(args.raw.glob("*.parquet"))
+        if args.weeks:
+            weeks = [w for w in weeks if w.stem in args.weeks]
+        start = pd.Timestamp(args.start).timestamp() if args.start else None
+        for week in weeks:
             print(f"ugr16 {week.name}", flush=True)
             rows += ugr16.convert_week(week, args.out, args.sample_rate,
-                                       max_hours=args.max_hours)
+                                       max_hours=args.max_hours, start=start)
+            start = None
         summary = pd.DataFrame(rows)
     else:
         summary = convert(args.raw, args.out, args.dataset)

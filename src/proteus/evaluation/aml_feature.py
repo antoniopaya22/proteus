@@ -21,6 +21,7 @@ import argparse
 import json
 import multiprocessing
 import os
+import signal
 import time
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
@@ -43,6 +44,18 @@ FUNCTIONAL = [
 EPS = (0.01, 0.05, 0.1, 0.25, 0.5, 1.0)
 BUDGETS = {"hsja": {"max_iter": 10, "max_eval": 500, "init_eval": 100},
            "zoo": {"max_iter": 50, "nb_parallel": 16, "binary_search_steps": 2}}
+# Per-sample wall-clock limit. ART's HopSkipJump can loop forever on piecewise-constant
+# models (the geometric step search halves epsilon until the clipped point is adversarial,
+# which may never happen); a sample that hits the limit counts as a failed attack.
+TIMEOUT_S = {"hsja": 120, "zoo": 300}
+
+
+class _Timeout(Exception):
+    pass
+
+
+def _alarm(signum, frame):
+    raise _Timeout
 
 
 class Scaled:
@@ -113,7 +126,9 @@ def adversarial_training(Xtr, ytr, base, seed, n_adv, pool, state_dir):
                      "modifiable": list(range(Xtr.shape[1]))}, fh)
     chunks = np.array_split(np.arange(len(idx)), 32)
     advs = list(pool.map(_job, [("base", "hsja", path, c) for c in chunks if len(c)]))
-    adv = np.vstack([a for _, _, a, _ in advs])
+    adv = np.vstack([a[2] for a in advs])
+    print(f"adversarial training: {len(adv)} HSJA examples, "
+          f"{sum(a[4] for a in advs)} timeouts", flush=True)
     path.unlink()
     Xa, ya = np.vstack([Xtr, adv]), np.concatenate([ytr, np.ones(len(adv), dtype=int)])
     return HistGradientBoostingClassifier(
@@ -134,10 +149,23 @@ def run_attack(name, model, X, modifiable, functional):
         att = HopSkipJump(classifier=clf, targeted=True, verbose=False, **b)
     else:
         att = ZooAttack(classifier=clf, targeted=True, verbose=False, **b)
-    adv = att.generate(x=X.astype(np.float32), y=y_target).astype(np.float64)
+    adv = X.astype(np.float64).copy()
+    timeouts = 0
+    previous = signal.signal(signal.SIGALRM, _alarm)
+    try:
+        for i in range(len(X)):
+            signal.alarm(TIMEOUT_S[name])
+            try:
+                adv[i] = att.generate(x=X[i:i + 1].astype(np.float32), y=y_target[i:i + 1])[0]
+            except _Timeout:
+                timeouts += 1
+            finally:
+                signal.alarm(0)
+    finally:
+        signal.signal(signal.SIGALRM, previous)
     if len(functional):
         adv[:, functional] = X[:, functional]
-    return adv
+    return adv, timeouts
 
 
 _CACHE: dict = {}
@@ -159,8 +187,8 @@ def _job(args):
     if rows is not None:
         X = X[rows]
     t0 = time.time()
-    adv = run_attack(attack, model, X, modifiable, functional)
-    return name, attack, adv, time.time() - t0
+    adv, timeouts = run_attack(attack, model, X, modifiable, functional)
+    return name, attack, adv, time.time() - t0, timeouts
 
 
 def summarize(model, X, adv, draws=10):
@@ -231,16 +259,17 @@ def main() -> None:
     chunks = [c for c in np.array_split(np.arange(len(X)), max(1, args.workers // 2)) if len(c)]
     jobs = [(n, a, path, c) for n in models for a in ("hsja", "zoo") for c in chunks]
     parts: dict = {}
-    for name, attack, adv, secs in pool.map(_job, jobs):
-        parts.setdefault((name, attack), []).append((adv, secs))
+    for name, attack, adv, secs, timeouts in pool.map(_job, jobs):
+        parts.setdefault((name, attack), []).append((adv, secs, timeouts))
     pool.shutdown()
     advs, results = {}, []
     for (name, attack), lst in parts.items():
-        adv = np.vstack([a for a, _ in lst])
+        adv = np.vstack([a for a, _, _ in lst])
         advs[(name, attack)] = adv
         s_, _ = summarize(models[name], X, adv)
         results.append({"model": name, "attack": attack,
-                        "seconds": round(sum(t for _, t in lst)), **s_})
+                        "seconds": round(sum(t for _, t, _ in lst)),
+                        "timeouts": sum(k for _, _, k in lst), **s_})
         print(json.dumps(results[-1]), flush=True)
 
     # Transfer matrix: examples crafted against one model, evaluated on every model.
@@ -251,6 +280,7 @@ def main() -> None:
             transfer.append({"source": src, "target": dst, "attack": attack, "asr": s["asr"]})
     report = {"dataset": args.dataset, "seed": args.seed, "n_attacked": len(X),
               "attack_types": sorted(set(ate[pick])), "budgets": BUDGETS,
+              "timeout_s": TIMEOUT_S,
               "features": len(cols), "functional": len(functional),
               "clean": clean, "direct": results, "transfer": transfer}
     (out / "report.json").write_text(json.dumps(report, indent=1))

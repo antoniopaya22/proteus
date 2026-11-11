@@ -274,3 +274,50 @@ flujos "Background" son tráfico real **sin etiquetar**, no benigno.
 Lección para el paper: evaluar en tráfico real exige tratar el fondo como no
 etiquetado; cualquier detector sobre CTU-13 sufre este sesgo. Es un argumento a favor
 de medir alarmas por entidad y describirlas, no solo FPR por flujo.
+
+### CTU-13 con los escáneres reales marcados (núcleo de origen, FPR 10⁻³)
+
+| Run | DDoS | Escaneos | Spam | Fast-flux | Alarmas/h | Sospechosos detectados |
+|---|---|---|---|---|---|---|
+| CIC-17 → CTU, `core_both_x` | 4/14 | 0/64 | 0/9 | 0/1 | 13,8 | — |
+| CIC-17 → CTU, `core_both_cert` | 2/14 | 0/64 | 4/9 | 1/1 | 192,8 | — |
+| CTU A → B, `core_both_x` | 2/13 | 0/60 | 1/2 | — | 12,8 | 28/181 |
+| CTU B → A, `core_both_x` | 1/1 | 0/4 | 2/7 | 0/1 | 2,0 | 1/119 |
+| CTU A → B, `rate_rules_local` | 4/13 | 1/60 | 0/2 | — | 38,1 | 12/181 |
+
+- Los escaneos de las botnets siguen sin detectarse, también al quitar los escáneres
+  reales de la calibración. No es un problema de umbral: el bot va por debajo de la
+  frontera de la red (unos 30 destinos/min frente a escáneres reales de cientos).
+  Esto es lo que mide la frontera de daño: Proteus no promete detectar escaneos lentos,
+  sino acotar su velocidad. Queda pendiente medir esa frontera en CTU-13.
+- En la partición B el núcleo de origen detecta 28 de los 181 escáneres reales sin
+  etiquetar, con unas 13 alarmas/h. Son detecciones correctas que las métricas
+  habituales cuentan como falsos positivos.
+
+## 6.8 UNSW-NB15 (2026-11-11)
+
+CSV oficiales (2,54 M flujos, 321 k ataques, dos días de captura).
+
+**Pieza por flujo, partición aleatoria 80/20 (3 semillas):** F1 0,959 ± 0,001,
+FPR 1,2 %, TPR al 10⁻³ de FPR 0,94, AUROC 0,9997. Es peor que en CIC (0,9999): en UNSW
+varias familias (Exploits, Fuzzers, DoS) se parecen mucho al tráfico normal flujo a
+flujo.
+
+**Núcleo entrenado en CIC-IDS-2017 y probado en UNSW (umbral local, FPR 10⁻³):**
+
+| Modelo | Campañas | FPR real | Alarmas/h |
+|---|---|---|---|
+| `core_mono_dst_x` | 57/81 | 3,9·10⁻² | 33,7 |
+| `core_src_x` | 81/81 | 1,9·10⁻³ | 8,8 |
+| `core_both_cert@cert` | 81/81 | 2,8·10⁻⁴ | 7,8 |
+| `rate_rules_local` | 81/81 | 0,56 | 528 |
+
+**Lectura con cautela.** En UNSW **todos los ataques salen de 4 IPs**
+(175.45.176.0–3) contra 10 víctimas, y las 9 familias se mezclan cada día. Una
+"campaña" de una familia no se distingue a nivel de entidad de las demás: el núcleo de
+origen detecta a los **hosts atacantes**, no cada familia. El 81/81 significa "los 4
+orígenes generadores de IXIA son anómalos", no "Proteus detecta shellcode". Lo
+relevante es que el núcleo **certificado** los detecta con FPR 2,8·10⁻⁴ sin haber visto
+UNSW, y que las reglas de tasa con umbral local fallan (FPR 0,56: el benigno de UNSW es
+muy desigual entre días). En el paper, UNSW sirve para la pieza por flujo y como
+comprobación de transferencia, no como evidencia de detección por familia.
