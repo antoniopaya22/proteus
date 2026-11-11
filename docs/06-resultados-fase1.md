@@ -281,16 +281,16 @@ de medir alarmas por entidad y describirlas, no solo FPR por flujo.
 |---|---|---|---|---|---|---|
 | CIC-17 → CTU, `core_both_x` | 4/14 | 0/64 | 0/9 | 0/1 | 13,8 | — |
 | CIC-17 → CTU, `core_both_cert` | 2/14 | 0/64 | 4/9 | 1/1 | 192,8 | — |
-| CTU A → B, `core_both_x` | 2/13 | 0/60 | 1/2 | — | 12,8 | 28/181 |
-| CTU B → A, `core_both_x` | 1/1 | 0/4 | 2/7 | 0/1 | 2,0 | 1/119 |
-| CTU A → B, `rate_rules_local` | 4/13 | 1/60 | 0/2 | — | 38,1 | 12/181 |
+| CTU B → A, `core_both_x` | 2/13 | 0/60 | 1/2 | — | 12,8 | 28/181 |
+| CTU A → B, `core_both_x` | 1/1 | 0/4 | 2/7 | 0/1 | 2,0 | 1/119 |
+| CTU B → A, `rate_rules_local` | 4/13 | 1/60 | 0/2 | — | 38,1 | 12/181 |
 
 - Los escaneos de las botnets siguen sin detectarse, también al quitar los escáneres
   reales de la calibración. No es un problema de umbral: el bot va por debajo de la
   frontera de la red (unos 30 destinos/min frente a escáneres reales de cientos).
   Esto es lo que mide la frontera de daño: Proteus no promete detectar escaneos lentos,
   sino acotar su velocidad. Queda pendiente medir esa frontera en CTU-13.
-- En la partición B el núcleo de origen detecta 28 de los 181 escáneres reales sin
+- Probando en la partición A (entrenado en B), el núcleo de origen detecta 28 de los 181 escáneres reales sin
   etiquetar, con unas 13 alarmas/h. Son detecciones correctas que las métricas
   habituales cuentan como falsos positivos.
 
