@@ -321,3 +321,33 @@ relevante es que el núcleo **certificado** los detecta con FPR 2,8·10⁻⁴ si
 UNSW, y que las reglas de tasa con umbral local fallan (FPR 0,56: el benigno de UNSW es
 muy desigual entre días). En el paper, UNSW sirve para la pieza por flujo y como
 comprobación de transferencia, no como evidencia de detección por familia.
+
+## 6.9 Frontera de los escaneos horizontales en CTU-13 (2026-11-11)
+
+`python -m proteus.evaluation.frontier_scan` (escenario de origen: un origen nuevo
+reproduce los sondeos reales del bot, con sus destinos y puertos, sobre el tráfico
+real hacia esos destinos). Modelo `core_both_x` entrenado en B, FPR 10⁻³.
+
+| Escenario | Sondeos | Destinos | Puertos | Bot real (sondeos/min) | Frontera (sondeos/min) |
+|---|---|---|---|---|---|
+| s03 (prueba) | 26.759 | 26.724 | 22 | 6,8 | 3.916 |
+| s06 (prueba) | 4.630 | 1.579 | 25 | 36,1 | 3.980 |
+| s08 (entrenamiento) | 6.127 | 497 | 135, 3389 | 5,2 | 3.936 |
+| s12 (entrenamiento) | 807 | 644 | 80, 53 | 12,8 | 4.042 |
+
+Frontera certificada: por encima del máximo probado (12.000/min).
+
+Lectura:
+
+- El bot escanea 100–750 veces por debajo de la frontera: por eso 0/64.
+- La frontera es casi la misma en todos los escenarios porque el umbral local es el
+  mismo (0,999946): está en la **saturación** del modelo. El 0,1 % más alto del
+  fondo ya recibe la puntuación máxima, así que un escaneo solo alerta cuando llega
+  a ese techo (~65 sondeos/s desde un origen nuevo).
+- Dos causas probables, en prueba:
+  1. **Evidencia:** el núcleo de origen no ve las conexiones sin respuesta, la huella
+     propia de un escaneo. Se añade en la evidencia v2 (`noreply`, `n_dhost_nr`;
+     doc 04), conservada dados los destinos.
+  2. **Calibración por flujo:** un FPR por flujo da más peso a los hosts con más
+     flujos. Hace falta ver qué entidades saturan (`alarms.py`) y, si son unas
+     pocas, calibrar por alarmas de entidad por hora.
