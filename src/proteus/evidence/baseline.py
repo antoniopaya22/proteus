@@ -30,10 +30,12 @@ import pandas as pd
 
 # Counters that get a baseline, per entity. Source-side counters catch what leaves
 # no destination footprint (horizontal scans, spam, infected hosts).
+# ``noreply`` and ``n_dhost_nr`` exist only in evidence v2 (absent columns are skipped).
 COUNTERS = {
-    "dsvc": ("flows", "fpkts", "fbytes", "rst", "conn_s", "n_src"),
-    "dhost": ("flows", "fpkts", "fbytes", "rst", "conn_s", "n_src", "n_dport"),
-    "shost": ("flows", "fpkts", "fbytes", "rst", "conn_s", "n_dhost", "n_dsvc"),
+    "dsvc": ("flows", "fpkts", "fbytes", "rst", "conn_s", "n_src", "noreply"),
+    "dhost": ("flows", "fpkts", "fbytes", "rst", "conn_s", "n_src", "n_dport", "noreply"),
+    "shost": ("flows", "fpkts", "fbytes", "rst", "conn_s", "n_dhost", "n_dsvc", "noreply",
+              "n_dhost_nr"),
 }
 QUANTILE = 0.95
 

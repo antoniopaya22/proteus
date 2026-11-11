@@ -24,7 +24,7 @@ from proteus.core.certify import slack, worst_case_features
 from proteus.core.combine import MaxCore
 from proteus.core.verify import monotonicity_violations
 from proteus.evidence import baseline as bl
-from proteus.evidence.features import DEFAULT_TAUS, build
+from proteus.evidence.features import DEFAULT_TAUS, EVIDENCE_VERSION, build
 
 DATA = Path("data/processed")
 META = ["dataset", "day", "t_start", "t_end", "src_ip", "dst_ip", "dst_port", "proto",
@@ -52,8 +52,8 @@ def days(ds: str) -> list[Path]:
 
 def evidence(ds: str, day: Path) -> tuple[pd.DataFrame, dict[str, str]]:
     """Evidence features for one day (cached)."""
-    cache = DATA / ds / "evidence" / day.name
-    spec_file = DATA / ds / "evidence" / "specs.json"
+    cache = _edir(ds) / day.name
+    spec_file = _edir(ds) / "specs.json"
     if cache.exists() and spec_file.exists():
         return pd.read_parquet(cache), json.loads(spec_file.read_text())
     df = pd.read_parquet(day, columns=META + ["fwd_pkts", "fwd_bytes", "bwd_pkts",
@@ -74,8 +74,25 @@ def evidence(ds: str, day: Path) -> tuple[pd.DataFrame, dict[str, str]]:
 BASELINE = {"mode": "loo", "mask": "labels"}
 
 
+# Written by their converters (evidence computed on every flow, only a sample stored):
+# the evidence cannot be recomputed from the stored flows.
+CHUNKED = ("ugr16", "cicddos2019")
+
+
+def _vsuffix(ds: str) -> str:
+    if EVIDENCE_VERSION == "v1":
+        return ""
+    if ds in CHUNKED:
+        raise ValueError(f"{ds}: evidence {EVIDENCE_VERSION} needs a new conversion")
+    return f"_{EVIDENCE_VERSION}"
+
+
+def _edir(ds: str) -> Path:
+    return DATA / ds / f"evidence{_vsuffix(ds)}"
+
+
 def _bdir(ds: str) -> Path:
-    return DATA / ds / f"evidence_b_{BASELINE['mode']}_{BASELINE['mask']}"
+    return DATA / ds / f"evidence_b_{BASELINE['mode']}_{BASELINE['mask']}{_vsuffix(ds)}"
 
 
 def evidence_b(ds: str, day: Path, columns: list[str] | None = None
