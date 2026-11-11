@@ -140,8 +140,18 @@ def run_attack(name, model, X, modifiable, functional):
     from art.attacks.evasion import HopSkipJump, ZooAttack
     from art.estimators.classification import BlackBoxClassifier
 
-    clf = BlackBoxClassifier(predict_fn=lambda x: model.predict_proba(x),
-                             input_shape=(X.shape[1],), nb_classes=2, clip_values=(0.0, 1.0))
+    count = {"queries": 0, "blocked": 0}
+
+    def predict(x):
+        # Every query is a flow sent through the inline detector; "blocked" ones are
+        # those it classifies as attack (evidence the core's feedback counter keeps).
+        p = model.predict_proba(x)
+        count["queries"] += len(x)
+        count["blocked"] += int((p[:, 1] >= 0.5).sum())
+        return p
+
+    clf = BlackBoxClassifier(predict_fn=predict, input_shape=(X.shape[1],), nb_classes=2,
+                             clip_values=(0.0, 1.0))
     y_target = np.zeros((len(X), 2))
     y_target[:, 0] = 1
     b = BUDGETS[name]
@@ -151,9 +161,12 @@ def run_attack(name, model, X, modifiable, functional):
         att = ZooAttack(classifier=clf, targeted=True, verbose=False, **b)
     adv = X.astype(np.float64).copy()
     timeouts = 0
+    queries = np.zeros(len(X), dtype=np.int64)
+    blocked = np.zeros(len(X), dtype=np.int64)
     previous = signal.signal(signal.SIGALRM, _alarm)
     try:
         for i in range(len(X)):
+            q0, b0 = count["queries"], count["blocked"]
             signal.alarm(TIMEOUT_S[name])
             try:
                 adv[i] = att.generate(x=X[i:i + 1].astype(np.float32), y=y_target[i:i + 1])[0]
@@ -161,11 +174,13 @@ def run_attack(name, model, X, modifiable, functional):
                 timeouts += 1
             finally:
                 signal.alarm(0)
+                queries[i] = count["queries"] - q0
+                blocked[i] = count["blocked"] - b0
     finally:
         signal.signal(signal.SIGALRM, previous)
     if len(functional):
         adv[:, functional] = X[:, functional]
-    return adv, timeouts
+    return adv, timeouts, queries, blocked
 
 
 _CACHE: dict = {}
@@ -187,8 +202,8 @@ def _job(args):
     if rows is not None:
         X = X[rows]
     t0 = time.time()
-    adv, timeouts = run_attack(attack, model, X, modifiable, functional)
-    return name, attack, adv, time.time() - t0, timeouts
+    adv, timeouts, queries, blocked = run_attack(attack, model, X, modifiable, functional)
+    return name, attack, adv, time.time() - t0, timeouts, queries, blocked
 
 
 def summarize(model, X, adv, draws=10):
@@ -259,17 +274,25 @@ def main() -> None:
     chunks = [c for c in np.array_split(np.arange(len(X)), max(1, args.workers // 2)) if len(c)]
     jobs = [(n, a, path, c) for n in models for a in ("hsja", "zoo") for c in chunks]
     parts: dict = {}
-    for name, attack, adv, secs, timeouts in pool.map(_job, jobs):
-        parts.setdefault((name, attack), []).append((adv, secs, timeouts))
+    for name, attack, adv, secs, timeouts, q, b in pool.map(_job, jobs):
+        parts.setdefault((name, attack), []).append((adv, secs, timeouts, q, b))
     pool.shutdown()
     advs, results = {}, []
     for (name, attack), lst in parts.items():
-        adv = np.vstack([a for a, _, _ in lst])
+        adv = np.vstack([x[0] for x in lst])
+        q = np.concatenate([x[3] for x in lst])
+        b = np.concatenate([x[4] for x in lst])
         advs[(name, attack)] = adv
-        s_, _ = summarize(models[name], X, adv)
+        s_, ev = summarize(models[name], X, adv)
+        ok = ev >= 0.5
         results.append({"model": name, "attack": attack,
-                        "seconds": round(sum(t for _, t, _ in lst)),
-                        "timeouts": sum(k for _, _, k in lst), **s_})
+                        "seconds": round(sum(x[1] for x in lst)),
+                        "timeouts": sum(x[2] for x in lst), **s_,
+                        "queries_median": float(np.median(q)),
+                        "blocked_median": float(np.median(b)),
+                        "blocked_median_success": float(np.median(b[ok])) if ok.any() else None,
+                        "blocked_min_success": int(b[ok].min()) if ok.any() else None})
+        np.savez(out / f"queries_{name}_{attack}.npz", queries=q, blocked=b, evaded=ev)
         print(json.dumps(results[-1]), flush=True)
 
     # Transfer matrix: examples crafted against one model, evaluated on every model.
