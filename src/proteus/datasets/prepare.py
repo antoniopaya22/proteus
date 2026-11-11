@@ -9,13 +9,13 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from . import cicddos, ctu13, ugr16, unsw
+from . import cicddos, ctu13, ctusme11, ugr16, unsw
 from .cic import convert
 
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--dataset", required=True, choices=["cicids2017", "csecicids2018", "ctu13", "unsw_nb15", "ugr16", "cicddos2019"])
+    ap.add_argument("--dataset", required=True, choices=["cicids2017", "csecicids2018", "ctu13", "unsw_nb15", "ugr16", "cicddos2019", "ctusme11"])
     ap.add_argument("--raw", type=Path, required=True)
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--sample-rate", type=float, default=0.01, help="ugr16: background kept")
@@ -26,6 +26,8 @@ def main() -> None:
     args = ap.parse_args()
     if args.dataset == "ctu13":
         summary = ctu13.convert(args.raw, args.out)
+    elif args.dataset == "ctusme11":
+        summary = ctusme11.convert(args.raw, args.out)
     elif args.dataset == "unsw_nb15":
         summary = unsw.convert(args.raw, args.out)
     elif args.dataset == "cicddos2019":
