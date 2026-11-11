@@ -76,7 +76,7 @@ BASELINE = {"mode": "loo", "mask": "labels"}
 
 # Written by their converters (evidence computed on every flow, only a sample stored):
 # the evidence cannot be recomputed from the stored flows.
-CHUNKED = ("ugr16", "cicddos2019")
+CHUNKED = ("ugr16", "cicddos2019", "ctusme11")
 
 
 def _vsuffix(ds: str) -> str:

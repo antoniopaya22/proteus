@@ -17,7 +17,6 @@ when the flow has backward packets, which only approximates "the responder reset
 
 from __future__ import annotations
 
-import json
 import re
 import zipfile
 from pathlib import Path
@@ -25,7 +24,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from proteus.evidence.features import DEFAULT_TAUS, build
+from proteus.datasets import staged
 
 KEY = {"Source IP": "src_ip", "Source Port": "src_port", "Destination IP": "dst_ip",
        "Destination Port": "dst_port", "Protocol": "proto", "Timestamp": "timestamp",
@@ -99,62 +98,5 @@ def _label(raw: pd.Series) -> tuple[np.ndarray, np.ndarray]:
 
 def process(stage_dir: Path, out_dir: Path, attack_rate: float = 0.02,
             warmup_s: float = 1800.0, salt: int = 0) -> list[dict]:
-    ev_dir = out_dir / "evidence"
-    ev_dir.mkdir(parents=True, exist_ok=True)
-    stats, specs = [], None
-    for day_dir in sorted(p for p in stage_dir.iterdir() if p.is_dir()):
-        hours = sorted(p for p in day_dir.iterdir() if p.is_dir())
-        parts = []
-        prev = None
-        for hdir in hours:
-            cur = pd.concat([pd.read_parquet(f) for f in sorted(hdir.glob("*.parquet"))],
-                            ignore_index=True)
-            hour_start = pd.Timestamp(f"{day_dir.name} {hdir.name}:00:00")
-            if prev is not None:
-                warm = prev[prev["t_end"] >= hour_start - pd.Timedelta(seconds=warmup_s)]
-                df = pd.concat([warm, cur], ignore_index=True)
-            else:
-                df = cur
-            key = ["t_start", "t_end", "src_ip", "dst_ip", "src_port", "dst_port", "proto",
-                   "fwd_pkts", "bwd_pkts", "fwd_bytes", "bwd_bytes"]
-            df = df.drop_duplicates(subset=key).sort_values("t_end", kind="stable")
-            df = df.reset_index(drop=True)
-            attack, family = _label(df["label_raw"])
-            df["attack"], df["family"] = attack, family
-            df["is_attack"] = family != "benign"
-            df["attempted"] = False
-            df["dataset"], df["day"] = "cicddos2019", day_dir.name
-            feats, specs = build(df, DEFAULT_TAUS)
-            own = (df["t_end"] >= hour_start).to_numpy()
-            h = pd.util.hash_pandas_object(df[key], index=False).to_numpy()
-            u = ((h ^ np.uint64(salt)) % np.uint64(1_000_000)).astype(np.float64) / 1e6
-            keep = own & (~df["is_attack"].to_numpy() | (u < attack_rate))
-            parts.append(pd.concat([df.loc[keep].reset_index(drop=True),
-                                    feats.loc[keep].reset_index(drop=True)], axis=1))
-            stats.append({"day": day_dir.name, "hour": hdir.name, "flows": int(own.sum()),
-                          "attacks": int(df.loc[own, "is_attack"].sum()),
-                          "stored": int(keep.sum())})
-            print(f"  {stats[-1]}", flush=True)
-            prev = cur
-        if parts:
-            _flush(day_dir.name, parts, out_dir, ev_dir)
-    (ev_dir / "specs.json").write_text(json.dumps({s.name: s.conservation for s in specs}))
-    return stats
-
-
-def _flush(day: str, parts: list, out_dir: Path, ev_dir: Path) -> None:
-    from proteus.evaluation.h1 import clean_benign
-
-    d = pd.concat(parts, ignore_index=True).sort_values("t_end", kind="stable")
-    d = d.reset_index(drop=True)
-    for c in ("dataset", "day", "attack", "family", "label_raw"):
-        d[c] = d[c].astype("category")
-    for c in ("src_ip", "dst_ip"):
-        d[c] = d[c].astype("string")
-    d["suspect"] = False
-    d["clean"] = clean_benign(d)
-    feat_cols = [c for c in d.columns if "__t" in c]
-    raw_cols = [c for c in d.columns if c not in feat_cols and c not in ("suspect", "clean")]
-    d[raw_cols].to_parquet(out_dir / f"{day}.parquet", index=False)
-    d[META + feat_cols + ["suspect", "clean"]].to_parquet(ev_dir / f"{day}.parquet", index=False)
-    print(f"  wrote {day}: {len(d):,} stored flows", flush=True)
+    return staged.process(stage_dir, out_dir, "cicddos2019", attack_rate=attack_rate,
+                          warmup_s=warmup_s, salt=salt, label=lambda d: _label(d["label_raw"]))

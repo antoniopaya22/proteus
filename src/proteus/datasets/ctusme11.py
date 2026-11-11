@@ -16,13 +16,18 @@ Mapping to the common flow schema:
 * labels: ``label == "Malicious"`` → attack; the family comes from the last part of
   ``detailedlabel`` (``From_malicious-To_benign-Discovery`` → ``discovery``).
   Benign flows were labelled by experts and are used as benign;
-* every capture holds one device; all devices of a day are merged into one "network"
-  day, removing flows seen by two captures.
+* every capture holds one device; all devices are merged into one network, removing
+  flows seen by two captures (same endpoints, start rounded to 1 ms);
+* one capture (Ubuntu VM, 2023-02-23) holds ~99 M flows, so flows are staged in
+  10-minute windows and evidence is computed with ``proteus.datasets.staged``: every
+  benign flow is stored, attack flows are sampled (counters use all of them).
 """
 
 from __future__ import annotations
 
 from pathlib import Path
+
+from proteus.datasets import staged
 
 import numpy as np
 import pandas as pd
@@ -52,10 +57,7 @@ def _num(s: pd.Series, kind=np.int64) -> np.ndarray:
     return pd.to_numeric(s.replace("-", np.nan), errors="coerce").fillna(0).to_numpy(kind)
 
 
-def read_conn(path: Path, device: str) -> pd.DataFrame:
-    # Zeek header and the trailing "#close" line start with '#'; no field contains it.
-    raw = pd.read_csv(path, sep="\t", names=_fields(path), dtype=str, comment="#",
-                      keep_default_na=False, quoting=3, encoding_errors="replace")
+def _normalise(raw: pd.DataFrame, device: str) -> pd.DataFrame:
     ts = pd.to_numeric(raw["ts"], errors="coerce")
     raw, ts = raw[ts.notna()], ts[ts.notna()]
     dur_s = _num(raw["duration"], np.float64).clip(min=0)
@@ -69,7 +71,7 @@ def read_conn(path: Path, device: str) -> pd.DataFrame:
     fam = suffix.map(FAMILY).fillna(suffix).to_numpy()
     family = np.where(mal, fam, "benign")
     attack = np.where(mal, "sme_" + suffix.str.replace(r"[^a-z0-9]+", "_", regex=True), "benign")
-    df = pd.DataFrame({
+    return pd.DataFrame({
         "dataset": "ctusme11",
         "device": device,
         "t_start": t_start.astype("datetime64[us]"),
@@ -91,39 +93,42 @@ def read_conn(path: Path, device: str) -> pd.DataFrame:
         "attempted": False,
         "is_attack": mal,
     })
-    return df
 
 
+def _chunks(path: Path, chunksize: int):
+    # Zeek header and the trailing "#close" line start with '#'; no field contains it.
+    return pd.read_csv(path, sep="\t", names=_fields(path), dtype=str, comment="#",
+                       keep_default_na=False, quoting=3, encoding_errors="replace",
+                       chunksize=chunksize)
+
+
+def read_conn(path: Path, device: str) -> pd.DataFrame:
+    return pd.concat([_normalise(c, device) for c in _chunks(path, 1_000_000)],
+                     ignore_index=True)
+
+
+# Duplicate flows seen by two captures: same endpoints and start (rounded to 1 ms,
+# the two sniffers stamp packets independently).
 KEY = ["t_start", "src_ip", "src_port", "dst_ip", "dst_port", "proto"]
 
 
-def convert(raw_dir: Path, out_dir: Path) -> pd.DataFrame:
+def stage(raw_dir: Path, stage_dir: Path, chunksize: int = 2_000_000, minutes: int = 10) -> None:
+    for p in sorted(raw_dir.glob("**/zeek/conn.log.labeled")):
+        device = p.parents[2].name
+        n = 0
+        for k, chunk in enumerate(_chunks(p, chunksize)):
+            df = _normalise(chunk, device)
+            df["t_start"] = df["t_start"].dt.round("ms")
+            staged.partition(stage_dir, df, f"{device}-{p.parents[1].name}-{k:05d}", minutes)
+            n += len(df)
+        print(f"  staged {device}/{p.parents[1].name}: {n:,} flows", flush=True)
+
+
+def convert(raw_dir: Path, out_dir: Path, attack_rate: float = 0.02) -> pd.DataFrame:
     """``raw_dir`` holds ``CTU-SME-11/<device>/<YYYY-MM-DD>/zeek/conn.log.labeled``."""
     out_dir.mkdir(parents=True, exist_ok=True)
-    logs = sorted(raw_dir.glob("**/zeek/conn.log.labeled"))
-    by_day: dict[str, list[pd.DataFrame]] = {}
-    for p in logs:
-        device = p.parents[2].name
-        df = read_conn(p, device)
-        for day, g in df.groupby(df["t_end"].dt.strftime("%Y-%m-%d")):
-            by_day.setdefault(day, []).append(g)
-        print(f"  {device}/{p.parents[1].name}: {len(df):,} flows", flush=True)
-    rows = []
-    for day, parts in sorted(by_day.items()):
-        d = pd.concat(parts, ignore_index=True)
-        n = len(d)
-        # Flows between two monitored devices appear in both captures; keep one, timestamps
-        # rounded to 1 ms because the two sniffers stamp packets independently.
-        d["_t"] = d["t_start"].dt.round("ms")
-        d = d.drop_duplicates(subset=["_t"] + KEY[1:]).drop(columns="_t")
-        d = d.sort_values("t_end", kind="stable").reset_index(drop=True)
-        d["day"] = day
-        for c in ("dataset", "day", "device", "attack", "family", "label_raw"):
-            d[c] = d[c].astype("category")
-        d.to_parquet(out_dir / f"{day}.parquet", index=False)
-        s = d.groupby("family", observed=True).size().rename("flows").reset_index()
-        s.insert(0, "day", day)
-        s["duplicates"] = n - len(d)
-        rows.append(s)
-        print(f"ctusme11/{day}: {len(d):,} flows ({n - len(d):,} duplicates)", flush=True)
-    return pd.concat(rows, ignore_index=True)
+    stage_dir = out_dir / "_stage"
+    if not stage_dir.exists():
+        stage(raw_dir, stage_dir)
+    return pd.DataFrame(staged.process(stage_dir, out_dir, "ctusme11", attack_rate=attack_rate,
+                                       key=KEY))

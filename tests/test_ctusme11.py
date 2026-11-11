@@ -42,14 +42,17 @@ def test_read_conn_maps_fields(tmp_path):
 
 
 def test_convert_merges_devices_and_drops_shared_flows(tmp_path):
+    import pandas as pd
+
     shared = row(1677024020.1234, "192.168.1.50", 4000, "192.168.1.60", 80, "tcp", 1, 10, 10,
                  "ShAD", 3, 3, "Benign", "From_benign-To_benign-HTTP")
     for dev, extra in (("A", "192.168.1.50"), ("B", "192.168.1.60")):
         write(tmp_path / "raw" / "CTU-SME-11" / dev / "2023-02-21" / "zeek" / "conn.log.labeled",
               [shared, row(1677024030, extra, 1, "9.9.9.9", 443, "tcp", 1, 1, 1, "S", 1, 1,
                            "Benign", "From_benign-To_benign-HTTPS")])
-    s = ctusme11.convert(tmp_path / "raw", tmp_path / "out")
-    assert int(s["flows"].sum()) == 3 and int(s["duplicates"].iloc[0]) == 1
-    import pandas as pd
+    ctusme11.convert(tmp_path / "raw", tmp_path / "out")
     d = pd.read_parquet(tmp_path / "out" / "2023-02-22.parquet")
+    assert len(d) == 3 and set(d["device"]) == {"A", "B"}
     assert np.all(np.diff(d["t_end"].to_numpy()) >= np.timedelta64(0, "us"))
+    ev = pd.read_parquet(tmp_path / "out" / "evidence" / "2023-02-22.parquet")
+    assert len(ev) == 3 and "dhost__flows__t60" in ev.columns
