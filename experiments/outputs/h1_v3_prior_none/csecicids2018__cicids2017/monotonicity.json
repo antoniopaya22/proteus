@@ -1,0 +1,12 @@
+{
+  "core_mono_dst": {
+    "checks": 240000,
+    "violations": 0,
+    "worst_drop": 0.0
+  },
+  "core_mono_dst_b": {
+    "checks": 658626,
+    "violations": 0,
+    "worst_drop": 0.0
+  }
+}

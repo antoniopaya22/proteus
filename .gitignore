@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+
+# Data and experiment outputs
+data/*
+!data/README.md
+# Experiment outputs: keep tables (csv/json), not models or logs
+experiments/outputs/**/*.pkl
+experiments/outputs/**/*.log
+experiments/outputs/**/*.done
+
+# The paper lives in its own repository (antoniopaya22/proteus-paper)
+paper/
