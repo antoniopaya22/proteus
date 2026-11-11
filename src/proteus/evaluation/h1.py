@@ -303,7 +303,23 @@ def campaigns(df: pd.DataFrame) -> pd.DataFrame:
     return rows
 
 
-def evaluate(test: pd.DataFrame, scores: dict[str, np.ndarray], thresholds: dict) -> pd.DataFrame:
+def alert_side(model, cols: list[str], X: np.ndarray) -> np.ndarray:
+    """True where an alert would be about the flow's source host rather than its
+    destination: the source sub-core gives the maximum (``MaxCore``), or the model only
+    uses source evidence."""
+    parts = getattr(model, "parts", None)
+    if not parts:
+        return np.full(len(X), bool(cols) and all(c.startswith("shost") for c in cols))
+    subs = np.vstack([m.predict_proba(X[:, idx])[:, 1] for idx, m in parts])
+    is_src = np.array([all(cols[i].startswith("shost") for i in idx) for idx, _ in parts])
+    return is_src[subs.argmax(axis=0)]
+
+
+ENTITY_BUCKET = "10min"
+
+
+def evaluate(test: pd.DataFrame, scores: dict[str, np.ndarray], thresholds: dict,
+             sides: dict[str, np.ndarray] | None = None) -> pd.DataFrame:
     camp = campaigns(test)
     hours = sum(
         (g["t_end"].max() - g["t_start"].min()).total_seconds() / 3600
@@ -320,8 +336,19 @@ def evaluate(test: pd.DataFrame, scores: dict[str, np.ndarray], thresholds: dict
         fa = test.loc[clean & alert]
         alarm_groups = fa.groupby(["day", "dst_ip", fa["t_start"].dt.floor("min")],
                                   observed=True).ngroups
+        # Entity alarms: the alerted entity (source or destination host, by the
+        # sub-core that fires) per ENTITY_BUCKET window.
+        side = (sides or {}).get(model.removesuffix("@cert"))
+        is_src = (side[clean & alert] if side is not None
+                  else np.zeros(len(fa), dtype=bool))
+        ent = np.where(is_src, fa["src_ip"].astype(str), fa["dst_ip"].astype(str))
+        entity_groups = pd.DataFrame({"d": fa["day"].astype(str).to_numpy(), "e": ent,
+                                      "s": is_src,
+                                      "b": fa["t_start"].dt.floor(ENTITY_BUCKET).to_numpy()}
+                                     ).drop_duplicates().shape[0]
         base = {"model": model, "target_fpr": fpr, "threshold": kind,
                 "benign_fpr": alert[clean].mean(), "alarms_per_hour": alarm_groups / hours,
+                "entity_alarms_per_hour": entity_groups / hours,
                 "suspect_sources": int(sus_src.nunique()),
                 "suspect_detected": int(sus_src[alert[suspect]].nunique())}
         for day, attack, idx in camp:
@@ -426,6 +453,7 @@ def main() -> None:
                      | set(META) | {"clean"})
     day_scores, benign_sample, benign_feats = {}, {}, {}
     top_of: dict = {}  # day -> model -> (top clean scores, dst key, minute)
+    day_sides: dict = {}  # day -> model -> alert about the source host
     hours_of: dict = {}
     for day in test_days:
         ev, _ = evidence_b(args.test, day, columns=ev_cols)
@@ -436,6 +464,9 @@ def main() -> None:
 
         scores = {n: score(m, frame(c)[c].to_numpy(np.float32)).astype(np.float32)
                   for n, (c, m) in models.items() if n != "rate_rules_local"}
+        day_sides[day] = {n: alert_side(m, c, frame(c)[c].to_numpy(np.float32))
+                          for n, (c, m) in models.items()
+                          if n != "rate_rules_local" and not c[0].startswith("flow__")}
         clean_idx = np.flatnonzero(ev["clean"].to_numpy())
         pick = rng.choice(clean_idx, min(len(clean_idx), 1_000_000), replace=False)
         benign_sample[day] = {n: s[pick] for n, s in scores.items()}
@@ -498,7 +529,7 @@ def main() -> None:
         for (n, fpr, kind), v in list(th.items()):
             if f"{n}@cert" in scores:
                 th[(f"{n}@cert", fpr, kind)] = v
-        results.append(evaluate(ev, scores, th))
+        results.append(evaluate(ev, scores, th, day_sides.pop(day, None)))
         print(f"  evaluated {args.test}/{day.stem} at {time.time() - t0:.0f}s", flush=True)
         del ev
 
@@ -512,8 +543,10 @@ def main() -> None:
     )
     summary.to_csv(out / "summary.csv", index=False)
     fa = (res.groupby(["model", "target_fpr", "threshold", "day"], observed=True)
-          [["benign_fpr", "alarms_per_hour", "suspect_sources", "suspect_detected"]]
+          [["benign_fpr", "alarms_per_hour", "entity_alarms_per_hour", "suspect_sources",
+            "suspect_detected"]]
           .first().groupby(level=[0, 1, 2]).agg({"benign_fpr": "mean", "alarms_per_hour": "mean",
+                                                  "entity_alarms_per_hour": "mean",
                                                   "suspect_sources": "sum",
                                                   "suspect_detected": "sum"}))
     fa.to_csv(out / "false_alarms.csv")

@@ -18,3 +18,21 @@ def test_budget_counts_entity_minutes_not_flows():
     assert 0.5 < t2 <= 0.95
     # 0 alarms allowed: above every score
     assert entity_threshold(tops, hours=1.0, budget=0.0) > 0.99
+
+
+def test_alert_side_follows_the_sub_core_that_fires():
+    from sklearn.ensemble import HistGradientBoostingClassifier
+
+    from proteus.core.combine import MaxCore
+    from proteus.evaluation.h1 import alert_side
+
+    rng = np.random.default_rng(0)
+    X = rng.random((600, 2))
+    y = ((X[:, 0] > 0.8) | (X[:, 1] > 0.8)).astype(int)
+    cols = ["dhost__flows__t60", "shost__flows__t60"]
+    m = MaxCore(cols, [([cols[0]], HistGradientBoostingClassifier(max_iter=30)),
+                       ([cols[1]], HistGradientBoostingClassifier(max_iter=30))]).fit(X, y)
+    side = alert_side(m, cols, np.array([[0.95, 0.1], [0.1, 0.95]]))
+    assert side.tolist() == [False, True]
+    assert alert_side(object(), ["shost__n_dhost__t60"], np.zeros((3, 1))).all()
+    assert not alert_side(object(), ["dsvc__flows__t60"], np.zeros((3, 1))).any()
