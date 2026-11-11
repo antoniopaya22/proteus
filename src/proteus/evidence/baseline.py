@@ -16,8 +16,8 @@ attacker operations is unaffected: the excess x - b is increasing in x. The
 attacker can only influence b by acting on earlier days (baseline poisoning),
 which is an adaptive attack evaluated separately.
 
-Entity keys are strings stable across days: "dst_ip" for dhost and
-"dst_ip:dst_port/proto" for dsvc. ``KeyCodes`` turns them into integers shared by
+Entity keys are strings stable across days: "dst_ip" for dhost,
+"dst_ip:dst_port/proto" for dsvc and "src_ip" for shost. ``KeyCodes`` turns them into integers shared by
 all days to keep the per-minute tables small.
 """
 
@@ -28,10 +28,12 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
-# Counters that get a baseline, per destination entity.
+# Counters that get a baseline, per entity. Source-side counters catch what leaves
+# no destination footprint (horizontal scans, spam, infected hosts).
 COUNTERS = {
     "dsvc": ("flows", "fpkts", "fbytes", "rst", "conn_s", "n_src"),
     "dhost": ("flows", "fpkts", "fbytes", "rst", "conn_s", "n_src", "n_dport"),
+    "shost": ("flows", "fpkts", "fbytes", "rst", "conn_s", "n_dhost", "n_dsvc"),
 }
 QUANTILE = 0.95
 
@@ -46,7 +48,7 @@ def baseline_columns(names: list[str]) -> dict[str, list[str]]:
 def entity_keys(ev: pd.DataFrame) -> dict[str, pd.Series]:
     dhost = ev["dst_ip"].astype("string")
     dsvc = dhost + ":" + ev["dst_port"].astype("string") + "/" + ev["proto"].astype("string")
-    return {"dsvc": dsvc, "dhost": dhost}
+    return {"dsvc": dsvc, "dhost": dhost, "shost": ev["src_ip"].astype("string")}
 
 
 class KeyCodes:

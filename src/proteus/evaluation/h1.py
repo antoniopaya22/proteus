@@ -21,6 +21,7 @@ from sklearn.ensemble import HistGradientBoostingClassifier
 
 from proteus.baselines.rate_rules import RateRules
 from proteus.core.certify import slack, worst_case_features
+from proteus.core.combine import MaxCore
 from proteus.core.verify import monotonicity_violations
 from proteus.evidence import baseline as bl
 from proteus.evidence.features import DEFAULT_TAUS, build
@@ -157,9 +158,12 @@ def clean_benign(df: pd.DataFrame) -> np.ndarray:
 
 # ---------------------------------------------------------------- training set
 
-def training_set(ds: str, rng: np.random.Generator, cap_attack=50_000, cap_benign=300_000):
+def training_set(ds: str, rng: np.random.Generator, cap_attack=50_000, cap_benign=300_000,
+                 only: list[str] | None = None):
     parts = []
     for day in days(ds):
+        if only and day.stem not in only:
+            continue
         ev, specs = evidence_b(ds, day)
         flow = flow_features(day)
         idx = []
@@ -191,15 +195,25 @@ def detectors(specs: dict[str, str], flow_cols: list[str]) -> dict[str, tuple[li
     """Name -> (columns, model). Monotone models: +1 on evidence and excess over
     baseline, -1 on the baseline itself (a busier entity needs more evidence)."""
     dst = [k for k, v in specs.items() if not k.startswith("shost__")]
-    raw = [k for k in dst if specs[k] == "conserved" and not k.endswith(("__b", "__x"))]
+    src = [k for k in specs if k.startswith("shost__")]
+
+    def raw_of(cols):
+        return [k for k in cols if specs[k] == "conserved" and not k.endswith(("__b", "__x"))]
+
+    raw = raw_of(dst)
     excess = [k for k in dst if k.endswith("__x")]
     with_b = raw + [k for k in dst if k.endswith(("__b", "__x"))]
     rules = raw + excess
-    long_rules = [k for k in rules if f"__t{int(max(DEFAULT_TAUS))}" in k]
+    long_tau = f"__t{int(max(DEFAULT_TAUS))}"
+    long_rules = [k for k in rules if long_tau in k]
+    src_rules = raw_of(src) + [k for k in src if k.endswith("__x")]
+    src_long = [k for k in src_rules if long_tau in k]
 
     def cst(cols):
         return [CST[specs[c]] for c in cols]
 
+    both = rules + src_rules
+    both_long = long_rules + src_long
     return {
         "core_mono_dst": (raw, hgb(cst(raw))),
         # Excess over the entity's own baseline, without the baseline itself: rarity
@@ -208,6 +222,12 @@ def detectors(specs: dict[str, str], flow_cols: list[str]) -> dict[str, tuple[li
         # Certifiable core: only the longest time scale, where the certification
         # slack 2Δ/τ is small (0.4 for Δ=120 s, τ=600 s).
         "core_cert": (long_rules, hgb(cst(long_rules))),
+        # Destination core and source core, combined by max (monotone).
+        "core_src_x": (src_rules, hgb(cst(src_rules))),
+        "core_both_x": (both, MaxCore(both, [(rules, hgb(cst(rules))),
+                                            (src_rules, hgb(cst(src_rules)))])),
+        "core_both_cert": (both_long, MaxCore(both_long, [(long_rules, hgb(cst(long_rules))),
+                                                          (src_long, hgb(cst(src_long)))])),
         "core_mono_dst_b": (with_b, hgb(cst(with_b))),
         "core_free_dst_b": (with_b, hgb(None)),
         "rate_rules": (rules, RateRules()),
@@ -274,6 +294,10 @@ def main() -> None:
     ap.add_argument("--models", nargs="*", default=None,
                     help="only these detectors (default: all)")
     ap.add_argument("--tag", default="", help="suffix for the output directory")
+    ap.add_argument("--train-days", nargs="*", default=None,
+                    help="restrict training to these capture days (file stems)")
+    ap.add_argument("--test-days", nargs="*", default=None,
+                    help="restrict testing to these capture days (file stems)")
     ap.add_argument("--train-thresholds", action="store_true",
                     help="also evaluate thresholds calibrated on the training network "
                          "(known not to transfer; slow because of the many alerts)")
@@ -286,7 +310,7 @@ def main() -> None:
     out.mkdir(parents=True, exist_ok=True)
 
     t0 = time.time()
-    tr, specs = training_set(args.train, rng)
+    tr, specs = training_set(args.train, rng, only=args.train_days)
     flow_cols = [c for c in tr.columns if c.startswith("flow__")]
     # Held-out calibration benign flows (30%) are not used for fitting.
     calib = tr["clean"].to_numpy() & (rng.random(len(tr)) < 0.3)
@@ -321,7 +345,7 @@ def main() -> None:
     del tr
 
     # Pass 1: score every test day; keep a sample of clean benign scores per day.
-    test_days = days(args.test)
+    test_days = [d for d in days(args.test) if not args.test_days or d.stem in args.test_days]
     local_cols = models["rate_rules_local"][0] if "rate_rules_local" in models else []
     ev_cols = sorted({c for cols, _ in models.values() for c in cols if not c.startswith("flow__")}
                      | set(META) | {"clean"})

@@ -170,3 +170,14 @@ UWF-ZeekData24. En la literatura AML-NIDS casi nadie usa datasets con fondo real
 **Víctimas ocupadas por construcción:** insertar pcaps de ataque (CIC-DDoS-2019,
 UNSW-NB15, CTU) en tráfico real de fondo (MAWI, CTU), reasignando atacante y víctima a
 hosts reales con mucho tráfico. Sirve también para la fase de reproducción.
+
+### Estado de las descargas (2026-11-11)
+
+| Dataset | Estado | Notas |
+|---|---|---|
+| CTU-13 | **Descargado y convertido** (`proteus.datasets.ctu13`) | 19,6 M flujos. Se extraen solo `.binetflow` y README: el archivo incluye los binarios del malware |
+| CTU-SME-11 | Descargando (Zenodo, ~103 GB, CC BY 4.0) | Pendiente de conversor (Zeek) |
+| UGR'16 | Espejo Hugging Face `Lystea/UGR16-PARQUET` (no oficial; la web oficial da 403). Bajadas `july_week5` y `august_week1` | Esquema válido (IPs anonimizadas, inicio/fin, paquetes, bytes, flags, familia de ataque; fondo = desconocido). **539 M flujos por semana**: hay que procesar por trozos con calentamiento de 30 min para los contadores, y limitar las características guardadas a las entidades evaluadas. Validar recuentos de ataques con el paper de UGR'16 |
+| UNSW-NB15 | **Espejo descartado** (`rdpahalavan/UNSW-NB15`): 2,06 M flujos frente a 2,54 M oficiales, Generic 25k frente a 215k, DoS 5,7k frente a 16k (deduplicado). El SharePoint oficial no se puede listar por script (403 en la API para enlaces anónimos) | Bajar a mano `UNSW-NB15_1..4.csv`, `UNSW-NB15_GT.csv`, `UNSW-NB15_features.csv` |
+| CSE-CIC-IDS-2018 pcaps | Disponibles en el bucket público oficial `s3://cse-cic-ids2018` (446 GB, ~37 GB/día) | Para NetMasquerade: bajar solo los días necesarios |
+| CIC-IDS-2017 pcaps, CIC-DDoS-2019 | Formulario de registro de CIC | Bajar a mano |

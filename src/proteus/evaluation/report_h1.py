@@ -11,7 +11,8 @@ from pathlib import Path
 import pandas as pd
 
 MODELS = ["core_mono_strict", "core_mono_dst", "core_mono_dst@cert", "core_mono_dst_x",
-          "core_mono_dst_x@cert", "core_cert", "core_cert@cert", "core_mono_dst_b",
+          "core_mono_dst_x@cert", "core_cert", "core_cert@cert", "core_src_x", "core_both_x", "core_both_x@cert",
+          "core_both_cert", "core_both_cert@cert", "core_mono_dst_b",
           "core_mono_dst_b@cert", "core_mono_full", "core_free", "core_free_dst_b",
           "rate_rules", "rate_rules_local", "flow_clf"]
 

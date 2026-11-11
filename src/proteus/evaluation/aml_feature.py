@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import multiprocessing
 import os
 import time
 from concurrent.futures import ProcessPoolExecutor
@@ -199,7 +200,9 @@ def main() -> None:
     os.environ.setdefault("OMP_NUM_THREADS", "1")
     jobs = [(n, a, path, args.seed) for n in models for a in ("hsja", "zoo")]
     advs, results = {}, []
-    with ProcessPoolExecutor(max_workers=args.workers) as ex:
+    # spawn, not fork: forking after OpenMP threads exist (gradient boosting) deadlocks.
+    ctx = multiprocessing.get_context("spawn")
+    with ProcessPoolExecutor(max_workers=args.workers, mp_context=ctx) as ex:
         for name, attack, adv, secs in ex.map(_job, jobs):
             advs[(name, attack)] = adv
             s, _ = summarize(models[name], X, adv)
