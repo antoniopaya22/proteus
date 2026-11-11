@@ -334,6 +334,24 @@ def evaluate(test: pd.DataFrame, scores: dict[str, np.ndarray], thresholds: dict
     return pd.DataFrame(rows)
 
 
+def entity_threshold(tops: list[tuple], hours: float, budget: float) -> float:
+    """Lowest threshold giving at most ``budget`` alarms per hour, an alarm being a
+    (day, destination host, minute) group with a clean flow at or above it."""
+    groups = []
+    for i, (sc, key, minute) in enumerate(tops):
+        if len(sc) == 0:
+            continue
+        g = pd.DataFrame({"s": sc, "k": key, "m": minute}).groupby(["k", "m"])["s"].max()
+        groups.append(g.to_numpy())
+    if not groups:
+        return float("inf")
+    g = np.sort(np.concatenate(groups))[::-1]
+    allowed = int(np.floor(budget * hours))
+    if allowed >= len(g):
+        return float(g[-1])
+    return float(np.nextafter(g[allowed], np.inf))
+
+
 # ---------------------------------------------------------------- main
 
 def main() -> None:
@@ -347,6 +365,10 @@ def main() -> None:
     ap.add_argument("--models", nargs="*", default=None,
                     help="only these detectors (default: all)")
     ap.add_argument("--tag", default="", help="suffix for the output directory")
+    ap.add_argument("--entity-budgets", nargs="*", type=float, default=[],
+                    help="also calibrate thresholds to at most this many alarms per hour "
+                         "(destination host, minute) on clean traffic of the other days; "
+                         "reported with threshold='entity' and the budget as target_fpr")
     ap.add_argument("--train-days", nargs="*", default=None,
                     help="restrict training to these capture days (file stems)")
     ap.add_argument("--test-days", nargs="*", default=None,
@@ -403,6 +425,8 @@ def main() -> None:
     ev_cols = sorted({c for cols, _ in models.values() for c in cols if not c.startswith("flow__")}
                      | set(META) | {"clean"})
     day_scores, benign_sample, benign_feats = {}, {}, {}
+    top_of: dict = {}  # day -> model -> (top clean scores, dst key, minute)
+    hours_of: dict = {}
     for day in test_days:
         ev, _ = evidence_b(args.test, day, columns=ev_cols)
         flow = flow_features(day).add_prefix("flow__")
@@ -424,6 +448,19 @@ def main() -> None:
                 scores[f"{n}@cert"] = score(m, X).astype(np.float32)
                 del X
         day_scores[day] = scores
+        if args.entity_budgets:
+            clean = ev["clean"].to_numpy()
+            key = pd.util.hash_array(ev["dst_ip"].astype(str).to_numpy()).astype(np.uint64)
+            minute = (ev["t_start"].astype("int64") // 60_000_000).to_numpy().astype(np.uint64)
+            hours_of[day] = (ev["t_end"].max() - ev["t_start"].min()).total_seconds() / 3600
+            top_of[day] = {}
+            for n, s_ in scores.items():
+                if n.endswith("@cert"):
+                    continue
+                sc = s_[clean]
+                cut = np.quantile(sc, 0.99) if len(sc) else np.inf
+                hi = sc >= cut
+                top_of[day][n] = (sc[hi], key[clean][hi], minute[clean][hi])
         if local_cols:
             benign_feats[day] = ev[local_cols].to_numpy(np.float32)[pick[:200_000]]
         print(f"  scored {args.test}/{day.stem} at {time.time() - t0:.0f}s", flush=True)
@@ -453,6 +490,10 @@ def main() -> None:
                 ref = np.concatenate([benign_sample[d][n] for d in others])
             for fpr in FPRS:
                 th[(n, fpr, "local")] = np.quantile(ref, 1 - fpr, method="higher")
+        for n in top_of.get(day, {}):
+            for budget in args.entity_budgets:
+                th[(n, budget, "entity")] = entity_threshold(
+                    [top_of[d][n] for d in others], sum(hours_of[d] for d in others), budget)
         # A certified alert uses the same threshold as the model it certifies.
         for (n, fpr, kind), v in list(th.items()):
             if f"{n}@cert" in scores:
