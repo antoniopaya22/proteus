@@ -23,6 +23,19 @@ detrás. Total aproximado: 26–28 semanas.
 El orden pone primero lo que puede tumbar el enfoque: la fase 1 comprueba H1 con el
 mínimo código posible, antes de invertir en ataques o en reproducir v1.
 
+### Estado a 2026-11-11
+
+| Fase | Estado | Pendiente |
+|---|---|---|
+| 0 | Hecha para CIC-17/18 (corregidos), CTU-13, UNSW-NB15. En curso: UGR'16 (espejo HF), CIC-DDoS-2019, CTU-SME-11 (Zeek). Pcaps de CIC-17 bajando | Pcaps para ataques en espacio de tráfico |
+| 1 | Hecha. H1 se cumple para DoS/DDoS y escaneos entre redes | — |
+| 2 | Corrección de v1 publicada (PR #1). Ataques directos ZOO/HSJA en marcha (`aml_feature`), con recuento de consultas | Resultados y tabla |
+| 3 | Operadores gratuitos y costosos sobre registros de flujo (`attacks/operators.py`) | Ataques sobre pcaps (NetMasquerade) |
+| 4 | Núcleos rápido y certificado, línea base por entidad, frontera (destino y escaneo horizontal). Evidencia v2 con flujos sin respuesta en prueba | Comprobación empírica de H3 en cola (`free_ops`); fronteras en víctimas ocupadas |
+| 5 | Calibración del contador de realimentación (`feedback`) en cola | Implementarlo en el núcleo y medir H5; escalado |
+| 6 | Parcial (docs/06) | UGR'16, DDoS-2019, CTU-SME-11; baselines Kitsune/HyperVision/BARS/CertTA |
+| 7 | Borrador: introducción, trabajo relacionado, modelo de amenaza, diseño, Apollon, evaluación parcial | Discusión, conclusión, figuras |
+
 ## 5.2 Fase 0 — Infraestructura y datos
 
 **Objetivo:** registros de flujo con marca de tiempo y etiqueta fiables, y
