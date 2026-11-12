@@ -379,3 +379,46 @@ Lectura:
 - El FPR por flujo medido (hasta 2,9 % con objetivo 10⁻³) confirma la saturación:
   muchos flujos empatan en la puntuación máxima y el cuantil no los separa. El FPR por
   flujo no es una buena medida para un detector de entidades.
+
+## 6.11 Realimentación de la cáscara al núcleo: calibración de K (H5, 2026-11-12)
+
+`python -m proteus.evaluation.feedback`. En modo en línea, cada flujo que la cáscara
+bloquea es evidencia que el emisor no puede retirar. El núcleo lleva, por origen, el
+contador decaído de bloqueos `F_s(t) = Σ exp(-(t - t_i)/τ)` y alerta al origen cuando
+`F_s ≥ K`. El contador es monótono en las sondas bloqueadas, así que un ataque por
+consultas contra la cáscara acaba con el origen alertado tras unas K sondas
+bloqueadas dentro de τ.
+
+K se fija con los falsos positivos de la cáscara en el tráfico benigno de la red de
+prueba: alarmas (origen, ventana de 10 min) por hora para cada K y τ.
+
+**18 → 17** (cáscara entrenada en CSE-CIC-IDS-2018, bloqueo con puntuación ≥ 0,5):
+FPR por flujo de la cáscara 1,2–2,2 % según el día (19.920 falsos positivos en
+40,8 h), pero concentrados en **14 orígenes**.
+
+| K \ τ | 60 s | 600 s | 3600 s |
+|---|---|---|---|
+| 1 | 54,5 | 54,5 | 54,5 |
+| 10 | 7,0 | 18,4 | 39,4 |
+| 20 | 1,1 | 10,3 | 33,1 |
+| 50 | 0,025 | 1,8 | 16,6 |
+| 100 | 0 | 0,12 | 9,1 |
+| 200 | 0 | 0 | 0,61 |
+| 500 | 0 | 0 | 0 |
+
+Lectura:
+
+- En régimen estable el contador vale tasa × τ, así que la realimentación **limita la
+  tasa de sondas bloqueadas** de un origen a K/τ. Con K = 100 y τ = 600 s (0,12
+  alarmas/h en benigno) un origen puede encajar como mucho ~0,17 bloqueos/s sin ser
+  alertado.
+- Con las ~950 consultas bloqueadas por evasión que mide HSJA en la prueba de
+  juguete (§7), una evasión cuesta ≥ 95 min por origen a ese ritmo, o
+  ⌈950/K⌉ ≈ 10 orígenes quemados si el atacante no frena. Cifras definitivas cuando
+  termine `aml_feature` en CIC-IDS-2017.
+- La FPR de la cáscara entre redes (1–2 %) es alta para bloquear en línea; la
+  realimentación solo es usable porque los falsos positivos se concentran en pocos
+  orígenes y no se acumulan rápido. Un umbral de bloqueo más alto (o calibrado en la
+  red de despliegue) es necesario en cualquier caso.
+
+**17 → 18:** pendiente (se cortó con la caída de la VM; relanzado).
