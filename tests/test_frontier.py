@@ -84,3 +84,24 @@ def test_source_side_scenario_keeps_destinations_and_one_source():
     assert set(a["src_ip"]) == {"198.51.100.7"}
     assert set(a["dst_ip"]) <= set(sc.template["dst_ip"]) and a["dst_ip"].nunique() > 50
     assert set(a["dst_port"]) == {445}
+
+
+def test_background_false_positives_are_not_attributed_to_the_attack():
+    from proteus.core.frontier import _scores_all, attributable_alert, noisy_minutes
+
+    rng = np.random.default_rng(0)
+    sc = scenario(rng)
+    m = MonotoneSum()
+    s_bg = _scores_all(sc.background, m, COLS, SPECS, BASE, None)
+    thr = float(np.quantile(s_bg, 0.995))  # the background alone alerts sometimes
+    noisy = noisy_minutes(sc, m, COLS, SPECS, BASE, thr)
+    assert len(noisy) > 0
+    atk = nested_attack(sc, 5.0, np.random.default_rng(1))
+    prev = False
+    for r in np.geomspace(0.001, 5.0, 10):
+        a = atk[atk["u"] < r / 5.0].drop(columns=["u"])
+        hit = bool(len(a)) and attributable_alert(sc, a, m, COLS, SPECS, BASE, thr, noisy, None)
+        assert hit or not prev  # monotone in the rate
+        prev = hit
+    res = frontier(sc, m, COLS, SPECS, BASE, thr, np.random.default_rng(1), r_max=5.0, iters=10)
+    assert res["noisy_minutes"] == len(noisy) and res["bounded"] != "below r_min"

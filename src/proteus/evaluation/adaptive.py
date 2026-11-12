@@ -16,7 +16,9 @@ alerted, maximised over
   forward packets and bytes per packet of the victim's benign traffic (only adding,
   never removing).
 
-Rates are scanned on a geometric grid (the attacker needs one quiet rate, so no
+Only alerts in minutes where the victim's background alone raises none count against
+the attacker (benign false positives are not the attack's doing). Rates are scanned on
+a geometric grid (the attacker needs one quiet rate, so no
 monotonicity in the rate is assumed). For monotone detectors free operations only
 raise evidence, so the best variant is the plain attack, and for ``--certify``
 models the certified frontier (worst case over all free operations) is reported too.
@@ -125,6 +127,17 @@ def main() -> None:
             full = nested_attack(sc, args.rmax, np.random.default_rng(args.seed))
             plans = [("plain", None), ("mimic", None)] + [
                 (f"random{k}", k) for k in range(args.variants)]
+            # Minutes where the victim's background alone alerts: not the attack's doing.
+            bg_feats = _features(sc.background, all_cols, base)
+            bg_min = sc.background["t_end"].astype("int64").to_numpy() // 60_000_000
+            noisy, noisy_cert = {}, {}
+            for n, (cols, m) in models.items():
+                X = bg_feats[cols].to_numpy(np.float64)
+                noisy[n] = np.unique(bg_min[m.predict_proba(X)[:, 1] >= thr[n]])
+                if n in args.certify:
+                    W = worst_case_features(X, np.asarray(m.monotonic_cst),
+                                            slack(cols, specs, delta))
+                    noisy_cert[n] = np.unique(bg_min[m.predict_proba(W)[:, 1] >= thr[n]])
             best = {n: {"rate": 0.0, "plan": None} for n in models}
             plain = {n: 0.0 for n in models}
             cert = {n: 0.0 for n in args.certify if n in models}
@@ -144,22 +157,24 @@ def main() -> None:
                         v, _ = variant(df, np.random.default_rng(1000 + k), sc.target_ip,
                                        sc.target_port, retime=bool(k % 2))
                     feats = _features(v, all_cols, base)
-                    atk = v["_atk"].to_numpy()
+                    minute = v["t_end"].astype("int64").to_numpy() // 60_000_000
                     for n, (cols, m) in models.items():
                         X = feats[cols].to_numpy(np.float64)
-                        quiet = not (m.predict_proba(X[atk])[:, 1] >= thr[n]).any()
+                        clean_min = ~np.isin(minute, noisy[n])
+                        quiet = not ((m.predict_proba(X)[:, 1] >= thr[n]) & clean_min).any()
                         if quiet and r > best[n]["rate"]:
                             best[n] = {"rate": float(r), "plan": plan}
                         if quiet and plan == "plain":
                             plain[n] = max(plain[n], float(r))
                         if plan == "plain" and n in cert:
-                            W = worst_case_features(X[atk], np.asarray(m.monotonic_cst),
+                            W = worst_case_features(X, np.asarray(m.monotonic_cst),
                                                     slack(cols, specs, delta))
-                            if not (m.predict_proba(W)[:, 1] >= thr[n]).any():
+                            hit = m.predict_proba(W)[:, 1] >= thr[n]
+                            if not (hit & ~np.isin(minute, noisy_cert[n])).any():
                                 cert[n] = max(cert[n], float(r))
             for n in models:
                 rows.append({"day": day.stem, "attack": attack, "detector": n,
-                             "threshold": thr[n], "real_flows_per_h": len(A) / span * 3600,
+                             "threshold": thr[n], "noisy_minutes": len(noisy[n]), "real_flows_per_h": len(A) / span * 3600,
                              "plain_flows_per_h": plain[n] * 3600,
                              "adaptive_flows_per_h": best[n]["rate"] * 3600,
                              "best_plan": best[n]["plan"],

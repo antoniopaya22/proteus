@@ -110,22 +110,53 @@ def attack_scores(sc: Scenario, attack: pd.DataFrame, model, cols: list[str],
     return s[flows["_atk"].to_numpy()]
 
 
+def _scores_all(flows: pd.DataFrame, model, cols, specs, base, delta_s) -> np.ndarray:
+    X = _features(flows, cols, base)[cols].to_numpy(np.float64)
+    if delta_s is not None:
+        X = worst_case_features(X, np.asarray(model.monotonic_cst), slack(cols, specs, delta_s))
+    return model.predict_proba(X)[:, 1]
+
+
+def noisy_minutes(sc: Scenario, model, cols, specs, base, threshold: float,
+                  delta_s: float | None = None) -> np.ndarray:
+    """Minutes (int64, since epoch) in which the background alone raises an alert."""
+    s = _scores_all(sc.background, model, cols, specs, base, delta_s)
+    m = sc.background["t_end"].astype("int64").to_numpy() // (60 * US)
+    return np.unique(m[s >= threshold])
+
+
+def attributable_alert(sc: Scenario, attack: pd.DataFrame, model, cols, specs, base,
+                       threshold: float, noisy: np.ndarray, delta_s: float | None) -> bool:
+    """The attack gets the victim alerted: some flow (attack or background, whose
+    evidence the attack raised) alerts in a minute where the background alone does
+    not. Adding attack flows only raises evidence, so this is monotone in the rate."""
+    flows = pd.concat([sc.background, attack], ignore_index=True)
+    s = _scores_all(flows, model, cols, specs, base, delta_s)
+    m = flows["t_end"].astype("int64").to_numpy() // (60 * US)
+    return bool(((s >= threshold) & ~np.isin(m, noisy)).any())
+
+
 def frontier(sc: Scenario, model, cols, specs, base, threshold: float, rng,
              r_min: float = 1e-3, r_max: float = 100.0, iters: int = 18,
              delta_s: float | None = None) -> dict:
-    """Highest rate (flows/s) with no alert on any attack flow."""
+    """Highest rate (flows/s) at which the attack raises no alert of its own.
+
+    Alerts in minutes where the victim's background alone is alerted (benign false
+    positives) are not attributed to the attack; otherwise a busy victim near its
+    threshold would give a frontier of zero that says nothing about the attack."""
     attack = nested_attack(sc, r_max, rng)
+    noisy = noisy_minutes(sc, model, cols, specs, base, threshold, delta_s)
 
     def alerts(r: float) -> bool:
-        a = attack[attack["u"] < r / r_max]
+        a = attack[attack["u"] < r / r_max].drop(columns=["u"])
         if a.empty:
             return False
-        return bool((attack_scores(sc, a, model, cols, specs, base, delta_s) >= threshold).any())
+        return attributable_alert(sc, a, model, cols, specs, base, threshold, noisy, delta_s)
 
     if alerts(r_min):
-        return {"rate": 0.0, "bounded": "below r_min"}
+        return {"rate": 0.0, "bounded": "below r_min", "noisy_minutes": len(noisy)}
     if not alerts(r_max):
-        return {"rate": np.inf, "bounded": "above r_max"}
+        return {"rate": np.inf, "bounded": "above r_max", "noisy_minutes": len(noisy)}
     lo, hi = np.log(r_min), np.log(r_max)
     for _ in range(iters):
         mid = (lo + hi) / 2
@@ -133,4 +164,5 @@ def frontier(sc: Scenario, model, cols, specs, base, threshold: float, rng,
             hi = mid
         else:
             lo = mid
-    return {"rate": float(np.exp(lo)), "rate_alert": float(np.exp(hi)), "bounded": "ok"}
+    return {"rate": float(np.exp(lo)), "rate_alert": float(np.exp(hi)), "bounded": "ok",
+            "noisy_minutes": len(noisy)}

@@ -1,4 +1,5 @@
-"""Read IPv4 TCP/UDP packets from a pcap into the packet table of ``exporter``."""
+"""Read IPv4 TCP/UDP packets from a pcap or pcapng file into the packet table of
+``exporter``."""
 
 from __future__ import annotations
 
@@ -19,7 +20,10 @@ def read(path: Path, hosts: set[str] | None = None, t0: float | None = None,
 
     rows: dict[str, list] = {c: [] for c in COLUMNS}
     with open(path, "rb") as fh:
-        for ts, buf in dpkt.pcap.Reader(fh):
+        ng = fh.read(4) == b"\x0a\x0d\x0d\x0a"  # pcapng section header block
+        fh.seek(0)
+        reader = dpkt.pcapng.Reader(fh) if ng else dpkt.pcap.Reader(fh)
+        for ts, buf in reader:
             if t0 is not None and ts < t0:
                 continue
             if t1 is not None and ts >= t1:
