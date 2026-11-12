@@ -487,11 +487,11 @@ def proteus_detectors(specs, rules, src_rules, raw, raw_of, cst) -> dict:
     # Pair excess over the service's busiest normal pair (PROTEUS_PAIRBASE=1).
     pair = pair + [k for k in specs if k.startswith("spair__") and k.endswith("__x")]
 
-    def calmax(parts, keep=lambda c: True):
+    def calmax(parts, keep=lambda c: True, mono=True):
         parts = [[c for c in cols if keep(c)] for cols in parts]
         parts = [cols for cols in parts if cols]
         cols = list(dict.fromkeys(c for cs in parts for c in cs))
-        return cols, CalibratedMax(cols, [(cs, hgb(cst(cs))) for cs in parts])
+        return cols, CalibratedMax(cols, [(cs, hgb(cst(cs) if mono else None)) for cs in parts])
 
     peer = raw + [k for k in specs if k.endswith("__xp") and not k.startswith("shost__")]
     parts = [rules, src_rules, pair, peer if len(peer) > len(raw) else raw]
@@ -499,6 +499,9 @@ def proteus_detectors(specs, rules, src_rules, raw, raw_of, cst) -> dict:
         "core_pair": (pair, hgb(cst(pair))),
         "proteus": calmax(parts),
         "proteus_cert": calmax(parts, keep=lambda c: _tau(c) >= 600),
+        # The same four sub-cores without monotonicity constraints (price of
+        # monotonicity for the combination itself, not only for one model).
+        "proteus_free": calmax(parts, mono=False),
     }
 
 
@@ -801,6 +804,10 @@ def main() -> None:
         for n, c in local.items():
             m = copy.deepcopy(models[n][1]).fit(
                 np.concatenate([benign_feats[d][c].to_numpy() for d in others]))
+            if isinstance(m, RateRules) and getattr(m, "monotonic_cst", None) is None:
+                # A maximum of per-feature benign CDFs is non-decreasing in every
+                # feature, so rate thresholds are certifiable on conserved evidence.
+                m.monotonic_cst = [CST[specs[k]] for k in c]
             mono = getattr(m, "monotonic_cst", None) is not None
             cst = np.asarray(m.monotonic_cst) if mono else None
             sl = slack(c, specs, EXPORT_TIMEOUT_S).astype(np.float32) if mono else None

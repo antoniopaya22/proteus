@@ -21,7 +21,9 @@ class MaxCore:
         for idx, m in self.parts:
             mc = np.asarray(m.monotonic_cst if m.monotonic_cst is not None else [0] * len(idx))
             cst[idx] = np.where(mc != 0, mc, cst[idx])
-        self.monotonic_cst = cst.tolist()
+        # Unconstrained parts (an ablation of monotonicity): not certifiable.
+        mono = any(m.monotonic_cst is not None for _, m in self.parts)
+        self.monotonic_cst = cst.tolist() if mono else None
 
     def fit(self, X, y, sample_weight=None):
         self.parts = [(idx, clone(m).fit(X[:, idx], y, sample_weight=sample_weight))

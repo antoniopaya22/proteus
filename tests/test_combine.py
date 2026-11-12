@@ -20,3 +20,23 @@ def test_max_of_monotone_cores_is_monotone():
                                 np.asarray(m.monotonic_cst), rng, n_rows=300)
     assert r["violations"] == 0
     assert (m.predict(X) == y).mean() > 0.9
+
+
+def test_unconstrained_parts_are_not_certifiable():
+    from proteus.core.combine import CalibratedMax
+
+    def hgb():
+        return HistGradientBoostingClassifier(max_iter=5, random_state=0)
+
+    m = CalibratedMax(["a", "b"], [(["a"], hgb()), (["b"], hgb())])
+    assert m.monotonic_cst is None
+
+
+def test_rate_rules_are_monotone():
+    from proteus.baselines.rate_rules import RateRules
+
+    rng = np.random.default_rng(1)
+    X = rng.exponential(size=(2000, 3))
+    m = RateRules().fit(X)
+    r = monotonicity_violations(m.score, X * 2, np.ones(3, dtype=int), rng, n_rows=300)
+    assert r["violations"] == 0
