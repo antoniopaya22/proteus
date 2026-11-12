@@ -229,6 +229,8 @@ def main() -> None:
     ap.add_argument("--n-adv", type=int, default=320,
                     help="HSJA examples added by adversarial training")
     ap.add_argument("--out", type=Path, default=Path("experiments/outputs/aml_feature"))
+    ap.add_argument("--resume", action="store_true",
+                    help="reuse the trained models of an interrupted run (state.pkl)")
     args = ap.parse_args()
     import pickle
 
@@ -241,15 +243,23 @@ def main() -> None:
     modifiable = [i for i, c in enumerate(cols) if c not in FUNCTIONAL]
     print(f"data ready: train {len(Xtr):,}, test {len(Xte):,}, {len(cols)} features "
           f"({len(functional)} functional) at {time.time() - t0:.0f}s", flush=True)
-    models = build_models(Xtr, ytr, args.seed)  # all threads in the main process
+    path = out / "state.pkl"
+    resumed = args.resume and path.exists()
+    if resumed:  # models of an interrupted run; data and sample selection are deterministic
+        with open(path, "rb") as fh:
+            state = pickle.load(fh)
+        models = state["models"]
+    else:
+        models = build_models(Xtr, ytr, args.seed)  # all threads in the main process
     # Workers: one thread each (set before they are spawned; OpenMP in this process is
     # already initialised). spawn, not fork: forking after OpenMP threads exist deadlocks.
     os.environ["OMP_NUM_THREADS"] = "1"
     ctx = multiprocessing.get_context("spawn")
     pool = ProcessPoolExecutor(max_workers=args.workers, mp_context=ctx)
-    models["advtrain"] = adversarial_training(Xtr, ytr, models["shell"], args.seed, args.n_adv,
-                                              pool, out)
-    print(f"models trained at {time.time() - t0:.0f}s", flush=True)
+    if not resumed:
+        models["advtrain"] = adversarial_training(Xtr, ytr, models["shell"], args.seed,
+                                                  args.n_adv, pool, out)
+    print(f"models {'loaded' if resumed else 'trained'} at {time.time() - t0:.0f}s", flush=True)
 
     # Clean metrics on the test sample and the attacked set: test attack flows detected
     # by every model (same samples for all, stratified by attack type).
@@ -264,10 +274,12 @@ def main() -> None:
     pick = np.concatenate([rng.choice(idx[types == t], min(per_type, (types == t).sum()),
                                       replace=False) for t in sorted(set(types))])
     X = Xte[pick]
-    path = out / "state.pkl"
-    with open(path, "wb") as fh:
-        pickle.dump({"models": models, "X": X, "functional": functional,
-                     "modifiable": modifiable}, fh)
+    if resumed:
+        assert np.array_equal(X, state["X"]), "resumed run selected different flows"
+    else:
+        with open(path, "wb") as fh:
+            pickle.dump({"models": models, "X": X, "functional": functional,
+                         "modifiable": modifiable}, fh)
     print(f"attacking {len(X)} flows ({per_type} per type) at {time.time() - t0:.0f}s", flush=True)
 
     # Each (model, attack) is split in chunks of rows so all workers stay busy.
