@@ -257,18 +257,37 @@ def clean_benign(df: pd.DataFrame) -> np.ndarray:
 
 # ---------------------------------------------------------------- training set
 
+# Class balance of the training set, chosen in main() (--balance):
+# "cap": at most cap_attack flows per attack type and day, cap_benign clean flows per day,
+#        class_weight="balanced" (default, as in earlier runs);
+# "type": same sample, sample weights giving every attack type the same total weight and
+#        the benign class as much as all attacks together;
+# "type_entity": as "type", benign flows weighted by 1/sqrt(flows of their destination
+#        host in the sample), so a few busy servers do not define what is normal;
+# "none": proportional sample (natural class ratio) of about none_rows flows, no weights.
+BALANCE = {"mode": "cap", "none_rows": 3_000_000}
+
+
 def training_set(ds: str, rng: np.random.Generator, cap_attack=50_000, cap_benign=300_000,
                  only: list[str] | None = None):
     parts = []
-    for day in days(ds):
-        if only and day.stem not in only:
-            continue
+    all_days = [d for d in days(ds) if not only or d.stem in only]
+    frac = None
+    if BALANCE["mode"] == "none":
+        total = sum(len(evidence_b(ds, d, columns=["clean"])[0]) for d in all_days)
+        frac = min(1.0, BALANCE["none_rows"] / max(total, 1))
+    for day in all_days:
         ev, specs = evidence_b(ds, day, columns=["attack", "is_attack", "clean"])
         idx = []
-        for _, g in ev[ev["is_attack"]].groupby("attack", observed=True):
-            idx.append(rng.choice(g.index.to_numpy(), min(len(g), cap_attack), replace=False))
-        clean = ev.index[ev["clean"]].to_numpy()
-        idx.append(rng.choice(clean, min(len(clean), cap_benign), replace=False))
+        if frac is not None:
+            keep = ev["is_attack"].to_numpy() | ev["clean"].to_numpy()
+            pool = ev.index[keep].to_numpy()
+            idx.append(rng.choice(pool, round(len(pool) * frac), replace=False))
+        else:
+            for _, g in ev[ev["is_attack"]].groupby("attack", observed=True):
+                idx.append(rng.choice(g.index.to_numpy(), min(len(g), cap_attack), replace=False))
+            clean = ev.index[ev["clean"]].to_numpy()
+            idx.append(rng.choice(clean, min(len(clean), cap_benign), replace=False))
         idx = np.sort(np.concatenate(idx))
         del ev
         rows = read_rows(_bdir(ds) / day.name, idx)
@@ -291,8 +310,31 @@ CST = {"conserved": 1, "response": 1, "baseline": -1}
 def hgb(cst: list[int] | None) -> HistGradientBoostingClassifier:
     return HistGradientBoostingClassifier(
         max_iter=300, learning_rate=0.1, max_leaf_nodes=31, l2_regularization=1.0,
-        class_weight="balanced", monotonic_cst=cst, random_state=0,
+        class_weight="balanced" if BALANCE["mode"] == "cap" else None,
+        monotonic_cst=cst, random_state=0,
     )
+
+
+def sample_weights(tr: pd.DataFrame) -> np.ndarray | None:
+    """Training weights for the --balance modes "type" and "type_entity" (None otherwise).
+    Total weight: every attack type the same; benign as much as all attacks."""
+    mode = BALANCE["mode"]
+    if mode not in ("type", "type_entity"):
+        return None
+    att = tr["is_attack"].to_numpy()
+    w = np.zeros(len(tr))
+    types = tr.loc[att, "attack"].astype(str)
+    counts = types.map(types.value_counts()).to_numpy(np.float64)
+    w[att] = 1.0 / counts  # each type sums to 1
+    n_types = types.nunique()
+    ben = ~att
+    if mode == "type_entity":
+        hosts = tr.loc[ben, "dst_ip"].astype(str)
+        wb = 1.0 / np.sqrt(hosts.map(hosts.value_counts()).to_numpy(np.float64))
+    else:
+        wb = np.ones(int(ben.sum()))
+    w[ben] = wb / wb.sum() * n_types  # benign total = attack total
+    return w * (len(tr) / w.sum())  # mean weight 1
 
 
 def detectors(specs: dict[str, str], flow_cols: list[str]) -> dict[str, tuple[list[str], object]]:
@@ -511,6 +553,8 @@ def main() -> None:
                     help="restrict training to these capture days (file stems)")
     ap.add_argument("--test-days", nargs="*", default=None,
                     help="restrict testing to these capture days (file stems)")
+    ap.add_argument("--balance", choices=["cap", "type", "type_entity", "none"], default="cap",
+                    help="class balance of the training set (see BALANCE)")
     ap.add_argument("--reuse", type=Path, default=None,
                     help="evaluate the fitted models of this run instead of training; "
                          "--models may name combinations a+b (maximum, MaxCore)")
@@ -519,6 +563,7 @@ def main() -> None:
                          "(known not to transfer; slow because of the many alerts)")
     args = ap.parse_args()
     BASELINE.update(mode=args.baseline, mask=args.mask)
+    BALANCE.update(mode=args.balance)
     rng = np.random.default_rng(args.seed)
     out = args.out / f"{args.train}__{args.test}__{args.baseline}_{args.mask}"
     if args.tag:
@@ -542,6 +587,7 @@ def main() -> None:
         calib = tr["clean"].to_numpy() & (rng.random(len(tr)) < 0.3)
         fit = ~calib
         y = tr["is_attack"].to_numpy()
+        sw = sample_weights(tr)
 
         models, thresholds, checks = {}, {}, {}
         chosen = detectors(specs, flow_cols)
@@ -552,7 +598,8 @@ def main() -> None:
             if isinstance(model, CalibratedMax):
                 # Sub-cores on the labelled training network; the benign CDFs are
                 # refitted per test day on local traffic (pass 2).
-                MaxCore.fit(model, X[fit], y[fit])
+                MaxCore.fit(model, X[fit], y[fit],
+                            sample_weight=None if sw is None else sw[fit])
                 model.fit(X[fit & tr["clean"].to_numpy()])
                 checks[name] = monotonicity_violations(
                     lambda Z, m=model: m.predict_proba(Z)[:, 1], X[fit],
@@ -561,7 +608,7 @@ def main() -> None:
             elif isinstance(model, UNSUPERVISED):
                 model.fit(X[fit & tr["clean"].to_numpy()])
             else:
-                model.fit(X[fit], y[fit])
+                model.fit(X[fit], y[fit], sample_weight=None if sw is None else sw[fit])
                 if model.monotonic_cst is not None:
                     checks[name] = monotonicity_violations(
                         lambda Z, m=model: m.predict_proba(Z)[:, 1], X[fit],

@@ -23,8 +23,9 @@ class MaxCore:
             cst[idx] = np.where(mc != 0, mc, cst[idx])
         self.monotonic_cst = cst.tolist()
 
-    def fit(self, X, y):
-        self.parts = [(idx, clone(m).fit(X[:, idx], y)) for idx, m in self.parts]
+    def fit(self, X, y, sample_weight=None):
+        self.parts = [(idx, clone(m).fit(X[:, idx], y, sample_weight=sample_weight))
+                      for idx, m in self.parts]
         return self
 
     def predict_proba(self, X):
