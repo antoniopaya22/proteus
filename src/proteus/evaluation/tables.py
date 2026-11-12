@@ -21,6 +21,13 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+DETECTOR_SETS = {
+    "v1": [("core_mono_dst_x", "Fast"), ("core_cert@cert", "Cert."),
+           ("core_free_dst_b", "Unc."), ("flow_clf", "Flow"), ("rate_rules_local", "Rules")],
+    "v3": [("proteus", "Proteus"), ("proteus_cert@cert", "Cert."),
+           ("core_free_dst_b", "Unc."), ("rate_rules_local", "Rules"),
+           ("kitnet_local", "KitNET"), ("flow_clf", "Flow")],
+}
 DETECTORS = [  # (model in summary.csv, column header)
     ("core_mono_dst_x", "Fast"),
     ("core_cert@cert", "Cert."),
@@ -147,6 +154,8 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("table", choices=["h1", "summary"])
     ap.add_argument("--detectors", nargs="*", default=None)
+    ap.add_argument("--set", choices=sorted(DETECTOR_SETS), default="v1",
+                    help="detector columns of the h1 table")
     ap.add_argument("--runs", type=Path, nargs="+", required=True)
     ap.add_argument("--extra", type=Path, nargs="*", default=[],
                     help="runs with more detectors for the same direction (e.g. __cert)")
@@ -159,6 +168,7 @@ def main() -> None:
         t.to_csv(args.out, index=False)
         print(t.round(3).to_string())
         return
+    DETECTORS[:] = DETECTOR_SETS[args.set]
     args.out.write_text(h1_table(args.runs, args.extra, args.fpr))
     print(args.out.read_text())
 
