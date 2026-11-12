@@ -690,3 +690,76 @@ Estado del día: 11.744 servicios × 39 valores, 9.012 hosts × 44, 22.981 pares
 (unos 10 MB en total; solo 25 orígenes porque CIC-2017 pasa por NAT). La
 certificación solo hace falta en las alertas. El máximo calibrado cuesta unas cinco
 veces lo que un solo modelo (cuatro subnúcleos más las CDF).
+
+## 6.20 Detección v3 de 2018 → 2017 y comparación de defensas (2026-11-12)
+
+`tables h1 --set v3`, `tables summary`, `bench` sobre
+`csecicids2018__cicids2017__loo_labels__v3`. FPR 10⁻³, umbrales locales.
+
+| Detector | Volumétricos y escaneos | Resto | Alarmas/h (IC 95 %) |
+|---|---|---|---|
+| `proteus` | 11/11 [0,74–1,00] | 2/10 | 2,7 [0,4–6,2] |
+| `proteus_cert@cert` | 8/11 [0,43–0,90] | 1/10 | 1,5 [0,2–3,2] |
+| `core_pair` | 5/11 | 0/10 | 0,3 |
+| `core_free_dst_b` (sin monotonía) | 9/11 | 0/10 | 5,6 [3,7–7,4] |
+| `rate_rules_local` | 9/11 [0,52–0,95] | 5/10 | 36,1 [17,8–54,4] |
+| `flow_clf` | 11/11 | 3/10 | 31,1 |
+
+A 10⁻⁴, `proteus` mantiene los cinco DoS/DDoS y 4/6 escaneos con 0,2 alarmas/h; las
+reglas dan 28,1. Detección: los intervalos de Wilson se solapan; alarmas: no.
+
+Banco al estilo METIS (detección y alarmas, ssd λ = 3; falta robustez): `proteus`
+0,64 (Pareto), `proteus_cert@cert` 0,55 (Pareto), sin monotonía 0,47, por flujo 0,32,
+reglas 0,29.
+
+## 6.21 Frontera v3 del sistema desplegado, 2018 → 2017 (2026-11-12)
+
+`tables frontier_system`: el sistema alerta si `proteus` o `proteus_cert` alertan.
+Frontera simple: el menor de los dos (ataque tal cual). Certificada: el menor de los
+dos certificados (toda variante con operaciones libres alerta por encima). Flujos/h.
+
+| Ataque | Real | Simple | × | Certificada | × |
+|---|---|---|---|---|---|
+| SSH | 1.541 | 969 | 1,6 | 4.602 | — |
+| FTP | 3.910 | 432 | 9,0 | 19.786 | — |
+| DoS Hulk | 518.525 | 1.407 | 369 | 11.291 | 46 |
+| DoS GoldenEye | 44.976 | 1.497 | 30 | 8.139 | 5,5 |
+| DoS Slowloris | 10.461 | 811 | 13 | 6.002 | 1,7 |
+| DoS Slowhttptest | 5.107 | 629 | 8,1 | 5.476 | — |
+| Escaneo (jue.) | 10.418 | 11 | 915 | 629 | 17 |
+| Escaneo (vie.) | 107.850 | 352 | 306 | 3.692 | 29 |
+| DDoS LOIC-HTTP | 290.167 | 2.174 | 134 | 28.728 | 10 |
+
+Lectura: el margen certificado de la v3 es mucho menor que el del núcleo certificado
+de un solo modelo (23–2.355×); el paper usa ya estas cifras. Envenenamiento de
+`proteus` (todas las escalas): en FTP el techo con línea base infinita es 432, igual
+que la frontera sin envenenar.
+
+## 6.22 Revisión interna y experimentos pedidos (2026-11-12)
+
+Revisión del borrador (agente con rol de revisor de Computers & Security). Aplicado en
+el paper: supuestos A1–A4 y temporizador junto a la proposición; tiempo de evento =
+último paquete; afirmaciones acotadas (operaciones libres, paquetes, envenenamiento
+de fuerza bruta, unidades de la frontera, contador de sondas); cifras reconciliadas
+(7,1/54,6 eran todas las alertas de `core_cert`; el núcleo envenenado era el rápido);
+RQ en los encabezados; amenazas a la validez; trabajo clásico (verificado).
+
+Experimentos nuevos:
+
+- `proteus_free`: los cuatro subnúcleos sin monotonía (precio de la monotonía de la
+  combinación). En cola tras el cerrojo de 2018.
+- `--entity-budgets 0.5 1 3 10` con `proteus`, `proteus_cert`, reglas y núcleo libre:
+  comparación a igual presupuesto de alarmas; las reglas de tasa son monótonas y ahora
+  también dan alertas certificadas (`rate_rules_local@cert`).
+- `PROTEUS_TIMER_S`: holgura (2Δ+δ)/τ con re-puntuación cada δ; 18 → 17 con δ = 10 y
+  60 s.
+- `packet_check` ampliado a los contadores de origen y de par del atacante y a 6 h.
+
+## 6.23 Incidencia: OOM y cerrojo de trabajos de 2018 (2026-11-12)
+
+La v3 17 → 18 (pico de ~16 GB evaluando 2018) murió por OOM a las 12:57 UTC al
+coincidir con el entrenamiento de `proteus_free`, y la frontera certificada 17 → 18
+(18 GB) a las 13:22. El script original creó `v3_1718.done` pese a la muerte. Ahora
+todo trabajo que evalúa en 2018, o entrena en 2018 desde cero, pasa por
+`flock ~/tools/heavy.lock`; la v3 17 → 18 se relanzó con `--reuse` sobre su
+`models.pkl`.
