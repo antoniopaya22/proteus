@@ -412,10 +412,9 @@ Lectura:
   tasa de sondas bloqueadas** de un origen a K/τ. Con K = 100 y τ = 600 s (0,12
   alarmas/h en benigno) un origen puede encajar como mucho ~0,17 bloqueos/s sin ser
   alertado.
-- Con las ~950 consultas bloqueadas por evasión que mide HSJA en la prueba de
-  juguete (§7), una evasión cuesta ≥ 95 min por origen a ese ritmo, o
-  ⌈950/K⌉ ≈ 10 orígenes quemados si el atacante no frena. Cifras definitivas cuando
-  termine `aml_feature` en CIC-IDS-2017.
+- En CIC-IDS-2017, toda evasión exitosa de la cáscara con HSJA se llevó ≥ 805 sondas
+  bloqueadas (mediana 863, doc 07 §7.5). A ese ritmo, una evasión cuesta ≥ 80 min por
+  origen, o ⌈805/K⌉ = 9 orígenes quemados si el atacante no frena.
 - La FPR de la cáscara entre redes (1–2 %) es alta para bloquear en línea; la
   realimentación solo es usable porque los falsos positivos se concentran en pocos
   orígenes y no se acumulan rápido. Un umbral de bloqueo más alto (o calibrado en la

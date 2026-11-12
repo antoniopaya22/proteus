@@ -64,7 +64,45 @@ por debajo:
 - se añaden los protocolos exigentes (temporal y entre datasets), donde el
   estado del arte suele caer, como aportación metodológica.
 
-## 7.5 Pendiente
+## 7.5 Resultados: ataques directos en el espacio de características (2026-11-12)
+
+`python -m proteus.evaluation.aml_feature --dataset cicids2017 --n 100 --workers 8`.
+Partición aleatoria de CIC-IDS-2017, 81 características CICFlowMeter escaladas a [0, 1]
+tras log1p. Las 26 características que fijan lo que hace el flujo (paquetes, bytes
+hacia delante, tamaños de segmento, ventanas iniciales) quedan fijas; el atacante
+mueve las otras 55. Se atacan 79 flujos de ataque detectados por todos los modelos
+(≤ 7 por tipo, 14 tipos), con HSJA dirigido (~2.400 consultas por flujo) y ZOO
+(~400).
+
+En limpio, todos tienen F1 0,9999 salvo Apollon tal como se publicó (F1 0,993,
+FPR 1,2 %).
+
+| Modelo | HSJA evade | HSJA en alguna de 10 tiradas | ZOO evade | Bloqueadas por evasión (mediana / mín.) |
+|---|---|---|---|---|
+| Cáscara (HGB) | 0,10 | 0,10 | 0,01 | 863 / 805 |
+| Random forest | 0,04 | 0,04 | 0,01 | 2.123 / 1.091 |
+| Apollon publicado | 0,11 | **0,53** | 0,03 | 1.187 / 1.106 |
+| Apollon corregido | 0,05 | 0,05 | 0,00 | 2.179 / 1.889 |
+| Entrenamiento adversario | **0,27** | 0,27 | 0,00 | 1.308 / 862 |
+
+Transferencia (HSJA, origen → destino): de la cáscara a Apollon publicado, 0,165,
+más que el ataque directo (0,114). Del RF al modelo con entrenamiento adversario,
+0,177.
+
+Lectura:
+
+- **La aleatorización de Apollon no da robustez.** Publicado, se evade igual que la
+  cáscara sola; y como responde al azar, repetir sirve al atacante: el 53 % de los
+  ejemplos pasa en al menos una de diez tiradas. Corregido, queda como el RF que
+  contiene.
+- **El entrenamiento adversario empeora** (27 % frente a 10 %).
+- Las tasas son bajas en todos porque las características funcionales están fijas y
+  el presupuesto es corto. Con 79 flujos la resolución es de ~1,3 puntos.
+- **Coste para H5:** toda evasión exitosa de la cáscara se llevó ≥ 805 sondas
+  bloqueadas. Con K = 100 y τ = 600 s (§6.11), eso son ≥ 80 min por evasión y origen,
+  o ≥ 9 orígenes quemados.
+
+## 7.6 Pendiente
 
 - Elegir las 3–5 defensas de referencia y sus datasets (doc 08).
 - Implementar la cáscara (fase 5 del plan, se adelanta).
