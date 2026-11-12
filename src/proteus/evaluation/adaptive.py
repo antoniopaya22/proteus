@@ -42,6 +42,8 @@ from proteus.evaluation.free_ops import variant
 from proteus.evaluation.frontier_exp import ATTACKS, FLOW_COLS, Baselines, scenarios
 from proteus.evaluation.poisoning import combined, local_benign
 
+STOP_AFTER = 2  # stop scanning once every detector alerts on every variant this many rates
+
 
 class Scored:
     """``predict_proba`` view of a detector that only has ``score`` (rate rules,
@@ -85,7 +87,7 @@ def main() -> None:
                     help="unsupervised detectors fitted per day on local benign traffic")
     ap.add_argument("--certify", nargs="*", default=["core_cert"])
     ap.add_argument("--fpr", type=float, default=1e-3)
-    ap.add_argument("--variants", type=int, default=8, help="random free-operation variants")
+    ap.add_argument("--variants", type=int, default=4, help="random free-operation variants")
     ap.add_argument("--grid", type=int, default=20)
     ap.add_argument("--rmin", type=float, default=1e-3)
     ap.add_argument("--rmax", type=float, default=200.0)
@@ -141,7 +143,11 @@ def main() -> None:
             best = {n: {"rate": 0.0, "plan": None} for n in models}
             plain = {n: 0.0 for n in models}
             cert = {n: 0.0 for n in args.certify if n in models}
+            streak = {n: 0 for n in models}  # consecutive rates where every variant alerts
             for r in rates:
+                if all(v >= STOP_AFTER for v in streak.values()):
+                    break  # higher rates are only more evidence: stop paying for them
+                quiet_any = {n: False for n in models}
                 a = full[full["u"] < r / args.rmax].drop(columns=["u"])
                 if a.empty:
                     continue
@@ -162,6 +168,7 @@ def main() -> None:
                         X = feats[cols].to_numpy(np.float64)
                         clean_min = ~np.isin(minute, noisy[n])
                         quiet = not ((m.predict_proba(X)[:, 1] >= thr[n]) & clean_min).any()
+                        quiet_any[n] = quiet_any[n] or quiet
                         ladder.append({"day": day.stem, "attack": attack, "detector": n,
                                        "plan": plan, "flows_per_h": float(r) * 3600,
                                        "detected": not quiet})
@@ -175,6 +182,9 @@ def main() -> None:
                             hit = m.predict_proba(W)[:, 1] >= thr[n]
                             if not (hit & ~np.isin(minute, noisy_cert[n])).any():
                                 cert[n] = max(cert[n], float(r))
+                                quiet_any[n] = True  # keep scanning for the certified frontier
+                for n in models:
+                    streak[n] = 0 if quiet_any[n] else streak[n] + 1
             for n in models:
                 rows.append({"day": day.stem, "attack": attack, "detector": n,
                              "threshold": thr[n], "noisy_minutes": len(noisy[n]), "real_flows_per_h": len(A) / span * 3600,
