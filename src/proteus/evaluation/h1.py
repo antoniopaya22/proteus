@@ -19,6 +19,7 @@ import numpy as np
 import pandas as pd
 from sklearn.ensemble import HistGradientBoostingClassifier
 
+from proteus.baselines.kitnet import KitNET
 from proteus.baselines.rate_rules import RateRules
 from proteus.core.certify import slack, worst_case_features
 from proteus.core.combine import MaxCore
@@ -224,6 +225,11 @@ def training_set(ds: str, rng: np.random.Generator, cap_attack=50_000, cap_benig
 
 # ---------------------------------------------------------------- detectors
 
+# Unsupervised detectors fitted, for each test day, on clean benign traffic of the
+# other days of the test network (no labels), like the local thresholds.
+LOCAL = {"rate_rules_local": RateRules, "kitnet_local": KitNET}
+UNSUPERVISED = (RateRules, KitNET)
+
 CST = {"conserved": 1, "response": 1, "baseline": -1}
 
 
@@ -260,6 +266,7 @@ def detectors(specs: dict[str, str], flow_cols: list[str]) -> dict[str, tuple[li
     # Evidence that connection reuse (many requests in one connection) cannot lower
     # either: payload bytes and distinct counts. Per-connection counts (flows, resets,
     # unanswered) and packets (handshakes saved) can drop under reuse.
+    raw_all = [k for k in specs if not k.endswith(("__b", "__x"))]
     reuse_long = [k for k in long_rules if k.split("__")[1] in REUSE_SAFE]
     return {
         "core_mono_dst": (raw, hgb(cst(raw))),
@@ -280,12 +287,15 @@ def detectors(specs: dict[str, str], flow_cols: list[str]) -> dict[str, tuple[li
         "core_free_dst_b": (with_b, hgb(None)),
         "rate_rules": (rules, RateRules()),
         "rate_rules_local": (rules, RateRules()),
+        # Kitsune's detector on our damped per-entity statistics (its AfterImage
+        # counterpart): every evidence feature of both sides, no baselines.
+        "kitnet_local": (raw_all, KitNET()),
         "flow_clf": (flow_cols, hgb(None)),
     }
 
 
 def score(model, X: np.ndarray) -> np.ndarray:
-    if isinstance(model, RateRules):
+    if isinstance(model, UNSUPERVISED):
         return model.score(X)
     return model.predict_proba(X)[:, 1]
 
@@ -435,7 +445,7 @@ def main() -> None:
         chosen = {k: v for k, v in chosen.items() if k in args.models}
     for name, (cols, model) in chosen.items():
         X = tr[cols].to_numpy(np.float32)
-        if isinstance(model, RateRules):
+        if isinstance(model, UNSUPERVISED):
             model.fit(X[fit & tr["clean"].to_numpy()])
         else:
             model.fit(X[fit], y[fit])
@@ -458,7 +468,8 @@ def main() -> None:
 
     # Pass 1: score every test day; keep a sample of clean benign scores per day.
     test_days = [d for d in days(args.test) if not args.test_days or d.stem in args.test_days]
-    local_cols = models["rate_rules_local"][0] if "rate_rules_local" in models else []
+    local = {n: models[n][0] for n in LOCAL if n in models}
+    local_cols = sorted({c for cols in local.values() for c in cols})
     ev_cols = sorted({c for cols, _ in models.values() for c in cols if not c.startswith("flow__")}
                      | set(META) | {"clean"})
     day_scores, benign_sample, benign_feats = {}, {}, {}
@@ -473,10 +484,10 @@ def main() -> None:
             return flow if cols[0].startswith("flow__") else ev
 
         scores = {n: score(m, frame(c)[c].to_numpy(np.float32)).astype(np.float32)
-                  for n, (c, m) in models.items() if n != "rate_rules_local"}
+                  for n, (c, m) in models.items() if n not in LOCAL}
         day_sides[day] = {n: alert_side(m, c, frame(c)[c].to_numpy(np.float32))
                           for n, (c, m) in models.items()
-                          if n != "rate_rules_local" and not c[0].startswith("flow__")}
+                          if n not in LOCAL and not c[0].startswith("flow__")}
         clean_idx = np.flatnonzero(ev["clean"].to_numpy())
         pick = rng.choice(clean_idx, min(len(clean_idx), 1_000_000), replace=False)
         benign_sample[day] = {n: s[pick] for n, s in scores.items()}
@@ -502,8 +513,9 @@ def main() -> None:
                 cut = np.quantile(sc, 0.99) if len(sc) else np.inf
                 hi = sc >= cut
                 top_of[day][n] = (sc[hi], key[clean][hi], minute[clean][hi])
-        if local_cols:
-            benign_feats[day] = ev[local_cols].to_numpy(np.float32)[pick[:200_000]]
+        if local:
+            benign_feats[day] = {n: ev[c].to_numpy(np.float32)[pick[:200_000]]
+                                 for n, c in local.items()}
         print(f"  scored {args.test}/{day.stem} at {time.time() - t0:.0f}s", flush=True)
         del ev, flow
 
@@ -519,14 +531,17 @@ def main() -> None:
         others = [d for d in test_days if d != day]
         ev, _ = evidence_b(args.test, day, columns=meta_cols + local_cols)
         scores = day_scores.pop(day)
-        # Fixed thresholds fitted on the test network's own benign traffic (other days).
-        if local_cols:
-            rr = RateRules().fit(np.concatenate([benign_feats[d] for d in others]))
-            scores["rate_rules_local"] = rr.score(ev[local_cols].to_numpy(np.float32))
-        th = {k: v for k, v in thresholds.items() if k[0] != "rate_rules_local"}
+        # Unsupervised detectors fitted on the test network's own benign traffic of the
+        # other days; their reference scores are those of the same benign sample.
+        refs = {}
+        for n, c in local.items():
+            m = LOCAL[n]().fit(np.concatenate([benign_feats[d][n] for d in others]))
+            scores[n] = m.score(ev[c].to_numpy(np.float32))
+            refs[n] = np.concatenate([m.score(benign_feats[d][n]) for d in others])
+        th = {k: v for k, v in thresholds.items() if k[0] not in LOCAL}
         for n in [k for k in scores if not k.endswith("@cert")]:
-            if n == "rate_rules_local":
-                ref = np.concatenate([rr.score(benign_feats[d]) for d in others])
+            if n in refs:
+                ref = refs[n]
             else:
                 ref = np.concatenate([benign_sample[d][n] for d in others])
             for fpr in FPRS:
