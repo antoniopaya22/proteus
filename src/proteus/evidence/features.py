@@ -28,8 +28,8 @@ For unidirectional records (UGR'16) every flow counts as unanswered.
 Evidence version ``v3`` (``PROTEUS_EVIDENCE=v3``) extends v2 in two directions:
 
 * **Long time scales** (1 h and 6 h, ``LONG_TAUS``) for the counters that slow
-  attacks cannot avoid accumulating: flows, forward bytes, resets, connection-seconds,
-  unanswered flows and distinct counts. A slow attack sustained for hours piles up
+  attacks cannot avoid accumulating: flows, forward bytes, resets, unanswered flows
+  and distinct counts. A slow attack sustained for hours piles up
   evidence there, the certification slack 2Δ/τ becomes small (0.07 at 1 h for
   Δ = 120 s), and poisoning traffic sustained over days is itself visible.
   Counters reset with each capture file, so on 8-hour captures τ = 6 h is close to the
@@ -56,7 +56,7 @@ LONG_TAUS = (3600.0, 21600.0)
 # Weights without long time scales (volume proxies already covered by other counters).
 SHORT_ONLY = {"fpkts", "bpkts", "bbytes"}
 # Pair counters: attempts, resets, unanswered attempts and connection time.
-PAIR_WEIGHTS = {"flows", "fbytes", "rst", "conn_s", "noreply"}
+PAIR_WEIGHTS = {"flows", "fbytes", "rst", "noreply"}
 EVIDENCE_VERSION = os.environ.get("PROTEUS_EVIDENCE", "v1")
 
 
@@ -105,9 +105,11 @@ def build(df: pd.DataFrame, taus=None, version: str | None = None
         "fpkts": (df["fwd_pkts"].to_numpy(np.float64), "conserved"),
         "fbytes": (df["fwd_bytes"].to_numpy(np.float64), "conserved"),
         "rst": ((df["f_bwd_rst_flags"].fillna(0).to_numpy() > 0).astype(np.float64), "conserved"),
-        # Connection-seconds held: what slow DoS cannot stop doing. Padding and
-        # splitting cannot shorten it; closing connections earlier weakens the attack.
-        "conn_s": (df["duration_us"].clip(lower=0).to_numpy(np.float64) / 1e6, "conserved"),
+        # Connection-seconds in flow records. NOT conserved: splitting a connection
+        # (moving to a new source port) loses the gaps between the pieces, while the
+        # server may keep holding the abandoned connection (packet-level check,
+        # evaluation/packet_check.py). Kept for unconstrained models only.
+        "conn_s": (df["duration_us"].clip(lower=0).to_numpy(np.float64) / 1e6, "response"),
         "bpkts": (df["bwd_pkts"].to_numpy(np.float64), "response"),
         "bbytes": (df["bwd_bytes"].to_numpy(np.float64), "response"),
     }

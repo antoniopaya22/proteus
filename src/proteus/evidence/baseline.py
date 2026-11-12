@@ -32,11 +32,13 @@ import pandas as pd
 # no destination footprint (horizontal scans, spam, infected hosts).
 # ``noreply`` and ``n_dhost_nr`` exist only in evidence v2 (absent columns are skipped).
 COUNTERS = {
-    "dsvc": ("flows", "fpkts", "fbytes", "rst", "conn_s", "n_src", "noreply"),
-    "dhost": ("flows", "fpkts", "fbytes", "rst", "conn_s", "n_src", "n_dport", "noreply"),
-    "shost": ("flows", "fpkts", "fbytes", "rst", "conn_s", "n_dhost", "n_dsvc", "noreply",
+    "dsvc": ("flows", "fpkts", "fbytes", "rst", "n_src", "noreply"),
+    "dhost": ("flows", "fpkts", "fbytes", "rst", "n_src", "n_dport", "noreply"),
+    "shost": ("flows", "fpkts", "fbytes", "rst", "n_dhost", "n_dsvc", "noreply",
               "n_dhost_nr"),
 }
+# ``conn_s`` has no baseline: it is not conserved (see features.py), so its excess
+# cannot enter a monotone core.
 QUANTILE = 0.95
 
 

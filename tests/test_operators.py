@@ -108,7 +108,8 @@ def test_retiming_operations_are_bounded(which, seed):
     checks = {
         "dhost_fpkts": (dhost, both["fwd_pkts"].to_numpy(float)),
         "dsvc_flows": (dsvc, np.ones(len(both))),
-        "dsvc_conn_s": (dsvc, both["duration_us"].to_numpy(float) / 1e6),
+        # No conn_s: the record-level split keeps durations by construction, but on
+        # packets a split loses the gaps between pieces (tests/test_packets.py).
     }
     for name, (ent, w) in checks.items():
         orig = decayed_sum(t[a], ent[a], w[a], taus)
