@@ -704,8 +704,10 @@ def main() -> None:
                 top_of[day][n] = (sc[hi], key[clean][hi], minute[clean][hi])
         if local:
             sample = np.sort(pick[:200_000])
-            benign_feats[day] = {n: read_rows(path, sample, c)[c].to_numpy(np.float32)
-                                 for n, c in local.items()}
+            # One sample per day with the union of the local detectors' columns; each
+            # detector takes its own (ablation variants share most of them).
+            union = sorted({c for cols in local.values() for c in cols})
+            benign_feats[day] = read_rows(path, sample, union).astype(np.float32)
         print(f"  scored {args.test}/{day.stem} at {time.time() - t0:.0f}s", flush=True)
         del ev, flow
 
@@ -727,7 +729,7 @@ def main() -> None:
         refs = {}
         for n, c in local.items():
             m = copy.deepcopy(models[n][1]).fit(
-                np.concatenate([benign_feats[d][n] for d in others]))
+                np.concatenate([benign_feats[d][c].to_numpy() for d in others]))
             mono = getattr(m, "monotonic_cst", None) is not None
             cst = np.asarray(m.monotonic_cst) if mono else None
             sl = slack(c, specs, EXPORT_TIMEOUT_S).astype(np.float32) if mono else None
@@ -743,7 +745,7 @@ def main() -> None:
                 scores[f"{n}@cert"] = np.concatenate(acc["cert"])
             if acc["certr"]:
                 scores[f"{n}@certr"] = np.concatenate(acc["certr"])
-            refs[n] = np.concatenate([m.score(benign_feats[d][n]) for d in others])
+            refs[n] = np.concatenate([m.score(benign_feats[d][c].to_numpy()) for d in others])
         th = {k: v for k, v in thresholds.items() if k[0] not in local}
         for n in [k for k in scores if not k.endswith(("@cert", "@certr"))]:
             if n in refs:
