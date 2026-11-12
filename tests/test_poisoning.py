@@ -81,3 +81,28 @@ def test_combined_is_the_maximum_of_fitted_models():
     want = np.maximum(a.predict_proba(Z[:, [0]])[:, 1], b.predict_proba(Z[:, [1, 0]])[:, 1])
     assert np.allclose(m.predict_proba(Z)[:, 1], want)
     assert m.monotonic_cst == [1, 1]
+
+
+def test_calibrated_max_is_monotone_max_of_benign_cdfs():
+    from sklearn.ensemble import HistGradientBoostingClassifier
+
+    from proteus.evaluation.poisoning import combined
+
+    rng = np.random.default_rng(0)
+    X = rng.normal(size=(2000, 2))
+    y = (X[:, 0] + X[:, 1] > 1).astype(int)
+    a = HistGradientBoostingClassifier(max_iter=20, monotonic_cst=[1]).fit(X[:, [0]], y)
+    b = HistGradientBoostingClassifier(max_iter=20, monotonic_cst=[1]).fit(X[:, [1]], y)
+    _, m = combined({"a": (["x"], a), "b": (["y"], b)}, "a|b")
+    assert getattr(m, "local", False)
+    m.fit(X[y == 0])
+    s = m.score(X)
+    Z = X.copy()
+    Z[:, 0] += rng.uniform(0, 2, len(Z))
+    assert (m.score(Z) >= s - 1e-12).all()  # monotone
+    cdf = [np.searchsorted(r, p.predict_proba(X[:, idx])[:, 1], side="right") / len(r)
+           for (idx, p), r in zip(m.parts, m.ref_)]
+    inside = s <= 1.0
+    assert np.allclose(s[inside], np.max(cdf, axis=0)[inside])
+    p = m.predict_proba(X)[:, 1]
+    assert ((p >= 0) & (p < 1)).all()

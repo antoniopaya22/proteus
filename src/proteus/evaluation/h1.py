@@ -10,6 +10,7 @@ benign flows of the same dataset, test on the other dataset.
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import pickle
 import time
@@ -22,7 +23,7 @@ from sklearn.ensemble import HistGradientBoostingClassifier
 from proteus.baselines.kitnet import KitNET
 from proteus.baselines.rate_rules import RateRules
 from proteus.core.certify import slack, worst_case_features
-from proteus.core.combine import MaxCore
+from proteus.core.combine import CalibratedMax, MaxCore
 from proteus.core.verify import monotonicity_violations
 from proteus.evidence import baseline as bl
 from proteus.evidence.features import DEFAULT_TAUS, EVIDENCE_VERSION, build
@@ -228,7 +229,7 @@ def training_set(ds: str, rng: np.random.Generator, cap_attack=50_000, cap_benig
 # Unsupervised detectors fitted, for each test day, on clean benign traffic of the
 # other days of the test network (no labels), like the local thresholds.
 LOCAL = {"rate_rules_local": RateRules, "kitnet_local": KitNET}
-UNSUPERVISED = (RateRules, KitNET)
+UNSUPERVISED = (RateRules, KitNET, CalibratedMax)
 
 CST = {"conserved": 1, "response": 1, "baseline": -1}
 
@@ -479,7 +480,7 @@ def main() -> None:
 
     # Pass 1: score every test day; keep a sample of clean benign scores per day.
     test_days = [d for d in days(args.test) if not args.test_days or d.stem in args.test_days]
-    local = {n: models[n][0] for n in LOCAL if n in models}
+    local = {n: c for n, (c, m) in models.items() if n in LOCAL or getattr(m, "local", False)}
     local_cols = sorted({c for cols in local.values() for c in cols})
     ev_cols = sorted({c for cols, _ in models.values() for c in cols if not c.startswith("flow__")}
                      | set(META) | {"clean"})
@@ -495,16 +496,16 @@ def main() -> None:
             return flow if cols[0].startswith("flow__") else ev
 
         scores = {n: score(m, frame(c)[c].to_numpy(np.float32)).astype(np.float32)
-                  for n, (c, m) in models.items() if n not in LOCAL}
+                  for n, (c, m) in models.items() if n not in local}
         day_sides[day] = {n: alert_side(m, c, frame(c)[c].to_numpy(np.float32))
                           for n, (c, m) in models.items()
-                          if n not in LOCAL and not c[0].startswith("flow__")}
+                          if n not in local and not c[0].startswith("flow__")}
         clean_idx = np.flatnonzero(ev["clean"].to_numpy())
         pick = rng.choice(clean_idx, min(len(clean_idx), 1_000_000), replace=False)
         benign_sample[day] = {n: s[pick] for n, s in scores.items()}
         # Certified scores: worst case over every free-operation variant (doc 04).
         for n, (c, m) in models.items():
-            if getattr(m, "monotonic_cst", None) is not None:
+            if n not in local and getattr(m, "monotonic_cst", None) is not None:
                 cst = np.asarray(m.monotonic_cst)
                 X = worst_case_features(ev[c].to_numpy(np.float32), cst,
                                         slack(c, specs, EXPORT_TIMEOUT_S).astype(np.float32))
@@ -546,10 +547,15 @@ def main() -> None:
         # other days; their reference scores are those of the same benign sample.
         refs = {}
         for n, c in local.items():
-            m = LOCAL[n]().fit(np.concatenate([benign_feats[d][n] for d in others]))
+            m = copy.deepcopy(models[n][1]).fit(
+                np.concatenate([benign_feats[d][n] for d in others]))
             scores[n] = m.score(ev[c].to_numpy(np.float32))
+            if getattr(m, "monotonic_cst", None) is not None:
+                X = worst_case_features(ev[c].to_numpy(np.float32), np.asarray(m.monotonic_cst),
+                                        slack(c, specs, EXPORT_TIMEOUT_S).astype(np.float32))
+                scores[f"{n}@cert"] = m.score(X)
             refs[n] = np.concatenate([m.score(benign_feats[d][n]) for d in others])
-        th = {k: v for k, v in thresholds.items() if k[0] not in LOCAL}
+        th = {k: v for k, v in thresholds.items() if k[0] not in local}
         for n in [k for k in scores if not k.endswith("@cert")]:
             if n in refs:
                 ref = refs[n]

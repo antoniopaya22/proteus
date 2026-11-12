@@ -21,7 +21,7 @@ import numpy as np
 import pandas as pd
 
 from proteus.core import poisoning as po
-from proteus.core.combine import MaxCore
+from proteus.core.combine import CalibratedMax, MaxCore
 from proteus.core.frontier import frontier, nested_attack
 from proteus.evaluation import h1
 from proteus.evaluation.frontier_exp import (
@@ -37,12 +37,28 @@ BELOW = 0.95  # poisoning rate as a fraction of the current frontier (stays aler
 
 def combined(models: dict, name: str):
     """``a+b``: maximum of already fitted monotone models (``MaxCore``, still monotone),
-    e.g. the fast core plus the raw-count core, which bounds poisoning."""
-    if "+" not in name:
+    e.g. the fast core plus the raw-count core, which bounds poisoning. ``a|b``: the
+    same after calibrating each part on local benign traffic (``CalibratedMax``, needs
+    ``fit`` on benign flows)."""
+    sep = "|" if "|" in name else "+" if "+" in name else None
+    if sep is None:
         return models[name]
-    parts = [models[n] for n in name.split("+")]
+    parts = [models[n] for n in name.split(sep)]
     cols = list(dict.fromkeys(c for cs, _ in parts for c in cs))
-    return cols, MaxCore(cols, parts)
+    return cols, (MaxCore if sep == "+" else CalibratedMax)(cols, parts)
+
+
+def local_benign(ds: str, day: Path, cols: list[str], rng: np.random.Generator,
+                 per_day: int = 200_000) -> np.ndarray:
+    """Clean benign evidence of the other days of the network (sampled)."""
+    out = []
+    for d in h1.days(ds):
+        if d == day:
+            continue
+        ev, _ = h1.evidence_b(ds, d, columns=[*cols, "clean"])
+        X = ev.loc[ev["clean"], cols].to_numpy(np.float32)
+        out.append(X[rng.choice(len(X), min(len(X), per_day), replace=False)])
+    return np.concatenate(out)
 
 
 def growth_stats(ds: str, caps: list[float]) -> pd.DataFrame:
@@ -113,6 +129,8 @@ def main() -> None:
         if not present:
             continue
         base0 = baselines.for_day(day)
+        if getattr(model, "local", False):  # calibrated per day on the other days' benign
+            model.fit(local_benign(args.test, day, cols, rng))
         thr = local_threshold(args.test, day, model, cols, args.fpr, rng)
         for attack, sc, A in scenarios(flows, present):
             span = max((A["t_end"].max() - A["t_start"].min()).total_seconds(), 1.0)
