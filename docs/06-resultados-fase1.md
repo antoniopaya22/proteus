@@ -582,7 +582,7 @@ origen, par y bruto). Detectores `proteus` (todas las escalas) y `proteus_cert`
 | `proteus` | 11/11 (escaneos 6/6, recall 0,82) | FTP 1/1, SSH 1/2 (recall ≤ 0,03) | 2,7 / 0,18 |
 | `proteus_cert`, alertas certificadas | 8/11 (escaneos 3/6) | — | 1,5 / 0,09 |
 | núcleo certificado v1, alertas certificadas | 9/11 | — | 3,2 / 0,77 |
-| `core_pair` solo | 4/11 (sin escaneos) | — | 0,27 |
+| `core_pair` solo | 5/11 (todos los DoS y DDoS, ningún escaneo) | — | 0,27 |
 | reglas de tasa locales (v3) | 9/11 | FTP, SSH, botnet, infiltración | 36 |
 
 - `proteus` iguala al núcleo rápido v1 en volumétricos con alarmas parecidas (2,7
