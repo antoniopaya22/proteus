@@ -422,3 +422,35 @@ Lectura:
   red de despliegue) es necesario en cualquier caso.
 
 **17 → 18:** pendiente (se cortó con la caída de la VM; relanzado).
+
+## 6.12 Comprobación empírica de la garantía con operaciones libres (H3, 2026-11-12)
+
+`python -m proteus.evaluation.free_ops`, 18 → 17, 20 variantes aleatorias por ataque
+(relleno de 0/40/400 bytes, 0/1/5 paquetes insertados con o sin extensión de hasta
+120 s, puertos de origen nuevos, 0/100/1000 señuelos, partición de flujos en 2 o 5),
+aplicadas sobre una ventana de 10 min de la campaña real contra su víctima real, con
+el tráfico real hacia la víctima.
+
+| Ataque | `core_cert`: alertas originales → mín. variantes | víctima alertada | `core_mono_dst_x`: originales → mín. |
+|---|---|---|---|
+| DoS Hulk | 90.625 → 90.625 | 100 % | 90.613 → 90.613 |
+| DoS GoldenEye | 7.567 → 7.567 | 100 % | 7.560 → 7.560 |
+| DoS Slowloris | 1.788 → 1.788 | 100 % | 1.788 → 1.788 |
+| DoS Slowhttptest | 1.120 → 1.120 | 100 % | 1.119 → 1.119 |
+| DDoS LOIC-HTTP | 47.266 → 47.266 | 100 % | 47.648 → 47.648 |
+| PortScan (jueves) | 1.991 → 2.011 | 100 % | 2.015 → 2.016 |
+| PortScan (viernes) | 0 → 0 | 50 % | 96 → 97 |
+| FTP-Patator | 0 → 0 | 100 % | 141 → 117 |
+| SSH-Patator | 0 → 0 | 45 % | 33 → 33 |
+
+Lectura:
+
+- **Ninguna violación**: en ninguna variante bajó la puntuación de un flujo original
+  con operaciones exactas (sin re-temporizar), ni se perdió una alerta certificada
+  del núcleo certificado. H3 se cumple en todas las campañas reales.
+- Las operaciones libres solo **suben** la evidencia: con FTP y SSH, que el núcleo
+  certificado no alertaba, las variantes acaban alertando a la víctima en el 100 % y
+  el 45 % de los casos; con el escaneo del viernes, en el 50 %.
+- El núcleo rápido no está certificado, pero tampoco pierde alertas en la práctica.
+  La única bajada (FTP, 141 → 117 flujos alertados) viene de partir flujos, que cambia
+  el conjunto de flujos; la víctima sigue alertada en todas las variantes.
