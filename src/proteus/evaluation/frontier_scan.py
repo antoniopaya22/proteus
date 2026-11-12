@@ -36,7 +36,10 @@ def main() -> None:
     ap.add_argument("--delta", type=float, default=h1.EXPORT_TIMEOUT_S)
     ap.add_argument("--rmax", type=float, default=200.0, help="highest rate tried (probes/s)")
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--hours", type=float, default=WINDOW_S / 3600,
+                    help="duration of the replayed scan (long time scales need hours)")
     args = ap.parse_args()
+    window_s = args.hours * 3600
     rng = np.random.default_rng(args.seed)
     cols, model = h1.load_models(args.run)[args.model]
     _, specs = h1.evidence_b(args.test, h1.days(args.test)[0], columns=["clean"])
@@ -52,14 +55,18 @@ def main() -> None:
         span = max((A["t_end"].max() - A["t_start"].min()).total_seconds(), 1.0)
         start = A["t_start"].min()
         dsts = set(A["dst_ip"].unique())
-        lo, hi = start - pd.Timedelta(hours=1), start + pd.Timedelta(seconds=WINDOW_S + 3600)
+        lo, hi = start - pd.Timedelta(hours=1), start + pd.Timedelta(seconds=window_s + 3600)
         bg = flows[~flows["is_attack"] & flows["dst_ip"].isin(dsts)
                    & (flows["t_end"] >= lo) & (flows["t_start"] <= hi)]
         bg = bg.drop(columns=["attack", "family", "is_attack"])
         template = A.drop(columns=["attack", "family", "is_attack"])
-        sc = Scenario(bg, template, "", 0, 0, start, WINDOW_S, src_ip=ATTACKER,
+        sc = Scenario(bg, template, "", 0, 0, start, window_s, src_ip=ATTACKER,
                       keep_ports=True, keep_dst=True)
         base = baselines.for_day(day)
+        if getattr(model, "local", False):  # calibrated maximum: fit on local benign
+            from proteus.evaluation.poisoning import local_benign
+
+            model.fit(local_benign(args.test, day, cols, rng))
         thr = local_threshold(args.test, day, model, cols, args.fpr, rng)
         row = {"day": day.stem, "bot": bot, "threshold": thr, "probes": len(A),
                "distinct_dsts": len(dsts), "background_flows": len(bg),
@@ -74,7 +81,8 @@ def main() -> None:
         rows.append(row)
         print(row, flush=True)
     out = pd.DataFrame(rows)
-    out.to_csv(args.run / f"frontier_scan_{args.model}_{args.fpr:g}.csv", index=False)
+    out.to_csv(args.run / f"frontier_scan_{args.model}_{args.fpr:g}_{args.hours:g}h.csv",
+               index=False)
     print(out.to_string())
 
 
