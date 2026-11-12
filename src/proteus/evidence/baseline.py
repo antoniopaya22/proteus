@@ -171,3 +171,27 @@ def attach(ev: pd.DataFrame, ent: str, cols: list[str], key: pd.Series,
         res[f"{c}__b"] = b.astype(np.float32)
         res[f"{c}__x"] = (ev[c].to_numpy(np.float64) - b).astype(np.float32)
     return res
+
+
+# ---------------------------------------------------------------- population baselines
+
+POP_QUANTILE = 0.99
+
+
+def peer_group(ent: str, keys: pd.Index) -> np.ndarray:
+    """Peer group of every entity key: services with the same port and protocol; all
+    hosts form one group."""
+    keys = pd.Index(keys).astype(str)
+    if ent == "dsvc":
+        return np.asarray(keys.str.split(":").str[-1])  # "port/proto"
+    return np.full(len(keys), "all", dtype=object)
+
+
+def population_for(ent: str, base: pd.DataFrame, keys: pd.Series) -> pd.DataFrame:
+    """Population baseline for arbitrary entity keys (strings), from the current
+    per-entity baselines: the q-quantile of the peer group of each key (0 when the
+    group has no history)."""
+    strings = pd.Index(base.index).astype(str)
+    grp_pop = base.groupby(peer_group(ent, strings)).quantile(POP_QUANTILE)
+    out = grp_pop.reindex(peer_group(ent, pd.Index(keys.astype(str))))
+    return out.fillna(0.0).set_axis(keys.index)

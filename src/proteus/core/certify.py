@@ -68,12 +68,12 @@ def reuse_worst_case(X: np.ndarray, names: list[str], cst: np.ndarray, s: np.nda
             continue
         parts = n.split("__")
         counter = parts[1] if len(parts) > 1 else ""
-        excess = n.endswith("__x")
+        suffix = "__xp" if n.endswith("__xp") else "__x" if n.endswith("__x") else ""
         if counter in PER_CONNECTION:
-            if not excess:
+            if not suffix:
                 W[:, j] = 0.0
             else:
-                raw = pos.get(n[: -len("__x")])
+                raw = pos.get(n[: -len(suffix)])
                 W[:, j] = (X[:, j] - X[:, raw]) if raw is not None else floor
         elif counter == "fpkts":
             W[:, j] = W[:, j] - np.log(packet_factor)

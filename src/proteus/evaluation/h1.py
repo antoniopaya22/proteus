@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import copy
 import json
+import os
 import pickle
 import time
 from pathlib import Path
@@ -94,8 +95,13 @@ def _edir(ds: str) -> Path:
     return DATA / ds / f"evidence{_vsuffix(ds)}"
 
 
+# Population baselines (``__xp`` features), opt-in: PROTEUS_PEER=1.
+PEER = os.environ.get("PROTEUS_PEER", "0") == "1"
+
+
 def _bdir(ds: str) -> Path:
-    return DATA / ds / f"evidence_b_{BASELINE['mode']}_{BASELINE['mask']}{_vsuffix(ds)}"
+    peer = "_peer" if PEER else ""
+    return DATA / ds / f"evidence_b_{BASELINE['mode']}_{BASELINE['mask']}{_vsuffix(ds)}{peer}"
 
 
 def evidence_b(ds: str, day: Path, columns: list[str] | None = None
@@ -162,6 +168,14 @@ def prepare_baselines(ds: str) -> None:
             base = bl.baseline([tables[d][ent] for d in ref], c) if ref else None
             k = pd.Series(codes[ent].encode(keys[ent], grow=False), index=ev.index)
             extra.update(bl.attach(ev, ent, c, k, base))
+            if PEER:  # excess over the peer group's baseline (``__xp``)
+                if base is None:
+                    extra.update({f"{x}__xp": np.full(len(ev), np.nan, np.float32) for x in c})
+                else:
+                    named = base.set_axis(codes[ent].index[base.index.to_numpy()])
+                    pop = bl.population_for(ent, named, keys[ent])
+                    extra.update({f"{x}__xp": (ev[x].to_numpy(np.float64) - pop[x].to_numpy()
+                                               ).astype(np.float32) for x in c})
         _write_chunked(out_dir / day.name, ev, extra)
         spec_map.update({k: ("baseline" if k.endswith("__b") else "conserved") for k in extra})
         print(f"  baselines {ds}/{day.stem}: {len(ref)} reference days", flush=True)
@@ -288,7 +302,8 @@ def detectors(specs: dict[str, str], flow_cols: list[str]) -> dict[str, tuple[li
     src = [k for k in specs if k.startswith("shost__")]
 
     def raw_of(cols):
-        return [k for k in cols if specs[k] == "conserved" and not k.endswith(("__b", "__x"))]
+        return [k for k in cols
+                if specs[k] == "conserved" and not k.endswith(("__b", "__x", "__xp"))]
 
     raw = raw_of(dst)
     excess = [k for k in dst if k.endswith("__x")]
@@ -307,7 +322,7 @@ def detectors(specs: dict[str, str], flow_cols: list[str]) -> dict[str, tuple[li
     # Evidence that connection reuse (many requests in one connection) cannot lower
     # either: payload bytes and distinct counts. Per-connection counts (flows, resets,
     # unanswered) and packets (handshakes saved) can drop under reuse.
-    raw_all = [k for k in specs if not k.endswith(("__b", "__x"))]
+    raw_all = [k for k in specs if not k.endswith(("__b", "__x", "__xp"))]
     reuse_long = [k for k in long_rules if k.split("__")[1] in REUSE_SAFE]
     return {
         "core_mono_dst": (raw, hgb(cst(raw))),
@@ -361,7 +376,8 @@ def proteus_detectors(specs, rules, src_rules, raw, raw_of, cst) -> dict:
         cols = list(dict.fromkeys(c for cs in parts for c in cs))
         return cols, CalibratedMax(cols, [(cs, hgb(cst(cs))) for cs in parts])
 
-    parts = [rules, src_rules, pair, raw]
+    peer = raw + [k for k in specs if k.endswith("__xp") and not k.startswith("shost__")]
+    parts = [rules, src_rules, pair, peer if len(peer) > len(raw) else raw]
     return {
         "core_pair": (pair, hgb(cst(pair))),
         "proteus": calmax(parts),
