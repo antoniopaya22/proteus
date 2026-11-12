@@ -21,6 +21,7 @@ import numpy as np
 import pandas as pd
 
 from proteus.core import poisoning as po
+from proteus.core.combine import MaxCore
 from proteus.core.frontier import frontier, nested_attack
 from proteus.evaluation import h1
 from proteus.evaluation.frontier_exp import (
@@ -32,6 +33,16 @@ from proteus.evaluation.frontier_exp import (
 )
 
 BELOW = 0.95  # poisoning rate as a fraction of the current frontier (stays alert-free)
+
+
+def combined(models: dict, name: str):
+    """``a+b``: maximum of already fitted monotone models (``MaxCore``, still monotone),
+    e.g. the fast core plus the raw-count core, which bounds poisoning."""
+    if "+" not in name:
+        return models[name]
+    parts = [models[n] for n in name.split("+")]
+    cols = list(dict.fromkeys(c for cs, _ in parts for c in cs))
+    return cols, MaxCore(cols, parts)
 
 
 def growth_stats(ds: str, caps: list[float]) -> pd.DataFrame:
@@ -70,7 +81,8 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--run", type=Path, required=True)
     ap.add_argument("--test", required=True)
-    ap.add_argument("--model", default="core_mono_dst_x")
+    ap.add_argument("--model", default="core_mono_dst_x",
+                    help="a model of the run, or a+b for the maximum of several")
     ap.add_argument("--fpr", type=float, default=1e-3)
     ap.add_argument("--rounds", type=int, default=8)
     ap.add_argument("--caps", nargs="+", default=["none", "0.25"],
@@ -88,7 +100,7 @@ def main() -> None:
         print(g.round(4).to_string())
         return
     rng = np.random.default_rng(args.seed)
-    cols, model = h1.load_models(args.run)[args.model]
+    cols, model = combined(h1.load_models(args.run), args.model)
     _, specs = h1.evidence_b(args.test, h1.days(args.test)[0], columns=["clean"])
     wanted = args.attacks or ATTACKS
 
@@ -132,7 +144,8 @@ def main() -> None:
                     levels = po.entity_levels(traffic, bcols, keys, t0, t1)
                     base = po.raise_baseline(base, levels, cap)
     out = pd.DataFrame(rows)
-    out.to_csv(args.run / f"poisoning_{args.model}_{args.fpr:g}.csv", index=False)
+    out.to_csv(args.run / f"poisoning_{args.model.replace('+', '_max_')}_{args.fpr:g}.csv",
+               index=False)
     piv = out.pivot_table(index=["day", "attack", "cap"], columns="round",
                           values="flows_per_h").round(0)
     print(piv.to_string())

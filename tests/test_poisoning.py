@@ -63,3 +63,21 @@ def test_poisoning_raises_frontier_up_to_the_ceiling():
     assert r1["rate"] >= r0["rate"]
     # The raw counter (dsvc__flows__t60) still bounds the attack: finite ceiling.
     assert ceil["bounded"] == "ok" and ceil["rate"] >= r1["rate"]
+
+
+def test_combined_is_the_maximum_of_fitted_models():
+    from sklearn.ensemble import HistGradientBoostingClassifier
+
+    from proteus.evaluation.poisoning import combined
+
+    rng = np.random.default_rng(0)
+    X = rng.normal(size=(500, 2))
+    y = (X.sum(axis=1) > 0).astype(int)
+    a = HistGradientBoostingClassifier(max_iter=20, monotonic_cst=[1]).fit(X[:, [0]], y)
+    b = HistGradientBoostingClassifier(max_iter=20, monotonic_cst=[1, 1]).fit(X[:, [1, 0]], y)
+    cols, m = combined({"a": (["x"], a), "b": (["y", "x"], b)}, "a+b")
+    assert cols == ["x", "y"]
+    Z = rng.normal(size=(50, 2))
+    want = np.maximum(a.predict_proba(Z[:, [0]])[:, 1], b.predict_proba(Z[:, [1, 0]])[:, 1])
+    assert np.allclose(m.predict_proba(Z)[:, 1], want)
+    assert m.monotonic_cst == [1, 1]
