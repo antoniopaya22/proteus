@@ -647,3 +647,28 @@ Lectura:
   del jueves 0,49 → 0,32 con σ de 0,1 a 0,5).
 - Fuerza bruta y escaneo del viernes: ni el base ni Proteus-cert alertan, no hay nada
   que certificar.
+
+## 6.18 Ablación de subnúcleos (2026-11-12, solo 18 → 17)
+
+`h1 --reuse ... --models proteus proteus-0..3 proteus_cert proteus_cert-0..3`
+(Proteus sin el subnúcleo K: 0 destino, 1 origen, 2 par, 3 destino bruto). FPR 10⁻³.
+
+| Variante | `proteus`: volumétricos / resto / alarmas/h | `proteus_cert`: ídem |
+|---|---|---|
+| Completo | 1,00 / 0,20 / 2,7 | 0,82 / 0,10 / 4,3 |
+| Sin destino (con exceso) | 1,00 / 0,20 / **0,7** | 0,82 / 0,10 / 3,6 |
+| Sin origen | 1,00 / 0,20 / 3,1 | 0,82 / 0,10 / 7,6 |
+| Sin par | 1,00 / 0,20 / 3,1 | 0,82 / **0,00** / 7,1 |
+| Sin destino bruto | **0,82 / 0,00** / 2,7 | 0,82 / 0,10 / 5,3 |
+
+Lectura provisional:
+
+- El **destino bruto** sostiene la detección de `proteus` (sin él se pierden dos
+  campañas y la fuerza bruta) y es además el techo frente al envenenamiento.
+- El **destino con exceso** no aporta detección en 18 → 17 y multiplica por cuatro
+  las alarmas. Si 17 → 18 lo confirma, conviene quitarlo: menos alarmas y menos
+  superficie de envenenamiento.
+- Quitar origen o par sube las alarmas: el umbral se recalibra al mismo FPR y cambia
+  el reparto entre subnúcleos. El par aporta el "resto" de `proteus_cert`
+  (infiltración).
+- Pendiente: 17 → 18 (en cola, partido en dos runs por memoria).
