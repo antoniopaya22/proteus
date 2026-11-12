@@ -15,6 +15,7 @@ queda como motivación.
 | El máximo calibrado funciona | `core_mono_dst_x\|core_mono_dst`: misma detección, 1,65 frente a 1,88 alarmas/h |
 | Un tope de crecimiento frena el envenenamiento del núcleo certificado | SSH con tope 0,1: de 16.001 a 17.013 intentos/h en 8 días; sin tope, ∞ en 4 días |
 | Sondear la cáscara cuesta | ≥ 805 sondas bloqueadas por evasión (§7.5) |
+| La garantía se cumple sobre paquetes reales | 0 violaciones, 11 variantes, 1,2 M de paquetes del DDoS LOIC (§6.14) |
 
 ## 9.2 Huecos
 
