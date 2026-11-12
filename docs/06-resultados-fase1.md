@@ -672,3 +672,21 @@ Lectura provisional:
   el reparto entre subnúcleos. El par aporta el "resto" de `proteus_cert`
   (infiltración).
 - Pendiente: 17 → 18 (en cola, partido en dos runs por memoria).
+
+## 6.19 Coste (2026-11-12)
+
+`python -m proteus.evaluation.cost`, v3, un núcleo de CPU, implementación por lotes,
+miércoles de CIC-IDS-2017 (496.641 flujos):
+
+| Etapa | Flujos/s |
+|---|---|
+| Evidencia (152 contadores) | 103.000 |
+| Puntuar `proteus` (218 características) | 79.000 |
+| Puntuar `proteus_cert` (126) | 68.000 |
+| Certificar todos los flujos (`proteus`) | 60.000 |
+| Puntuar el núcleo de un solo modelo (122) | 386.000 |
+
+Estado del día: 11.744 servicios × 39 valores, 9.012 hosts × 44, 22.981 pares × 20
+(unos 10 MB en total; solo 25 orígenes porque CIC-2017 pasa por NAT). La
+certificación solo hace falta en las alertas. El máximo calibrado cuesta unas cinco
+veces lo que un solo modelo (cuatro subnúcleos más las CDF).
