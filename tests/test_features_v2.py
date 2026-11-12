@@ -55,4 +55,4 @@ def test_v2_adding_flows_never_lowers_unanswered_evidence():
 
 def test_unknown_version():
     with pytest.raises(ValueError):
-        build(flows([(0, "a", "x", 0)]), version="v3")
+        build(flows([(0, "a", "x", 0)]), version="v9")

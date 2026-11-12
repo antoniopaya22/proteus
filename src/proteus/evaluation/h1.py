@@ -108,6 +108,27 @@ def evidence_b(ds: str, day: Path, columns: list[str] | None = None
     return pd.read_parquet(cache, columns=columns), json.loads(spec_file.read_text())
 
 
+def _write_chunked(path: Path, ev: pd.DataFrame, extra: dict[str, np.ndarray],
+                   chunk: int = 1_000_000) -> None:
+    """Evidence plus baseline columns, written in row chunks (no full-size copy)."""
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+
+    writer = None
+    try:
+        for lo in range(0, len(ev), chunk):
+            part = ev.iloc[lo:lo + chunk].reset_index(drop=True)
+            for k, v in extra.items():
+                part[k] = v[lo:lo + chunk]
+            tbl = pa.Table.from_pandas(part, preserve_index=False)
+            if writer is None:
+                writer = pq.ParquetWriter(path, tbl.schema)
+            writer.write_table(tbl.cast(writer.schema))
+    finally:
+        if writer is not None:
+            writer.close()
+
+
 def prepare_baselines(ds: str) -> None:
     out_dir = _bdir(ds)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -141,19 +162,38 @@ def prepare_baselines(ds: str) -> None:
             base = bl.baseline([tables[d][ent] for d in ref], c) if ref else None
             k = pd.Series(codes[ent].encode(keys[ent], grow=False), index=ev.index)
             extra.update(bl.attach(ev, ent, c, k, base))
-        out = pd.concat([ev, pd.DataFrame(extra, index=ev.index)], axis=1)
-        out.to_parquet(out_dir / day.name, index=False)
+        _write_chunked(out_dir / day.name, ev, extra)
         spec_map.update({k: ("baseline" if k.endswith("__b") else "conserved") for k in extra})
         print(f"  baselines {ds}/{day.stem}: {len(ref)} reference days", flush=True)
-        del ev, out
+        del ev, extra
     (out_dir / "specs.json").write_text(json.dumps(spec_map))
 
 
-def flow_features(day: Path) -> pd.DataFrame:
-    cols = pd.read_parquet(day).columns
-    keep = [c for c in cols if c.startswith("f_")] + [
+def flow_feature_columns(day: Path) -> list[str]:
+    import pyarrow.parquet as pq
+
+    cols = pq.read_schema(day).names
+    return [c for c in cols if c.startswith("f_")] + [
         "dst_port", "proto", "duration_us", "fwd_pkts", "bwd_pkts", "fwd_bytes", "bwd_bytes"]
-    return pd.read_parquet(day, columns=keep).astype("float32")
+
+
+def flow_features(day: Path) -> pd.DataFrame:
+    return pd.read_parquet(day, columns=flow_feature_columns(day)).astype("float32")
+
+
+def read_rows(path: Path, idx: np.ndarray, columns: list[str] | None = None,
+              batch: int = 500_000) -> pd.DataFrame:
+    """Rows ``idx`` (sorted positions) of a parquet file, reading it in batches so a
+    large day never sits in memory in full."""
+    import pyarrow.parquet as pq
+
+    out, start = [], 0
+    for b in pq.ParquetFile(path).iter_batches(batch_size=batch, columns=columns):
+        lo, hi = np.searchsorted(idx, [start, start + b.num_rows])
+        if hi > lo:
+            out.append(b.take(idx[lo:hi] - start).to_pandas())
+        start += b.num_rows
+    return pd.concat(out, ignore_index=True)
 
 
 SUSPECT_MIN_DSTS = 100
@@ -209,17 +249,17 @@ def training_set(ds: str, rng: np.random.Generator, cap_attack=50_000, cap_benig
     for day in days(ds):
         if only and day.stem not in only:
             continue
-        ev, specs = evidence_b(ds, day)
-        flow = flow_features(day)
+        ev, specs = evidence_b(ds, day, columns=["attack", "is_attack", "clean"])
         idx = []
         for _, g in ev[ev["is_attack"]].groupby("attack", observed=True):
             idx.append(rng.choice(g.index.to_numpy(), min(len(g), cap_attack), replace=False))
         clean = ev.index[ev["clean"]].to_numpy()
         idx.append(rng.choice(clean, min(len(clean), cap_benign), replace=False))
         idx = np.sort(np.concatenate(idx))
-        parts.append(pd.concat([ev.loc[idx].reset_index(drop=True),
-                                flow.loc[idx].add_prefix("flow__").reset_index(drop=True)],
-                               axis=1))
+        del ev
+        rows = read_rows(_bdir(ds) / day.name, idx)
+        flow = read_rows(day, idx, flow_feature_columns(day)).astype("float32")
+        parts.append(pd.concat([rows, flow.add_prefix("flow__")], axis=1))
         print(f"  train {ds}/{day.stem}: {len(idx):,} rows", flush=True)
     return pd.concat(parts, ignore_index=True), specs
 
@@ -244,7 +284,7 @@ def hgb(cst: list[int] | None) -> HistGradientBoostingClassifier:
 def detectors(specs: dict[str, str], flow_cols: list[str]) -> dict[str, tuple[list[str], object]]:
     """Name -> (columns, model). Monotone models: +1 on evidence and excess over
     baseline, -1 on the baseline itself (a busier entity needs more evidence)."""
-    dst = [k for k, v in specs.items() if not k.startswith("shost__")]
+    dst = [k for k, v in specs.items() if not k.startswith(("shost__", "spair__"))]
     src = [k for k in specs if k.startswith("shost__")]
 
     def raw_of(cols):
@@ -255,9 +295,9 @@ def detectors(specs: dict[str, str], flow_cols: list[str]) -> dict[str, tuple[li
     with_b = raw + [k for k in dst if k.endswith(("__b", "__x"))]
     rules = raw + excess
     long_tau = f"__t{int(max(DEFAULT_TAUS))}"
-    long_rules = [k for k in rules if long_tau in k]
+    long_rules = [k for k in rules if k.endswith(long_tau) or f"{long_tau}__" in k]
     src_rules = raw_of(src) + [k for k in src if k.endswith("__x")]
-    src_long = [k for k in src_rules if long_tau in k]
+    src_long = [k for k in src_rules if k.endswith(long_tau) or f"{long_tau}__" in k]
 
     def cst(cols):
         return [CST[specs[c]] for c in cols]
@@ -292,6 +332,40 @@ def detectors(specs: dict[str, str], flow_cols: list[str]) -> dict[str, tuple[li
         # counterpart): every evidence feature of both sides, no baselines.
         "kitnet_local": (raw_all, KitNET()),
         "flow_clf": (flow_cols, hgb(None)),
+        **proteus_detectors(specs, rules, src_rules, raw, raw_of, cst),
+    }
+
+
+def _tau(name: str) -> float:
+    return float(name.rsplit("__t", 1)[1].split("__")[0])
+
+
+def proteus_detectors(specs, rules, src_rules, raw, raw_of, cst) -> dict:
+    """Evidence v3: calibrated maximum of sub-cores, each fitted on one kind of
+    evidence and calibrated on local benign traffic (``CalibratedMax``):
+
+    * destination evidence and its excess over the entity baselines,
+    * source evidence and its excess,
+    * source-service pair counters (raw: pairs are almost always new, so they have no
+      baseline to poison),
+    * destination raw counts alone, which bound what baseline poisoning can hide.
+
+    ``proteus_cert`` keeps time scales of 10 minutes and more (slack 2Δ/τ <= 0.4)."""
+    pair = raw_of([k for k in specs if k.startswith("spair__")])
+    if not pair:
+        return {}
+
+    def calmax(parts, keep=lambda c: True):
+        parts = [[c for c in cols if keep(c)] for cols in parts]
+        parts = [cols for cols in parts if cols]
+        cols = list(dict.fromkeys(c for cs in parts for c in cs))
+        return cols, CalibratedMax(cols, [(cs, hgb(cst(cs))) for cs in parts])
+
+    parts = [rules, src_rules, pair, raw]
+    return {
+        "core_pair": (pair, hgb(cst(pair))),
+        "proteus": calmax(parts),
+        "proteus_cert": calmax(parts, keep=lambda c: _tau(c) >= 600),
     }
 
 
@@ -457,7 +531,16 @@ def main() -> None:
             chosen = {k: v for k, v in chosen.items() if k in args.models}
         for name, (cols, model) in chosen.items():
             X = tr[cols].to_numpy(np.float32)
-            if isinstance(model, UNSUPERVISED):
+            if isinstance(model, CalibratedMax):
+                # Sub-cores on the labelled training network; the benign CDFs are
+                # refitted per test day on local traffic (pass 2).
+                MaxCore.fit(model, X[fit], y[fit])
+                model.fit(X[fit & tr["clean"].to_numpy()])
+                checks[name] = monotonicity_violations(
+                    lambda Z, m=model: m.predict_proba(Z)[:, 1], X[fit],
+                    np.asarray(model.monotonic_cst), rng)
+                print(f"  monotonicity {name}: {checks[name]}", flush=True)
+            elif isinstance(model, UNSUPERVISED):
                 model.fit(X[fit & tr["clean"].to_numpy()])
             else:
                 model.fit(X[fit], y[fit])

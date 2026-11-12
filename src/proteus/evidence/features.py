@@ -24,6 +24,21 @@ unanswered flow into an answered one (the attacker does not control the victim's
 responses), so both are conserved. An attacker can lower them only by choosing
 destinations it already knows to be alive, which defeats the purpose of a scan.
 For unidirectional records (UGR'16) every flow counts as unanswered.
+
+Evidence version ``v3`` (``PROTEUS_EVIDENCE=v3``) extends v2 in two directions:
+
+* **Long time scales** (1 h and 6 h, ``LONG_TAUS``) for the counters that slow
+  attacks cannot avoid accumulating: flows, forward bytes, resets, connection-seconds,
+  unanswered flows and distinct counts. A slow attack sustained for hours piles up
+  evidence there, the certification slack 2Δ/τ becomes small (0.07 at 1 h for
+  Δ = 120 s), and poisoning traffic sustained over days is itself visible.
+  Counters reset with each capture file, so on 8-hour captures τ = 6 h is close to the
+  count since the start of the capture.
+* **Source-service pair** entity ``spair`` (source host, destination host, port,
+  protocol): a brute force is one source insisting on one service, which is diluted
+  in the service's total traffic and baseline. Pair counters are raw (no baseline):
+  almost every pair is new, so they cannot be poisoned, and they are conserved like
+  the per-entity ones.
 """
 
 from __future__ import annotations
@@ -37,6 +52,11 @@ import pandas as pd
 from .counters import decayed_distinct, decayed_sum
 
 DEFAULT_TAUS = (10.0, 60.0, 600.0)
+LONG_TAUS = (3600.0, 21600.0)
+# Weights without long time scales (volume proxies already covered by other counters).
+SHORT_ONLY = {"fpkts", "bpkts", "bbytes"}
+# Pair counters: attempts, resets, unanswered attempts and connection time.
+PAIR_WEIGHTS = {"flows", "fbytes", "rst", "conn_s", "noreply"}
 EVIDENCE_VERSION = os.environ.get("PROTEUS_EVIDENCE", "v1")
 
 
@@ -57,10 +77,16 @@ def _codes(*cols: pd.Series) -> np.ndarray:
     )
 
 
-def build(df: pd.DataFrame, taus=DEFAULT_TAUS, version: str | None = None
+def taus_for(version: str | None = None) -> tuple[float, ...]:
+    version = version or EVIDENCE_VERSION
+    return DEFAULT_TAUS + LONG_TAUS if version == "v3" else DEFAULT_TAUS
+
+
+def build(df: pd.DataFrame, taus=None, version: str | None = None
           ) -> tuple[pd.DataFrame, list[FeatureSpec]]:
     """Compute evidence features for every flow of one capture (one day)."""
     version = version or EVIDENCE_VERSION
+    taus = tuple(taus) if taus is not None else taus_for(version)
     t = (df["t_end"] - df["t_end"].min()).dt.total_seconds().to_numpy(np.float64)
     ent = {
         "dsvc": _codes(df["dst_ip"], df["dst_port"], df["proto"]),
@@ -91,7 +117,7 @@ def build(df: pd.DataFrame, taus=DEFAULT_TAUS, version: str | None = None
         "shost": ["dhost", "dsvc"],
     }
     item_w: dict[str, np.ndarray] = {}
-    if version == "v2":
+    if version in ("v2", "v3"):
         noreply = df["bwd_pkts"].to_numpy() == 0
         weights["noreply"] = (noreply.astype(np.float64), "conserved")
         # Answered flows only read the state: zero weight and an item no event uses.
@@ -100,18 +126,26 @@ def build(df: pd.DataFrame, taus=DEFAULT_TAUS, version: str | None = None
         distinct["shost"] = distinct["shost"] + ["dhost_nr"]
     elif version != "v1":
         raise ValueError(f"unknown evidence version {version!r}")
+    if version == "v3":
+        ent["spair"] = _codes(df["src_ip"], df["dst_ip"], df["dst_port"], df["proto"])
+        distinct["spair"] = []
 
     cols: dict[str, np.ndarray] = {}
     specs: list[FeatureSpec] = []
 
     def add(prefix: str, values: np.ndarray, conservation: str) -> None:
+        short = prefix.split("__")[1] in SHORT_ONLY
         for j, tau in enumerate(taus):
+            if short and tau > max(DEFAULT_TAUS):
+                continue
             name = f"{prefix}__t{int(tau)}"
             cols[name] = np.log1p(values[:, j]).astype(np.float32)
             specs.append(FeatureSpec(name, conservation))
 
     for e, codes in ent.items():
         for w_name, (w, cons) in weights.items():
+            if e == "spair" and w_name not in PAIR_WEIGHTS:
+                continue
             add(f"{e}__{w_name}", decayed_sum(t, codes, w, taus), cons)
         for it in distinct[e]:
             add(f"{e}__n_{it}", decayed_distinct(t, codes, item[it], taus, item_w.get(it)),
