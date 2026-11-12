@@ -5,7 +5,7 @@ from proteus.evaluation.tables import bootstrap_mean, wilson
 
 def test_wilson_interval_contains_proportion_and_is_bounded():
     lo, hi = wilson(6, 6)
-    assert 0.5 < lo < 1.0 and hi == 1.0
+    assert 0.5 < lo < 1.0 and np.isclose(hi, 1.0)
     lo, hi = wilson(0, 3)
     assert lo == 0.0 and 0.4 < hi < 0.8
     lo, hi = wilson(50, 100)
