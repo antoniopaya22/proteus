@@ -13,7 +13,6 @@ packets/h), the certified frontier and the rate the real campaign used.
 from __future__ import annotations
 
 import argparse
-import pickle
 from pathlib import Path
 
 import numpy as np
@@ -114,13 +113,7 @@ def main() -> None:
     ap.add_argument("--seed", type=int, default=0)
     args = ap.parse_args()
     rng = np.random.default_rng(args.seed)
-    import __main__
-    from proteus.baselines.rate_rules import RateRules
-
-    # Pickles written before RateRules moved to its own module reference __main__.
-    __main__.RateRules = RateRules
-    with open(args.run / "models.pkl", "rb") as fh:
-        cols, model = pickle.load(fh)[args.model]
+    cols, model = h1.load_models(args.run)[args.model]
     _, specs = h1.evidence_b(args.test, h1.days(args.test)[0], columns=["clean"])
 
     baselines = Baselines(args.test)
@@ -131,6 +124,10 @@ def main() -> None:
         if not present:
             continue
         base = baselines.for_day(day)
+        if getattr(model, "local", False):  # calibrated maximum: fit on local benign
+            from proteus.evaluation.poisoning import local_benign
+
+            model.fit(local_benign(args.test, day, cols, rng))
         thr = local_threshold(args.test, day, model, cols, args.fpr, rng)
         for attack, sc, A in scenarios(flows, present):
             template = sc.template
@@ -152,7 +149,7 @@ def main() -> None:
             rows.append(row)
             print(row, flush=True)
     out = pd.DataFrame(rows)
-    path = args.run / f"frontier_{args.model}_{args.fpr:g}.csv"
+    path = args.run / f"frontier_{args.model}_{args.fpr:g}_attr.csv"
     out.to_csv(path, index=False)
     print(out.to_string())
 
