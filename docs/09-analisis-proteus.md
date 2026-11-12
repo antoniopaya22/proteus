@@ -38,12 +38,12 @@ queda como motivación.
 
 | # | Mejora | Huecos | Estado |
 |---|---|---|---|
-| A | **Escalas largas** (1 h, 6 h): la frontera de lo lento baja con τ, la holgura 2Δ/τ cae a 0,07–0,01 y el envenenamiento sostenido se vuelve visible | 2, 4, 1 | evidencia v3, en cola |
-| B | **Entidad par origen→servicio**, contadores brutos: la fuerza bruta no se diluye en el servicio y no hay línea base que envenenar | 2, 4 | evidencia v3, en cola |
-| C | **Línea base por población** (cuantil de servicios del mismo puerto) + tope + historia larga (UGR'16) | 4 | pendiente de ver B |
-| D | **Máximo calibrado como arquitectura**: subnúcleos destino, origen, par y bruto, cada uno calibrado en local (`proteus`, `proteus_cert`). Las reglas de tasa pasan a ser el caso más simple de la familia | 1, 4 | implementado (v3) |
-| E | **Reutilización como holgura acotada**: los paquetes hacia delante bajan como mucho un factor c por petición, así que se certifican con holgura log c, igual que el tiempo; los flujos no | 3 | por hacer |
-| F | **Evaluación**: tabla de daño bajo atacante adaptativo (Proteus frente a núcleo libre, reglas de tasa y KitNET), validación de la conservación sobre pcaps, UGR'16, semillas con IC, ablaciones, coste | todos | `adaptive.py` en prueba |
+| A | **Escalas largas** (1 h, 6 h): la frontera de lo lento baja con τ, la holgura 2Δ/τ cae a 0,07–0,01 y el envenenamiento sostenido se vuelve visible | 2, 4, 1 | hecho (v3, e858aab); runs 18→17, 17→18 y CTU en curso |
+| B | **Entidad par origen→servicio**, contadores brutos: la fuerza bruta no se diluye en el servicio y no hay línea base que envenenar | 2, 4 | hecho (v3) |
+| C | **Línea base por población** (cuantil 0,99 de los pares del mismo puerto) + tope + historia larga (UGR'16) | 4 | implementado como opción (`PROTEUS_PEER=1`, 7d469c1); sin ejecutar: duplica la caché de 2018 (~45 GB) |
+| D | **Máximo calibrado como arquitectura**: subnúcleos destino, origen, par y bruto, cada uno calibrado en local (`proteus`, `proteus_cert`). Las reglas de tasa pasan a ser el caso más simple de la familia | 1, 4 | hecho (v3) |
+| E | **Reutilización como segundo peor caso**: contadores por conexión al mínimo y paquetes hacia delante con holgura log 5 (`@certr`) | 3 | hecho (b1bbb45) |
+| F | **Evaluación**: tabla de daño bajo atacante adaptativo (Proteus frente a núcleo libre, reglas de tasa y KitNET), validación sobre pcaps, UGR'16, intervalos de confianza, ablaciones, coste | todos | pcaps: hecho (0 violaciones, §6.14); IC: `tables summary`; adaptativo y coste: en cola con la v3; UGR y ablaciones: pendiente |
 
 ## 9.4 Orden
 
@@ -52,3 +52,17 @@ queda como motivación.
 3. C + tope sobre UGR'16 cuando termine de convertirse.
 4. E y la validación con pcaps.
 5. Semillas, ablaciones y coste.
+
+## 9.5 Hallazgos de método por el camino
+
+- **Los segundos de conexión no se conservan** (comprobación por paquetes): salen del
+  núcleo (§6.14).
+- **Fronteras de DoS falsamente cercanas a 0** por falsos positivos del fondo de la
+  víctima: ahora solo cuentan las alertas atribuibles al ataque (§6.15).
+- **El crecimiento benigno de las líneas base es grande** incluso con 9 días de
+  historia (2018: el 3–20 % de los pares crece más de 0,1 al día). Un tope uniforme
+  sale caro, por eso C usa la población (§6.13).
+- **Con 1–6 campañas por tipo, las diferencias de detección no son significativas**
+  (Wilson: 11/11 frente a 9/11 se solapan). Lo que separa a los detectores son las
+  alarmas (1,9/h [0,3; 4,3] frente a 11,1/h [9,6; 12,6]), la garantía y el daño
+  adaptativo. El paper debe apoyarse en eso.
