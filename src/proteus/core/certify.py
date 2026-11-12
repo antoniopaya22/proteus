@@ -43,3 +43,38 @@ def slack(names: list[str], conservation: dict[str, str], delta_s: float) -> np.
 def worst_case_features(X: np.ndarray, cst: np.ndarray, s: np.ndarray) -> np.ndarray:
     """Move every constrained feature by its slack against the evidence direction."""
     return X - np.where(cst > 0, s, 0.0)[None, :] + np.where(cst < 0, s, 0.0)[None, :]
+
+
+# Connection reuse (many requests in one connection, e.g. HTTP keep-alive) is free for
+# many attacks. Per-connection counters can then drop to almost nothing; forward
+# packets drop at most by the packets a connection costs beyond its requests
+# (handshake and teardown); payload bytes and distinct counts do not change.
+PER_CONNECTION = {"flows", "rst", "noreply", "conn_s"}
+PACKET_FACTOR = 5.0  # SYN, ACK, FIN, final ACK saved per request, plus the request
+
+
+def reuse_worst_case(X: np.ndarray, names: list[str], cst: np.ndarray, s: np.ndarray,
+                     packet_factor: float = PACKET_FACTOR, floor: float = -50.0) -> np.ndarray:
+    """Worst case over free operations *and* connection reuse, for a monotone model.
+
+    Starts from the timing worst case (``worst_case_features``); then every increasing
+    per-connection counter goes to its minimum (raw log1p count 0; excess -baseline,
+    recovered as raw - excess when the raw column is present, else ``floor``), and
+    forward packet counters drop by log(``packet_factor``)."""
+    W = worst_case_features(X, cst, s)
+    pos = {n: j for j, n in enumerate(names)}
+    for j, n in enumerate(names):
+        if cst[j] <= 0:
+            continue
+        parts = n.split("__")
+        counter = parts[1] if len(parts) > 1 else ""
+        excess = n.endswith("__x")
+        if counter in PER_CONNECTION:
+            if not excess:
+                W[:, j] = 0.0
+            else:
+                raw = pos.get(n[: -len("__x")])
+                W[:, j] = (X[:, j] - X[:, raw]) if raw is not None else floor
+        elif counter == "fpkts":
+            W[:, j] = W[:, j] - np.log(packet_factor)
+    return W

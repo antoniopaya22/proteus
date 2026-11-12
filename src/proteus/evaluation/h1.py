@@ -22,7 +22,7 @@ from sklearn.ensemble import HistGradientBoostingClassifier
 
 from proteus.baselines.kitnet import KitNET
 from proteus.baselines.rate_rules import RateRules
-from proteus.core.certify import slack, worst_case_features
+from proteus.core.certify import reuse_worst_case, slack, worst_case_features
 from proteus.core.combine import CalibratedMax, MaxCore
 from proteus.core.verify import monotonicity_violations
 from proteus.evidence import baseline as bl
@@ -433,7 +433,7 @@ def evaluate(test: pd.DataFrame, scores: dict[str, np.ndarray], thresholds: dict
                                   observed=True).ngroups
         # Entity alarms: the alerted entity (source or destination host, by the
         # sub-core that fires) per ENTITY_BUCKET window.
-        side = (sides or {}).get(model.removesuffix("@cert"))
+        side = (sides or {}).get(model.removesuffix("@certr").removesuffix("@cert"))
         is_src = (side[clean & alert] if side is not None
                   else np.zeros(len(fa), dtype=bool))
         ent = np.where(is_src, fa["src_ip"].astype(str), fa["dst_ip"].astype(str))
@@ -590,10 +590,13 @@ def main() -> None:
         for n, (c, m) in models.items():
             if n not in local and getattr(m, "monotonic_cst", None) is not None:
                 cst = np.asarray(m.monotonic_cst)
-                X = worst_case_features(ev[c].to_numpy(np.float32), cst,
-                                        slack(c, specs, EXPORT_TIMEOUT_S).astype(np.float32))
-                scores[f"{n}@cert"] = score(m, X).astype(np.float32)
-                del X
+                X0 = ev[c].to_numpy(np.float32)
+                sl = slack(c, specs, EXPORT_TIMEOUT_S).astype(np.float32)
+                scores[f"{n}@cert"] = score(m, worst_case_features(X0, cst, sl)).astype(np.float32)
+                if "cert" in n:  # also against connection reuse
+                    scores[f"{n}@certr"] = score(m, reuse_worst_case(X0, c, cst, sl)
+                                                 ).astype(np.float32)
+                del X0
         day_scores[day] = scores
         if args.entity_budgets:
             clean = ev["clean"].to_numpy()
@@ -602,7 +605,7 @@ def main() -> None:
             hours_of[day] = (ev["t_end"].max() - ev["t_start"].min()).total_seconds() / 3600
             top_of[day] = {}
             for n, s_ in scores.items():
-                if n.endswith("@cert"):
+                if n.endswith(("@cert", "@certr")):
                     continue
                 sc = s_[clean]
                 cut = np.quantile(sc, 0.99) if len(sc) else np.inf
@@ -634,12 +637,15 @@ def main() -> None:
                 np.concatenate([benign_feats[d][n] for d in others]))
             scores[n] = m.score(ev[c].to_numpy(np.float32))
             if getattr(m, "monotonic_cst", None) is not None:
-                X = worst_case_features(ev[c].to_numpy(np.float32), np.asarray(m.monotonic_cst),
-                                        slack(c, specs, EXPORT_TIMEOUT_S).astype(np.float32))
-                scores[f"{n}@cert"] = m.score(X)
+                X0 = ev[c].to_numpy(np.float32)
+                cst = np.asarray(m.monotonic_cst)
+                sl = slack(c, specs, EXPORT_TIMEOUT_S).astype(np.float32)
+                scores[f"{n}@cert"] = m.score(worst_case_features(X0, cst, sl))
+                if "cert" in n:
+                    scores[f"{n}@certr"] = m.score(reuse_worst_case(X0, c, cst, sl))
             refs[n] = np.concatenate([m.score(benign_feats[d][n]) for d in others])
         th = {k: v for k, v in thresholds.items() if k[0] not in local}
-        for n in [k for k in scores if not k.endswith("@cert")]:
+        for n in [k for k in scores if not k.endswith(("@cert", "@certr"))]:
             if n in refs:
                 ref = refs[n]
             else:
@@ -652,8 +658,9 @@ def main() -> None:
                     [top_of[d][n] for d in others], sum(hours_of[d] for d in others), budget)
         # A certified alert uses the same threshold as the model it certifies.
         for (n, fpr, kind), v in list(th.items()):
-            if f"{n}@cert" in scores:
-                th[(f"{n}@cert", fpr, kind)] = v
+            for suffix in ("@cert", "@certr"):
+                if f"{n}{suffix}" in scores:
+                    th[(f"{n}{suffix}", fpr, kind)] = v
         results.append(evaluate(ev, scores, th, day_sides.pop(day, None)))
         print(f"  evaluated {args.test}/{day.stem} at {time.time() - t0:.0f}s", flush=True)
         del ev
