@@ -27,8 +27,13 @@ import numpy as np
 _TAU = re.compile(r"__t(\d+)")
 
 
-def slack(names: list[str], conservation: dict[str, str], delta_s: float) -> np.ndarray:
-    """Per-feature slack 2Δ/τ in the direction of less evidence (0 for baselines)."""
+def slack(names: list[str], conservation: dict[str, str], delta_s: float,
+          timer_s: float = 0.0) -> np.ndarray:
+    """Per-feature slack 2Δ/τ in the direction of less evidence (0 for baselines).
+
+    A detector that scores an entity only when one of its records arrives must also
+    re-score active entities every ``timer_s`` seconds; the alert of a variant then
+    comes by t + Δ + δ and the slack becomes (2Δ + δ)/τ."""
     out = np.zeros(len(names))
     for j, n in enumerate(names):
         if conservation[n] == "baseline":
@@ -36,7 +41,7 @@ def slack(names: list[str], conservation: dict[str, str], delta_s: float) -> np.
         m = _TAU.search(n)
         if m is None:
             raise ValueError(f"feature {n!r} has no time constant")
-        out[j] = 2.0 * delta_s / float(m.group(1))
+        out[j] = (2.0 * delta_s + timer_s) / float(m.group(1))
     return out
 
 

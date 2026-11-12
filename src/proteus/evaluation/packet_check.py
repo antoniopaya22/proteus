@@ -14,7 +14,8 @@ Here X is a window of a real capture, X' are packet-level variants (padding, ext
 packets, source-port hopping that splits flows, SYN decoys, and combinations), both
 are exported with ``proteus.packets.exporter`` and turned into evidence with
 ``proteus.evidence.features.build``. For the victim's destination-service and
-destination-host counters the inequality is checked at every flow end of X. The
+destination-host counters, and the attackers' source-host and source-service-pair
+counters, the inequality is checked at every flow end of X. The
 script reports violations (expected: none) and the tightest ratio E'(t+Δ)/E(t).
 """
 
@@ -44,19 +45,28 @@ def counter_at(feats: pd.DataFrame, t_end: np.ndarray, rows: np.ndarray, col: st
 
 
 def check(base: pd.DataFrame, var: pd.DataFrame, victim: str, port: int, delta: float,
-          taus) -> pd.DataFrame:
+          taus, attackers=()) -> pd.DataFrame:
+    """Check the bound for the victim's service and host counters and, for every
+    attacker, its source-host and source-service-pair counters."""
     fb, specs = build(base, taus)
     fv, _ = build(var, taus)
     tb = base["t_end"].astype("int64").to_numpy() / 1e6
     tv = var["t_end"].astype("int64").to_numpy() / 1e6
+    to_victim = lambda d: (d["dst_ip"].astype(str) == victim).to_numpy()
     ents = {
-        "dsvc": lambda d: ((d["dst_ip"].astype(str) == victim) & (d["dst_port"] == port)
-                           ).to_numpy(),
-        "dhost": lambda d: (d["dst_ip"].astype(str) == victim).to_numpy(),
+        ("dsvc", victim): lambda d: to_victim(d) & (d["dst_port"] == port).to_numpy(),
+        ("dhost", victim): to_victim,
     }
+    for a in attackers:
+        src = lambda d, a=a: (d["src_ip"].astype(str) == a).to_numpy()
+        ents[("shost", a)] = src
+        ents[("spair", a)] = lambda d, src=src: (src(d) & to_victim(d)
+                                                 & (d["dst_port"] == port).to_numpy())
     rows = []
-    for ent, sel in ents.items():
+    for (ent, who), sel in ents.items():
         rb, rv = np.flatnonzero(sel(base)), np.flatnonzero(sel(var))
+        if len(rb) == 0:
+            continue
         q = tb[rb]
         for s in specs:
             if not s.name.startswith(ent + "__") or s.conservation != "conserved":
@@ -66,7 +76,7 @@ def check(base: pd.DataFrame, var: pd.DataFrame, victim: str, port: int, delta: 
             e2 = counter_at(fv, tv, rv, s.name, tau, q + delta)
             bound = np.exp(-2 * delta / tau) * e
             pos = e > 1e-9
-            rows.append({"counter": s.name, "points": int(pos.sum()),
+            rows.append({"counter": s.name, "entity": who, "points": int(pos.sum()),
                          "violations": int((e2[pos] < bound[pos] * (1 - 1e-6) - 1e-9).sum()),
                          "min_ratio": float((e2[pos] / e[pos]).min()) if pos.any() else np.nan,
                          "bound": float(np.exp(-2 * delta / tau))})
@@ -85,6 +95,7 @@ def main() -> None:
     ap.add_argument("--minutes", type=float, default=20)
     ap.add_argument("--delta", type=float, default=120.0, help="exporter active timeout")
     ap.add_argument("--variants", type=int, default=12)
+    ap.add_argument("--taus", type=float, nargs="+", default=[10, 60, 600, 3600, 21600])
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--out", type=Path, default=Path("experiments/outputs/packet_check"))
     args = ap.parse_args()
@@ -99,7 +110,7 @@ def main() -> None:
     atk = pk["src"].isin(args.attackers).to_numpy()
     base = exporter.export(pk, active_s=args.delta)
     print(f"{len(base):,} flows, {int(atk.sum()):,} attacker packets", flush=True)
-    taus = (10.0, 60.0, 600.0, 3600.0)
+    taus = tuple(args.taus)
     rng = np.random.default_rng(args.seed)
     results = []
     for k in range(args.variants):
@@ -118,7 +129,7 @@ def main() -> None:
             v = ops.decoys(v, args.attackers, [(args.victim, args.port), (args.victim, 22)],
                            p["decoys"], rng)
         var = exporter.export(v, active_s=args.delta)
-        r = check(base, var, args.victim, args.port, args.delta, taus)
+        r = check(base, var, args.victim, args.port, args.delta, taus, args.attackers)
         r["variant"], r["flows"] = k, len(var)
         for key, val in p.items():
             r[key] = val

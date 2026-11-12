@@ -21,3 +21,9 @@ def test_worst_case_moves_against_evidence():
     cst = np.array([1, -1, 0])
     s = np.array([0.5, 0.5, 0.5])
     np.testing.assert_allclose(worst_case_features(X, cst, s), [[0.5, 1.5, 1.0]])
+
+
+def test_slack_with_rescoring_timer():
+    s = slack(["dsvc__flows__t600"], {"dsvc__flows__t600": "conserved"}, delta_s=120,
+              timer_s=10)
+    assert abs(s[0] - 250 / 600) < 1e-12

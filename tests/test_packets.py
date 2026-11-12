@@ -53,8 +53,10 @@ def test_free_operations_respect_the_bound():
                 ops.hop_ports(pk, atk, rng, 2),
                 ops.decoys(pk, ["10.0.0.9"], [("10.0.0.1", 80)], 50, rng)]
     for v in variants:
-        r = check(base, exporter.export(v), "10.0.0.1", 80, 120.0, (10.0, 60.0, 600.0))
+        r = check(base, exporter.export(v), "10.0.0.1", 80, 120.0, (10.0, 60.0, 600.0),
+                  ["10.0.0.9"])
         assert r["violations"].sum() == 0, r[r["violations"] > 0]
+        assert "shost" in {c.split("__")[0] for c in r["counter"]}  # spair: evidence v3
     # Identity: the counter only decays during Δ, ratio exp(-Δ/τ) above the bound.
     same = check(base, base, "10.0.0.1", 80, 120.0, (600.0,)).dropna()
     assert np.allclose(same["min_ratio"], np.exp(-120.0 / 600.0), rtol=1e-3)

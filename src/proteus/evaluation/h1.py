@@ -41,6 +41,8 @@ NOT_MALICIOUS = ("benign", "background")
 def malicious_mask(df: pd.DataFrame) -> np.ndarray:
     return (~df["family"].isin(NOT_MALICIOUS)).to_numpy()
 EXPORT_TIMEOUT_S = 120.0  # CICFlowMeter flow timeout in both datasets (max duration 120 s)
+# Re-scoring period δ of active entities (slack (2Δ+δ)/τ); 0 = state at t + Δ is scored.
+TIMER_S = float(os.environ.get("PROTEUS_TIMER_S", "0"))
 CAMPAIGN_GAP_S = 600.0
 REUSE_SAFE = ("fbytes", "n_src", "n_dport", "n_dhost", "n_dsvc", "n_dhost_nr")
 
@@ -735,7 +737,7 @@ def main() -> None:
                 scores[n] = score(m, flow[c].to_numpy(np.float32)).astype(np.float32)
                 continue
             mono = getattr(m, "monotonic_cst", None) is not None
-            sl = slack(c, specs, EXPORT_TIMEOUT_S).astype(np.float32) if mono else None
+            sl = slack(c, specs, EXPORT_TIMEOUT_S, TIMER_S).astype(np.float32) if mono else None
             cst = np.asarray(m.monotonic_cst) if mono else None
             acc: dict[str, list] = {"s": [], "side": [], "cert": [], "certr": []}
             for X in score_batches(path, c):
@@ -810,7 +812,7 @@ def main() -> None:
                 m.monotonic_cst = [CST[specs[k]] for k in c]
             mono = getattr(m, "monotonic_cst", None) is not None
             cst = np.asarray(m.monotonic_cst) if mono else None
-            sl = slack(c, specs, EXPORT_TIMEOUT_S).astype(np.float32) if mono else None
+            sl = slack(c, specs, EXPORT_TIMEOUT_S, TIMER_S).astype(np.float32) if mono else None
             acc: dict[str, list] = {"s": [], "cert": [], "certr": []}
             for X in score_batches(path, c):
                 acc["s"].append(m.score(X))
