@@ -613,3 +613,37 @@ envenenar tampoco le sirve al atacante.
 mientras corrían 4–5 trabajos a la vez. Se corrigió h1 para puntuar por lotes y
 compartir la muestra benigna entre detectores locales (commits 14fcc3a, ebf2d04), y se
 relanzaron.
+
+## 6.17 Certificado por presupuesto frente a operaciones libres (2026-11-12)
+
+`python -m proteus.evaluation.smoothing` (`baselines/smoothing.py`). Reimplementación
+del mecanismo de BARS (no su código: la VM no tiene PyTorch ni GPU): suavizado
+aleatorio del núcleo sin restricciones con ruido gaussiano por característica
+(σ_j = escala × desviación típica benigna), 200 muestras, cota de Clopper-Pearson
+(α = 0,001) y radio certificado en la métrica L2 escalada por σ. Sobre las campañas
+reales de 2018 → 2017 (300 flujos de ataque por campaña, 6 variantes aleatorias de
+operaciones libres), se mide cuánto mueve cada variante cada flujo en esa métrica y si
+el desplazamiento cabe en el radio.
+
+| Ataque | Radio (mediana, σ = 0,25) | Desplazamiento (mediana) | Cubierto | Base sigue alertando | Proteus-cert |
+|---|---|---|---|---|---|
+| Hulk | 1,83 | 116 | 0 % | 100 % | 100 % |
+| GoldenEye | 1,83 | 104 | 0 % | 99 % | 76 % |
+| Slowloris | 0,84 | 16 | 0 % | 99 % | 52 % |
+| Slowhttptest | 1,52 | 9,6 | 4 % | 97 % | 98 % |
+| Escaneo (jueves) | 0,25 | 64 | 0 % | 93 % | 77 % |
+| LOIC-HTTP | 1,60 | 251 | 0 % | 100 % | 86 % |
+
+Lectura:
+
+- **El certificado por presupuesto no cubre las operaciones libres:** los desplaza-
+  mientos son de 5 a 626 unidades de ruido según la escala, y el radio no supera 1,83.
+  Certificar un radio r exige p ≥ Φ(r): r = 5 pide p ≈ 1 − 3·10⁻⁷, del orden de 10⁷
+  muestras de ruido por flujo.
+- El modelo base sigue alertando en el 93–100 % de las variantes (las operaciones
+  libres suben la evidencia), pero el suavizado no puede demostrarlo; Proteus lo
+  demuestra por construcción en el 52–100 % de los flujos de los DoS y DDoS.
+- Más ruido no ayuda: no cubre más y pierde detección (Slowloris 0,95 → 0,72; escaneo
+  del jueves 0,49 → 0,32 con σ de 0,1 a 0,5).
+- Fuerza bruta y escaneo del viernes: ni el base ni Proteus-cert alertan, no hay nada
+  que certificar.
