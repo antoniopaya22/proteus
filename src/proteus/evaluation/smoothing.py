@@ -88,6 +88,7 @@ def main() -> None:
             for k in range(args.variants):
                 v, _ = variant(df, np.random.default_rng(100 + k), victim, port, retime=bool(k % 2))
                 pos = pd.Series(np.arange(len(v)), index=v["orig_id"].to_numpy())
+                pos = pos[(pos.index >= 0) & ~pos.index.duplicated()]  # split flows: first piece
                 rows_v = pos.reindex(pick).to_numpy()
                 ok = ~np.isnan(rows_v)
                 Xv = np.full_like(X0, np.nan)
