@@ -792,3 +792,20 @@ Lectura:
   los intervalos de alarmas no se solapan solo vale en 18 → 17. Corregido en el paper.
 - Banco (detección y alarmas): `proteus` 0,41 (Pareto), cert 0,28, reglas 0,23, libre
   0,18, por flujo 0,13.
+
+## 6.25 Envenenamiento de `proteus` (todas las escalas), 18 → 17 (2026-11-12)
+
+Frontera simple (flujos/h) tras 8 días de envenenamiento sin tope; entre paréntesis,
+el techo con línea base infinita.
+
+| Ataque | Real | Día 0 | Día 8 | Techo |
+|---|---|---|---|---|
+| SSH | 1.541 | 969 | 969 | 969 |
+| FTP | 3.910 | 432 | 432 | 432 |
+| DoS (Hulk, GoldenEye, Slowloris, Slowhttptest) | — | 629–1.497 | igual | igual |
+| DDoS LOIC-HTTP | 290.167 | 2.174 | 2.174 | 2.174 |
+| Escaneo (vie.) | 107.850 | 352 | 352 | 352 |
+| Escaneo (jue.) | 10.418 | 11 | 956 | 1.978 |
+
+Solo se mueve el escaneo del jueves (víctima casi sin tráfico); con tope 0,1 llega a
+24. El SSH sigue alertando a su ritmo real aunque la línea base esté envenenada.
