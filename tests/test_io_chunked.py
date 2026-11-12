@@ -31,3 +31,17 @@ def test_read_rows_across_batches(tmp_path):
     got = h1.read_rows(tmp_path / "y.parquet", idx, ["a", "f"], batch=600)
     np.testing.assert_array_equal(got["a"], idx)
     assert list(got.columns) == ["a", "f"]
+
+
+def test_parts_with_disjoint_columns_are_stitched(tmp_path):
+    n = 2_500
+    main = pd.DataFrame({"a": np.arange(n, dtype=np.float32), "b": np.ones(n, np.float32)})
+    side = pd.DataFrame({"x": -np.arange(n, dtype=np.float32)})
+    main.to_parquet(tmp_path / "m.parquet", index=False)
+    side.to_parquet(tmp_path / "s.parquet", index=False)
+    parts = [tmp_path / "m.parquet", tmp_path / "s.parquet"]
+    X = np.concatenate(list(h1.score_batches(parts, ["x", "a"], batch=1_000)))
+    np.testing.assert_array_equal(X[:, 0], -X[:, 1])
+    rows = h1.read_rows(parts, np.array([3, 1_999, 2_400]), ["a", "x"], batch=700)
+    assert list(rows.columns) == ["a", "x"]
+    np.testing.assert_array_equal(rows["x"], [-3, -1_999, -2_400])

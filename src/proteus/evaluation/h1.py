@@ -101,8 +101,28 @@ PEER = os.environ.get("PROTEUS_PEER", "0") == "1"
 
 def _bdir(ds: str) -> Path:
     peer = "_peer" if PEER else ""
-    pb = "_pb" if bl.PAIRBASE else ""
-    return DATA / ds / f"evidence_b_{BASELINE['mode']}_{BASELINE['mask']}{_vsuffix(ds)}{peer}{pb}"
+    return DATA / ds / f"evidence_b_{BASELINE['mode']}_{BASELINE['mask']}{_vsuffix(ds)}{peer}"
+
+
+def _pbdir(ds: str) -> Path:
+    """Side cache with only the pair-baseline columns (PROTEUS_PAIRBASE=1), so the
+    large main cache is not duplicated."""
+    return _bdir(ds).with_name(_bdir(ds).name + "_pairbase")
+
+
+def cache_parts(ds: str, day: Path) -> list[Path]:
+    """Parquet files holding a day's evidence and baselines (disjoint columns, same
+    rows): the main cache and, with PROTEUS_PAIRBASE=1, the pair-baseline side cache."""
+    parts = [_bdir(ds) / day.name]
+    if bl.PAIRBASE:
+        parts.append(_pbdir(ds) / day.name)
+    return parts
+
+
+def _schema(path: Path) -> list[str]:
+    import pyarrow.parquet as pq
+
+    return pq.read_schema(path).names
 
 
 def evidence_b(ds: str, day: Path, columns: list[str] | None = None
@@ -112,7 +132,20 @@ def evidence_b(ds: str, day: Path, columns: list[str] | None = None
     cache, spec_file = _bdir(ds) / day.name, _bdir(ds) / "specs.json"
     if not (cache.exists() and spec_file.exists()):
         prepare_baselines(ds)
-    return pd.read_parquet(cache, columns=columns), json.loads(spec_file.read_text())
+    specs = json.loads(spec_file.read_text())
+    if not bl.PAIRBASE:
+        return pd.read_parquet(cache, columns=columns), specs
+    if not (_pbdir(ds) / "specs.json").exists():
+        prepare_pair_baselines(ds)
+    specs.update(json.loads((_pbdir(ds) / "specs.json").read_text()))
+    frames = []
+    for part in cache_parts(ds, day):
+        names = _schema(part)
+        cols = names if columns is None else [c for c in columns if c in names]
+        if cols:
+            frames.append(pd.read_parquet(part, columns=cols))
+    out = pd.concat(frames, axis=1)
+    return (out if columns is None else out[columns]), specs
 
 
 def _write_chunked(path: Path, ev: pd.DataFrame, extra: dict[str, np.ndarray],
@@ -137,7 +170,15 @@ def _write_chunked(path: Path, ev: pd.DataFrame, extra: dict[str, np.ndarray],
 
 
 def prepare_baselines(ds: str) -> None:
-    out_dir = _bdir(ds)
+    _prepare(ds, _bdir(ds), lambda e: e != "pairsvc", side=False)
+
+
+def prepare_pair_baselines(ds: str) -> None:
+    """Side cache with only the pair-baseline columns (see ``bl.PAIRBASE``)."""
+    _prepare(ds, _pbdir(ds), lambda e: e == "pairsvc", side=True)
+
+
+def _prepare(ds: str, out_dir: Path, use, side: bool) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     all_days = days(ds)
     codes = {e: bl.KeyCodes() for e in bl.COUNTERS}
@@ -147,7 +188,7 @@ def prepare_baselines(ds: str) -> None:
     # Pass A: per-minute tables of every day (masked minutes removed).
     for day in all_days:
         ev, specs = evidence(ds, day)
-        cols = bl.baseline_columns(list(specs))
+        cols = {e: c for e, c in bl.baseline_columns(list(specs)).items() if use(e)}
         keys = bl.entity_keys(ev)
         malicious = (malicious_mask(ev)
                      if BASELINE["mask"] == "labels" else None)
@@ -159,7 +200,7 @@ def prepare_baselines(ds: str) -> None:
         print(f"  minute tables {ds}/{day.stem}", flush=True)
         del ev
     # Pass B: baseline for each day from its reference days.
-    spec_map: dict[str, str] = dict(specs)
+    spec_map: dict[str, str] = {} if side else dict(specs)
     for i, day in enumerate(all_days):
         ref = all_days[:i] if BASELINE["mode"] == "prior" else all_days[:i] + all_days[i + 1:]
         ev, _ = evidence(ds, day)
@@ -177,7 +218,10 @@ def prepare_baselines(ds: str) -> None:
                     pop = bl.population_for(ent, named, keys[ent])
                     extra.update({f"{x}__xp": (ev[x].to_numpy(np.float64) - pop[x].to_numpy()
                                                ).astype(np.float32) for x in c})
-        _write_chunked(out_dir / day.name, ev, extra)
+        if side:  # only the new columns, same rows as the main cache
+            pd.DataFrame(extra).to_parquet(out_dir / day.name, index=False)
+        else:
+            _write_chunked(out_dir / day.name, ev, extra)
         spec_map.update({k: ("baseline" if k.endswith("__b") else "conserved") for k in extra})
         print(f"  baselines {ds}/{day.stem}: {len(ref)} reference days", flush=True)
         del ev, extra
@@ -196,27 +240,47 @@ def flow_features(day: Path) -> pd.DataFrame:
     return pd.read_parquet(day, columns=flow_feature_columns(day)).astype("float32")
 
 
-def score_batches(path: Path, cols: list[str], batch: int = 1_000_000):
-    """Feature matrices of ``cols`` for consecutive row batches of a parquet file."""
+def _as_parts(path) -> list[Path]:
+    return list(path) if isinstance(path, (list, tuple)) else [path]
+
+
+def score_batches(path, cols: list[str], batch: int = 1_000_000):
+    """Feature matrices of ``cols`` for consecutive row batches of a parquet file, or of
+    several files with disjoint columns and the same rows (``cache_parts``)."""
     import pyarrow.parquet as pq
 
-    for b in pq.ParquetFile(path).iter_batches(batch_size=batch, columns=cols):
-        yield b.to_pandas()[cols].to_numpy(np.float32)
+    parts = []
+    for p in _as_parts(path):
+        have = [c for c in cols if c in _schema(p)]
+        if have:
+            parts.append(pq.ParquetFile(p).iter_batches(batch_size=batch, columns=have))
+    for bs in zip(*parts):
+        df = pd.concat([b.to_pandas() for b in bs], axis=1)
+        yield df[cols].to_numpy(np.float32)
 
 
-def read_rows(path: Path, idx: np.ndarray, columns: list[str] | None = None,
+def read_rows(path, idx: np.ndarray, columns: list[str] | None = None,
               batch: int = 500_000) -> pd.DataFrame:
-    """Rows ``idx`` (sorted positions) of a parquet file, reading it in batches so a
-    large day never sits in memory in full."""
+    """Rows ``idx`` (sorted positions) of a parquet file (or of several with disjoint
+    columns, ``cache_parts``), reading it in batches so a large day never sits in
+    memory in full."""
     import pyarrow.parquet as pq
 
-    out, start = [], 0
-    for b in pq.ParquetFile(path).iter_batches(batch_size=batch, columns=columns):
-        lo, hi = np.searchsorted(idx, [start, start + b.num_rows])
-        if hi > lo:
-            out.append(b.take(idx[lo:hi] - start).to_pandas())
-        start += b.num_rows
-    return pd.concat(out, ignore_index=True)
+    frames = []
+    for p in _as_parts(path):
+        names = _schema(p)
+        cols = names if columns is None else [c for c in columns if c in names]
+        if not cols:
+            continue
+        out, start = [], 0
+        for b in pq.ParquetFile(p).iter_batches(batch_size=batch, columns=cols):
+            lo, hi = np.searchsorted(idx, [start, start + b.num_rows])
+            if hi > lo:
+                out.append(b.take(idx[lo:hi] - start).to_pandas())
+            start += b.num_rows
+        frames.append(pd.concat(out, ignore_index=True))
+    df = pd.concat(frames, axis=1)
+    return df if columns is None else df[columns]
 
 
 SUSPECT_MIN_DSTS = 100
@@ -299,7 +363,7 @@ def training_set(ds: str, rng: np.random.Generator, cap_attack=50_000, cap_benig
             idx.append(rng.choice(clean, min(len(clean), cap_benign), replace=False))
         idx = np.sort(np.concatenate(idx))
         del ev
-        rows = read_rows(_bdir(ds) / day.name, idx)
+        rows = read_rows(cache_parts(ds, day), idx)
         flow = read_rows(day, idx, flow_feature_columns(day)).astype("float32")
         parts.append(pd.concat([rows, flow.add_prefix("flow__")], axis=1))
         print(f"  train {ds}/{day.stem}: {len(idx):,} rows", flush=True)
@@ -654,7 +718,7 @@ def main() -> None:
     for day in test_days:
         # Only metadata in full; every model is scored on its own columns, in batches
         # of rows (a 2018 day with every model's columns does not fit in memory).
-        path = _bdir(args.test) / day.name
+        path = cache_parts(args.test, day)
         ev, _ = evidence_b(args.test, day, columns=sorted(set(META) | {"clean"}))
         flow = (flow_features(day).add_prefix("flow__")
                 if any(c[0].startswith("flow__") for c, _ in models.values()) else None)
@@ -722,7 +786,7 @@ def main() -> None:
     for day in test_days:
         others = [d for d in test_days if d != day]
         ev, _ = evidence_b(args.test, day, columns=meta_cols)
-        path = _bdir(args.test) / day.name
+        path = cache_parts(args.test, day)
         scores = day_scores.pop(day)
         # Unsupervised detectors fitted on the test network's own benign traffic of the
         # other days; their reference scores are those of the same benign sample.

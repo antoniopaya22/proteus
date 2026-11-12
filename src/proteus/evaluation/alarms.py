@@ -74,7 +74,7 @@ def explain_entities(alerts: pd.DataFrame, top: pd.DataFrame, ds: str, model, co
         g = alerts[(alerts["side"] == r["side"]) & (alerts["entity"] == r["entity"])]
         best = g.loc[g["score"].idxmax()]
         day = next(d for d in h1.days(ds) if d.stem == best["day"])
-        x = h1.read_rows(h1._bdir(ds) / day.name, np.array([int(best["row"])]), cols)
+        x = h1.read_rows(h1.cache_parts(ds, day), np.array([int(best["row"])]), cols)
         why[i] = describe(explain(model, cols, x[cols].to_numpy(np.float32), ref)[0])
     return why
 
