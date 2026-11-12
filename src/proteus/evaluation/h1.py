@@ -555,6 +555,9 @@ def main() -> None:
                     help="restrict testing to these capture days (file stems)")
     ap.add_argument("--balance", choices=["cap", "type", "type_entity", "none"], default="cap",
                     help="class balance of the training set (see BALANCE)")
+    ap.add_argument("--exclude-saturated", type=float, default=None,
+                    help="calibrated maxima drop sub-cores that cannot reach this FPR on "
+                         "local benign traffic (saturated); default keeps all")
     ap.add_argument("--reuse", type=Path, default=None,
                     help="evaluate the fitted models of this run instead of training; "
                          "--models may name combinations a+b (maximum, MaxCore)")
@@ -626,6 +629,10 @@ def main() -> None:
             pickle.dump(models, fh)
         del tr
 
+    if args.exclude_saturated is not None:
+        for _, m in models.values():
+            if isinstance(m, CalibratedMax):
+                m.exclude_fpr = args.exclude_saturated
     # Pass 1: score every test day; keep a sample of clean benign scores per day.
     test_days = [d for d in days(args.test) if not args.test_days or d.stem in args.test_days]
     local = {n: c for n, (c, m) in models.items() if n in LOCAL or getattr(m, "local", False)}

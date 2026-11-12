@@ -121,3 +121,32 @@ def test_ablation_drops_one_subcore():
     _, full = combined({"x": (["a"], parts[0][1]), "y": (["b", "c"], parts[1][1])}, "x|y")
     cols, abl = combined({"m": (["a", "b", "c"], full)}, "m-0")
     assert cols == ["b", "c"] and len(abl.parts) == 1 and type(abl) is type(full)
+
+
+def test_calibrated_max_excludes_saturated_subcores():
+    from proteus.core.combine import CalibratedMax
+
+    class Fixed:
+        monotonic_cst = (1,)
+
+        def __init__(self, f):
+            self.f = f
+
+        def predict_proba(self, X):
+            s = self.f(X[:, 0])
+            return np.stack([1 - s, s], axis=1)
+
+    rng = np.random.default_rng(0)
+    X = rng.normal(size=(5000, 2))
+    good = Fixed(lambda x: 1 / (1 + np.exp(-x)))
+    saturated = Fixed(lambda x: np.where(x > -1, 0.99, 0.1))  # ~84% of benign at its max
+    m = CalibratedMax(["a", "b"], [(["a"], good), (["b"], saturated)])
+    m.fit(X)
+    assert m.active_ == [True, True]
+    m.exclude_fpr = 1e-3
+    m.fit(X)
+    assert m.active_ == [True, False]
+    # Only the good sub-core decides now: monotone in it, blind to the saturated one.
+    Z = X.copy()
+    Z[:, 1] = 5.0
+    assert np.allclose(m.score(Z), m.score(X))

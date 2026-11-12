@@ -47,14 +47,31 @@ class CalibratedMax(MaxCore):
     """
 
     local = True  # fitted per test day on benign traffic of the other days
+    # Optional (set by the caller): exclude sub-cores that cannot reach this FPR on the
+    # local benign traffic, because more than that share of benign flows ties at their
+    # maximum score (a saturated model, as on CTU-13). Such a sub-core cannot separate
+    # anything at the target rate and only adds false alarms; METIS likewise drops a
+    # metric whose two references do not separate. The maximum over the remaining
+    # sub-cores is still monotone.
+    exclude_fpr: float | None = None
 
     def fit(self, X, y=None):
         self.ref_ = [np.sort(m.predict_proba(X[:, idx])[:, 1]) for idx, m in self.parts]
+        self.active_ = [True] * len(self.ref_)
+        if self.exclude_fpr is not None:
+            for i, ref in enumerate(self.ref_):
+                at_max = float((ref >= ref[-1]).mean())
+                self.active_[i] = at_max <= self.exclude_fpr
+            if not any(self.active_):
+                self.active_ = [True] * len(self.ref_)
         return self
 
     def score(self, X):
         u = []
-        for (idx, m), ref in zip(self.parts, self.ref_):
+        active = getattr(self, "active_", [True] * len(self.ref_))
+        for (idx, m), ref, on in zip(self.parts, self.ref_, active):
+            if not on:
+                continue
             s = m.predict_proba(X[:, idx])[:, 1]
             f = np.searchsorted(ref, s, side="right") / len(ref)
             # Beyond the benign maximum keep ranking by the score instead of saturating.
