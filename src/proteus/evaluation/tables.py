@@ -150,9 +150,35 @@ def summary_table(runs: list[Path], extra: list[Path], fpr: float,
     return pd.DataFrame(rows)
 
 
+SUBCORES = ["destination", "source", "pair", "raw destination"]
+
+
+def ablation_table(runs: list[Path], fpr: float, base: str = "proteus") -> str:
+    """Full calibrated maximum against the same without each sub-core: campaigns
+    detected (volumetric and scans / other) and alarms per hour, per direction."""
+    from proteus.evaluation.bench import detection_alarms
+
+    lines = [r"\begin{tabular}{lrrr}", r"\toprule",
+             r"Variant & Volumetric & Other & Alarms/h \\"]
+    for run in runs:
+        key = "__".join(run.name.split("__")[:2])
+        d = detection_alarms([run], fpr)
+        lines += [r"\midrule", rf"\multicolumn{{4}}{{l}}{{\emph{{{DIRECTION.get(key, key)}}}}} \\"]
+        names = [(base, "All sub-cores")] + [(f"{base}-{k}", f"without {s}")
+                                             for k, s in enumerate(SUBCORES)]
+        for m, label in names:
+            if m not in d.index:
+                continue
+            r = d.loc[m]
+            lines.append(f"{label} & {r['det_volumetric']:.2f} & {r['det_other']:.2f} & "
+                         f"{r['alarms_per_hour']:.1f} \\\\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    return "\n".join(lines) + "\n"
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("table", choices=["h1", "summary"])
+    ap.add_argument("table", choices=["h1", "summary", "ablation"])
     ap.add_argument("--detectors", nargs="*", default=None)
     ap.add_argument("--set", choices=sorted(DETECTOR_SETS), default="v1",
                     help="detector columns of the h1 table")
@@ -167,6 +193,10 @@ def main() -> None:
         t = summary_table(args.runs, args.extra, args.fpr, args.detectors)
         t.to_csv(args.out, index=False)
         print(t.round(3).to_string())
+        return
+    if args.table == "ablation":
+        args.out.write_text(ablation_table(args.runs, args.fpr))
+        print(args.out.read_text())
         return
     DETECTORS[:] = DETECTOR_SETS[args.set]
     args.out.write_text(h1_table(args.runs, args.extra, args.fpr))
