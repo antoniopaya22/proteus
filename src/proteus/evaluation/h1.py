@@ -712,6 +712,8 @@ def main() -> None:
     test_days = [d for d in days(args.test) if not args.test_days or d.stem in args.test_days]
     local = {n: c for n, (c, m) in models.items() if n in LOCAL or getattr(m, "local", False)}
     day_scores, benign_sample, benign_feats = {}, {}, {}
+    spill = out / "_scores"
+    spill.mkdir(parents=True, exist_ok=True)
     top_of: dict = {}  # day -> model -> (top clean scores, dst key, minute)
     day_sides: dict = {}  # day -> model -> alert about the source host
     hours_of: dict = {}
@@ -752,7 +754,11 @@ def main() -> None:
         pick = rng.choice(clean_idx, min(len(clean_idx), 1_000_000), replace=False)
         benign_sample[day] = {n: s_[pick] for n, s_ in scores.items()
                               if not n.endswith(("@cert", "@certr"))}
-        day_scores[day] = scores
+        # Spilled to disk: ten 2018 days of scores (7 M rows x ~14 score columns each)
+        # do not fit in memory next to everything else.
+        np.savez(spill / f"{day.stem}.npz", **{k.replace("@", "__AT__"): v
+                                                for k, v in scores.items()})
+        day_scores[day] = spill / f"{day.stem}.npz"
         if args.entity_budgets:
             clean = ev["clean"].to_numpy()
             key = pd.util.hash_array(ev["dst_ip"].astype(str).to_numpy()).astype(np.uint64)
@@ -787,7 +793,8 @@ def main() -> None:
         others = [d for d in test_days if d != day]
         ev, _ = evidence_b(args.test, day, columns=meta_cols)
         path = cache_parts(args.test, day)
-        scores = day_scores.pop(day)
+        with np.load(day_scores.pop(day)) as z:
+            scores = {k.replace("__AT__", "@"): z[k] for k in z.files}
         # Unsupervised detectors fitted on the test network's own benign traffic of the
         # other days; their reference scores are those of the same benign sample.
         refs = {}
@@ -831,6 +838,9 @@ def main() -> None:
         print(f"  evaluated {args.test}/{day.stem} at {time.time() - t0:.0f}s", flush=True)
         del ev
 
+    import shutil
+
+    shutil.rmtree(spill, ignore_errors=True)
     res = pd.concat(results, ignore_index=True)
     res.to_csv(out / "campaigns.csv", index=False)
     summary = (
