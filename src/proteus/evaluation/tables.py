@@ -205,9 +205,58 @@ def frontier_table(csvs: list[Path], data_out: Path | None = None) -> str:
     return "\n".join(lines) + "\n"
 
 
+def frontier_system_table(runs: list[Path], fpr: float = 1e-3,
+                          data_out: Path | None = None) -> str:
+    """Frontier of the deployed system, which alerts when proteus (every scale) or
+    proteus_cert alerts: the plain frontier is the lower of their plain frontiers
+    (the attack as it ran, no free operations), the certified frontier the lower of
+    their certified ones (every combination of free operations is alerted above it).
+    Factor: how many times slower than the real campaign the attack must run; ``--``
+    when the real campaign already ran below the frontier."""
+    lines = [r"\begin{tabular}{lrrrrr}", r"\toprule",
+             r"& & \multicolumn{2}{c}{Plain} & \multicolumn{2}{c}{Certified} \\",
+             r"\cmidrule(lr){3-4}\cmidrule(lr){5-6}",
+             r"Attack & Real rate & Frontier & Factor & Frontier & Factor \\"]
+    fig = []
+    fmt = lambda v: "--" if not np.isfinite(v) else f"{v:,.0f}".replace(",", "\\,")
+    fac = lambda real, v: (f"{real / v:,.1f}" if np.isfinite(v) and v > 0 and real / v >= 1
+                           else "--")
+    for run in runs:
+        parts = {m: pd.read_csv(run / f"frontier_{m}_{fpr}_attr.csv")
+                 for m in ("proteus", "proteus_cert")
+                 if (run / f"frontier_{m}_{fpr}_attr.csv").exists()}
+        if not parts:
+            continue
+        key = "__".join(run.name.split("__")[:2])
+        lines += [r"\midrule", rf"\multicolumn{{6}}{{l}}{{\emph{{{DIRECTION.get(key, key)}}}}} \\"]
+        idx = ["day", "attack", "target"]
+        d = None
+        for m, f in parts.items():
+            f = f.set_index(idx)[["real_flows_per_h", "plain_flows_per_h",
+                                   "certified_flows_per_h"]].add_suffix(f"_{m}")
+            d = f if d is None else d.join(f, how="outer")
+        first = pd.MultiIndex.from_frame(next(iter(parts.values()))[idx])
+        d = d.reindex(first.append(d.index.difference(first))).reset_index()
+        for _, r in d.iterrows():
+            name = ATTACK_NAMES.get(r["attack"], r["attack"])
+            if (d["attack"] == r["attack"]).sum() > 1:
+                name += f" ({r['day'][:3].title()}.)"
+            real = np.nanmax([r.get(f"real_flows_per_h_{m}", np.nan) for m in parts])
+            plain = np.nanmin([r.get(f"plain_flows_per_h_{m}", np.nan) for m in parts])
+            cert = np.nanmin([r.get(f"certified_flows_per_h_{m}", np.nan) for m in parts])
+            lines.append(f"{name} & {fmt(real)} & {fmt(plain)} & {fac(real, plain)} & "
+                         f"{fmt(cert)} & {fac(real, cert)} \\\\")
+            fig.append({"direction": key, "attack": name, "real": real, "plain": plain,
+                        "certified": cert})
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    if data_out is not None:
+        pd.DataFrame(fig).replace([np.inf, -np.inf], np.nan).to_csv(data_out, index=False)
+    return "\n".join(lines) + "\n"
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("table", choices=["h1", "summary", "ablation", "frontier"])
+    ap.add_argument("table", choices=["h1", "summary", "ablation", "frontier", "frontier_system"])
     ap.add_argument("--csv", type=Path, nargs="*", default=[], help="frontier CSVs")
     ap.add_argument("--data-out", type=Path, default=None)
     ap.add_argument("--detectors", nargs="*", default=None)
@@ -228,6 +277,10 @@ def main() -> None:
         return
     if args.table == "frontier":
         args.out.write_text(frontier_table(args.csv, args.data_out))
+        print(args.out.read_text())
+        return
+    if args.table == "frontier_system":
+        args.out.write_text(frontier_system_table(args.runs, args.fpr, args.data_out))
         print(args.out.read_text())
         return
     if args.table == "ablation":

@@ -8,7 +8,7 @@ mkdir -p "$T"
 PY=".venv/bin/python -m"
 A=$O/csecicids2018__cicids2017__loo_labels   # 2018 -> 2017
 B=$O/cicids2017__csecicids2018__loo_labels   # 2017 -> 2018
-exists() { for d in "$@"; do [ -d "$d" ] && echo "$d"; done; }
+exists() { for d in "$@"; do [ -f "$d/summary.csv" ] && echo "$d"; done; }  # finished runs only
 
 # Detection across networks (v3 detectors; flow classifier from the first runs).
 for f in 1e-3 1e-4; do
@@ -38,7 +38,6 @@ $PY proteus.evaluation.tables ablation --runs $(exists ${A}__v3_ablation ${B}__v
   --out $T/ablation.tex > /dev/null || true
 $PY proteus.evaluation.tables ablation --base proteus_cert \
   --runs $(exists ${A}__v3_ablation ${B}__v3_ablation_cert) --out $T/ablation_cert.tex > /dev/null || true
-ls -la "$T"
 
 # Harm frontiers (v3, attributable alerts): table and data of the dumbbell figure.
 for m in proteus_cert proteus; do
@@ -46,4 +45,9 @@ for m in proteus_cert proteus; do
   [ -n "$csvs" ] && $PY proteus.evaluation.tables frontier --csv $csvs \
     --data-out $T/frontier_${m}.csv --out $T/frontier_${m}.tex > /dev/null
 done
+ls -la "$T"
+
+# Frontier of the deployed system (proteus or proteus_cert alerts): plain and certified.
+$PY proteus.evaluation.tables frontier_system --runs $(ls -d ${A}__v3 ${B}__v3 2>/dev/null) \
+  --data-out $T/frontier_system.csv --out $T/frontier_system.tex > /dev/null
 ls -la "$T"
