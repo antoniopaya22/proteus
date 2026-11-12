@@ -47,18 +47,35 @@ def main() -> None:
     ap.add_argument("--test", required=True)
     ap.add_argument("--model", default="flow_clf")
     ap.add_argument("--block", type=float, default=0.5, help="shell score that blocks a flow")
+    ap.add_argument("--block-fpr", type=float, default=None,
+                    help="instead of --block, block at this FPR on clean benign flows of the "
+                         "other days of the test network (local calibration, no labels)")
     args = ap.parse_args()
     cols, model = h1.load_models(args.run)[args.model]
-    hours, fp_rows, stats = 0.0, [], []
+    rng = np.random.default_rng(0)
+    scored = {}
     for day in h1.days(args.test):
         ev, _ = h1.evidence_b(args.test, day, columns=["t_start", "t_end", "src_ip", "clean",
                                                        "is_attack"])
         flow = h1.flow_features(day).add_prefix("flow__")
-        s = model.predict_proba(flow[cols].to_numpy(np.float32))[:, 1]
-        blocked = s >= args.block
+        s = model.predict_proba(flow[cols].to_numpy(np.float32))[:, 1].astype(np.float32)
+        clean_s = s[ev["clean"].to_numpy()]
+        sample = clean_s[rng.choice(len(clean_s), min(len(clean_s), 1_000_000), replace=False)]
+        ev["src_ip"] = ev["src_ip"].astype("category")  # all days stay in memory
+        scored[day] = (ev, s, sample)
+        del flow
+    hours, fp_rows, stats = 0.0, [], []
+    for day, (ev, s, _) in scored.items():
+        if args.block_fpr is None:
+            thr = args.block
+        else:
+            ref = np.concatenate([x[2] for d, x in scored.items() if d != day])
+            thr = float(np.quantile(ref, 1 - args.block_fpr, method="higher"))
+        blocked = s >= thr
         clean = ev["clean"].to_numpy()
         hours += (ev["t_end"].max() - ev["t_start"].min()).total_seconds() / 3600
-        stats.append({"day": day.stem, "flows": len(ev), "clean": int(clean.sum()),
+        stats.append({"day": day.stem, "threshold": thr, "flows": len(ev),
+                      "clean": int(clean.sum()),
                       "fp": int((blocked & clean).sum()),
                       "fpr": float(blocked[clean].mean()) if clean.any() else np.nan,
                       "attack_blocked": float(blocked[ev["is_attack"].to_numpy()].mean())
@@ -67,7 +84,6 @@ def main() -> None:
         fp["day"] = day.stem
         fp_rows.append(fp)
         print(stats[-1], flush=True)
-        del ev, flow
     fp = pd.concat(fp_rows, ignore_index=True)
     t = fp["t_end"].astype("int64").to_numpy() / 1e6
     src = fp["src_ip"].astype(str).to_numpy()
@@ -85,7 +101,8 @@ def main() -> None:
     print(f"hours {hours:.1f}, shell false positives {len(fp):,} from "
           f"{pd.unique(src).size:,} sources")
     print(curve.pivot(index="K", columns="tau_s", values="alarms_per_hour").round(3).to_string())
-    curve.to_csv(args.run / f"feedback_{args.model}_{args.test}.csv", index=False)
+    tag = "" if args.block_fpr is None else f"_fpr{args.block_fpr:g}"
+    curve.to_csv(args.run / f"feedback_{args.model}_{args.test}{tag}.csv", index=False)
 
 
 if __name__ == "__main__":
