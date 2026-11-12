@@ -763,3 +763,32 @@ coincidir con el entrenamiento de `proteus_free`, y la frontera certificada 17 �
 todo trabajo que evalúa en 2018, o entrena en 2018 desde cero, pasa por
 `flock ~/tools/heavy.lock`; la v3 17 → 18 se relanzó con `--reuse` sobre su
 `models.pkl`.
+
+## 6.24 Detección v3 de 2017 → 2018 (2026-11-12)
+
+`cicids2017__csecicids2018__loo_labels__v3` (relanzado con `--reuse` tras el OOM).
+FPR 10⁻³; entre corchetes, IC 95 % (Wilson para campañas, bootstrap sobre 10 días para
+alarmas).
+
+| Detector | Volumétricos y escaneos | Resto | Alarmas/h | A 10⁻⁴ |
+|---|---|---|---|---|
+| `proteus` | 13/13 | 1/12 (SSH) | 16,0 [1,5–37,9] | 13/13, 6,7/h |
+| `proteus_cert@cert` | 6/13 | 1/12 (SSH) | 17,0 [12,3–22,4] | 6/13, 2,9/h |
+| `core_free_dst_b` | 13/13 | 3/12 (SSH, botnet, infiltración) | 124,6 [94,3–157,6] | 13/13 + botnet, 5,3/h |
+| `rate_rules_local` | 13/13 | 2/12 (SSH, botnet) | 45,5 [31,8–58,4] | 13,9/h |
+| `flow_clf` | 9/13 | 0/12 | 273,8 | 77,7/h |
+
+Lectura:
+
+- `proteus` detecta todo lo volumétrico y los escaneos, pero con recall bajo en
+  LOIC-HTTP (0,32) y escaneos (0,41), y pierde la botnet que sí ven las reglas y el
+  núcleo libre.
+- `proteus_cert` en la red grande certifica poco a 10⁻³ (nada de LOIC-HTTP ni de
+  escaneos) y da tantas alarmas como `proteus`; a 10⁻⁴ mantiene sus 6 campañas con
+  2,9/h. TTD mediano 165 s frente a 115 s.
+- Precio de la monotonía en este sentido: a 10⁻⁴ el núcleo libre detecta lo mismo y la
+  botnet con menos alarmas (5,3 frente a 6,7). A 10⁻³ da 7,8 veces más alarmas.
+- El IC de alarmas de `proteus` (1,5–37,9) toca el de las reglas: la afirmación de que
+  los intervalos de alarmas no se solapan solo vale en 18 → 17. Corregido en el paper.
+- Banco (detección y alarmas): `proteus` 0,41 (Pareto), cert 0,28, reglas 0,23, libre
+  0,18, por flujo 0,13.
