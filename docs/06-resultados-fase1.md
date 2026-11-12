@@ -505,3 +505,34 @@ Con tan poca historia, las líneas base benignas no son estables: un tope de 0,1
 recortaría una de cada cinco. Hace falta historia de semanas (UGR'16) para fijar un
 tope con coste bajo. Alternativas: línea base con ventana larga, o limitar el
 crecimiento solo en entidades sin cambios de carga explicables.
+
+## 6.14 La garantía a nivel de paquetes (2026-11-12)
+
+`python -m proteus.evaluation.packet_check` (`proteus.packets`). La certificación
+depende de cómo un exportador contabiliza los paquetes, así que se comprueba por
+debajo de los registros de flujo:
+
+- **Traza:** 25 min del pcap de viernes de CIC-IDS-2017 alrededor del DDoS LOIC-HTTP.
+  Son 1,2 M de paquetes con la víctima 192.168.10.50, de los que 716.000 son del
+  atacante 172.16.0.1.
+- **Exportador propio:** flujos bidireccionales con timeout activo Δ = 120 s, timeout
+  de inactividad de 60 s y cierre por FIN de ambos lados o por RST.
+- **Variantes (11)**, sobre los paquetes del atacante: relleno de 40 o 400 B; un
+  paquete extra tras el 20 % o el 100 % de sus paquetes; salto de puerto origen cada 3
+  o 20 paquetes (parte las conexiones en varios registros); 500 o 5.000 SYN señuelo; y
+  combinaciones de todo ello. Las variantes tienen hasta 4,6 veces más registros
+  (412.000 frente a 90.000).
+- **Comprobación:** E'(t+Δ) ≥ e^{−2Δ/τ}·E(t) en cada fin de flujo original, para
+  todos los contadores conservados del servicio y del host víctima, a 10 s, 60 s,
+  600 s y 1 h.
+
+**Resultado: 0 violaciones.** El cociente mínimo es e^{−Δ/τ} (solo el decaimiento
+durante Δ), por encima de la cota en todas las escalas.
+
+**Hallazgo:** los segundos de conexión (`conn_s`) **no se conservan**. Saltar de
+puerto parte una conexión y se pierden los huecos entre los trozos, mientras el
+servidor puede seguir reteniendo la conexión abandonada. El operador a nivel de
+registro (`split_flows`) lo ocultaba porque reparte la duración por construcción.
+`conn_s` pasa a ser una característica de respuesta, sin línea base y fuera de los
+núcleos monótonos (commit 2ab77da). Los resultados anteriores de núcleos con `conn_s`
+deben repetirse con la v3, que ya lo excluye.
