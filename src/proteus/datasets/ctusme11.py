@@ -27,10 +27,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from proteus.datasets import staged
-
 import numpy as np
 import pandas as pd
+
+from proteus.datasets import staged
 
 PROTO = {"tcp": 6, "udp": 17, "icmp": 1}
 FIELDS = ["ts", "uid", "id.orig_h", "id.orig_p", "id.resp_h", "id.resp_p", "proto", "service",

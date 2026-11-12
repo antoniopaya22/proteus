@@ -78,6 +78,31 @@ def local_threshold(ds: str, day: Path, model, cols: list[str], fpr: float,
     return float(np.quantile(np.concatenate(ref), 1 - fpr, method="higher"))
 
 
+def scenarios(flows: pd.DataFrame,
+              attacks: list[str]) -> list[tuple[str, Scenario, pd.DataFrame]]:
+    """One scenario per attack type of a day: the real victim, its benign traffic in a
+    window around the middle of the day, and the real campaign's flow shapes."""
+    out = []
+    for attack in attacks:
+        A = flows[flows["is_attack"] & (flows["attack"] == attack)]
+        target = A["dst_ip"].mode().iloc[0]
+        A = A[A["dst_ip"] == target]
+        port = int(A["dst_port"].mode().iloc[0])
+        proto = int(A["proto"].mode().iloc[0])
+        bg = flows[(flows["dst_ip"] == target) & (flows["family"] == "benign")]
+        start = bg["t_start"].min() + (bg["t_end"].max() - bg["t_start"].min()) / 2
+        lo = start - pd.Timedelta(hours=1)
+        hi = start + pd.Timedelta(seconds=WINDOW_S + 3600)
+        bg = bg[(bg["t_end"] >= lo) & (bg["t_start"] <= hi)].drop(
+            columns=["attack", "family", "is_attack"])
+        template = A.drop(columns=["attack", "family", "is_attack"])
+        sc = Scenario(bg, template, target, port, proto, start, WINDOW_S,
+                      n_sources=int(A["src_ip"].nunique()),
+                      keep_ports=attack == "portscan")
+        out.append((attack, sc, A))
+    return out
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--run", type=Path, required=True)
@@ -107,22 +132,10 @@ def main() -> None:
             continue
         base = baselines.for_day(day)
         thr = local_threshold(args.test, day, model, cols, args.fpr, rng)
-        for attack in present:
-            A = flows[flows["is_attack"] & (flows["attack"] == attack)]
-            target = A["dst_ip"].mode().iloc[0]
-            A = A[A["dst_ip"] == target]
-            port = int(A["dst_port"].mode().iloc[0])
-            proto = int(A["proto"].mode().iloc[0])
+        for attack, sc, A in scenarios(flows, present):
+            template = sc.template
+            target, port, bg = sc.target_ip, sc.target_port, sc.background
             span = max((A["t_end"].max() - A["t_start"].min()).total_seconds(), 1.0)
-            bg = flows[(flows["dst_ip"] == target) & (flows["family"] == "benign")]
-            start = bg["t_start"].min() + (bg["t_end"].max() - bg["t_start"].min()) / 2
-            lo, hi = start - pd.Timedelta(hours=1), start + pd.Timedelta(seconds=WINDOW_S + 3600)
-            bg = bg[(bg["t_end"] >= lo) & (bg["t_start"] <= hi)].drop(
-                columns=["attack", "family", "is_attack"])
-            template = A.drop(columns=["attack", "family", "is_attack"])
-            sc = Scenario(bg, template, target, port, proto, start, WINDOW_S,
-                          n_sources=int(A["src_ip"].nunique()),
-                          keep_ports=attack == "portscan")
             res = {}
             for kind, delta in (("plain", None), ("certified", args.delta)):
                 res[kind] = frontier(sc, model, cols, specs, base, thr,

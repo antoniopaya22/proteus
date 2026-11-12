@@ -273,10 +273,14 @@ def main() -> None:
     per_type = max(1, args.n // len(set(types)))
     pick = np.concatenate([rng.choice(idx[types == t], min(per_type, (types == t).sum()),
                                       replace=False) for t in sorted(set(types))])
-    X = Xte[pick]
     if resumed:
-        assert np.array_equal(X, state["X"]), "resumed run selected different flows"
-    else:
+        # Apollon draws classifiers at random when predicting, so ``detected`` (and the
+        # pick) can differ between runs; the split is deterministic, so locate the
+        # stored flows in the test set instead.
+        row = {Xte[i].tobytes(): i for i in range(len(Xte))}
+        pick = np.array([row[x.tobytes()] for x in state["X"]])
+    X = Xte[pick]
+    if not resumed:
         with open(path, "wb") as fh:
             pickle.dump({"models": models, "X": X, "functional": functional,
                          "modifiable": modifiable}, fh)
