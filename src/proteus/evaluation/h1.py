@@ -196,6 +196,14 @@ def flow_features(day: Path) -> pd.DataFrame:
     return pd.read_parquet(day, columns=flow_feature_columns(day)).astype("float32")
 
 
+def score_batches(path: Path, cols: list[str], batch: int = 1_000_000):
+    """Feature matrices of ``cols`` for consecutive row batches of a parquet file."""
+    import pyarrow.parquet as pq
+
+    for b in pq.ParquetFile(path).iter_batches(batch_size=batch, columns=cols):
+        yield b.to_pandas()[cols].to_numpy(np.float32)
+
+
 def read_rows(path: Path, idx: np.ndarray, columns: list[str] | None = None,
               batch: int = 500_000) -> pd.DataFrame:
     """Rows ``idx`` (sorted positions) of a parquet file, reading it in batches so a
@@ -639,39 +647,47 @@ def main() -> None:
     # Pass 1: score every test day; keep a sample of clean benign scores per day.
     test_days = [d for d in days(args.test) if not args.test_days or d.stem in args.test_days]
     local = {n: c for n, (c, m) in models.items() if n in LOCAL or getattr(m, "local", False)}
-    local_cols = sorted({c for cols in local.values() for c in cols})
-    ev_cols = sorted({c for cols, _ in models.values() for c in cols if not c.startswith("flow__")}
-                     | set(META) | {"clean"})
     day_scores, benign_sample, benign_feats = {}, {}, {}
     top_of: dict = {}  # day -> model -> (top clean scores, dst key, minute)
     day_sides: dict = {}  # day -> model -> alert about the source host
     hours_of: dict = {}
     for day in test_days:
-        ev, _ = evidence_b(args.test, day, columns=ev_cols)
-        flow = flow_features(day).add_prefix("flow__")
-
-        def frame(cols, ev=ev, flow=flow):
-            return flow if cols[0].startswith("flow__") else ev
-
-        scores = {n: score(m, frame(c)[c].to_numpy(np.float32)).astype(np.float32)
-                  for n, (c, m) in models.items() if n not in local}
-        day_sides[day] = {n: alert_side(m, c, frame(c)[c].to_numpy(np.float32))
-                          for n, (c, m) in models.items()
-                          if n not in local and not c[0].startswith("flow__")}
+        # Only metadata in full; every model is scored on its own columns, in batches
+        # of rows (a 2018 day with every model's columns does not fit in memory).
+        path = _bdir(args.test) / day.name
+        ev, _ = evidence_b(args.test, day, columns=sorted(set(META) | {"clean"}))
+        flow = (flow_features(day).add_prefix("flow__")
+                if any(c[0].startswith("flow__") for c, _ in models.values()) else None)
+        scores, sides = {}, {}
+        for n, (c, m) in models.items():
+            if n in local:
+                continue
+            if c[0].startswith("flow__"):
+                scores[n] = score(m, flow[c].to_numpy(np.float32)).astype(np.float32)
+                continue
+            mono = getattr(m, "monotonic_cst", None) is not None
+            sl = slack(c, specs, EXPORT_TIMEOUT_S).astype(np.float32) if mono else None
+            cst = np.asarray(m.monotonic_cst) if mono else None
+            acc: dict[str, list] = {"s": [], "side": [], "cert": [], "certr": []}
+            for X in score_batches(path, c):
+                acc["s"].append(score(m, X).astype(np.float32))
+                acc["side"].append(alert_side(m, c, X))
+                if mono:  # certified: worst case over every free-operation variant
+                    acc["cert"].append(score(m, worst_case_features(X, cst, sl)).astype(np.float32))
+                    if "cert" in n:  # also against connection reuse
+                        acc["certr"].append(score(m, reuse_worst_case(X, c, cst, sl)
+                                                  ).astype(np.float32))
+            scores[n] = np.concatenate(acc["s"])
+            sides[n] = np.concatenate(acc["side"])
+            if acc["cert"]:
+                scores[f"{n}@cert"] = np.concatenate(acc["cert"])
+            if acc["certr"]:
+                scores[f"{n}@certr"] = np.concatenate(acc["certr"])
+        day_sides[day] = sides
         clean_idx = np.flatnonzero(ev["clean"].to_numpy())
         pick = rng.choice(clean_idx, min(len(clean_idx), 1_000_000), replace=False)
-        benign_sample[day] = {n: s[pick] for n, s in scores.items()}
-        # Certified scores: worst case over every free-operation variant (doc 04).
-        for n, (c, m) in models.items():
-            if n not in local and getattr(m, "monotonic_cst", None) is not None:
-                cst = np.asarray(m.monotonic_cst)
-                X0 = ev[c].to_numpy(np.float32)
-                sl = slack(c, specs, EXPORT_TIMEOUT_S).astype(np.float32)
-                scores[f"{n}@cert"] = score(m, worst_case_features(X0, cst, sl)).astype(np.float32)
-                if "cert" in n:  # also against connection reuse
-                    scores[f"{n}@certr"] = score(m, reuse_worst_case(X0, c, cst, sl)
-                                                 ).astype(np.float32)
-                del X0
+        benign_sample[day] = {n: s_[pick] for n, s_ in scores.items()
+                              if not n.endswith(("@cert", "@certr"))}
         day_scores[day] = scores
         if args.entity_budgets:
             clean = ev["clean"].to_numpy()
@@ -687,7 +703,8 @@ def main() -> None:
                 hi = sc >= cut
                 top_of[day][n] = (sc[hi], key[clean][hi], minute[clean][hi])
         if local:
-            benign_feats[day] = {n: ev[c].to_numpy(np.float32)[pick[:200_000]]
+            sample = np.sort(pick[:200_000])
+            benign_feats[day] = {n: read_rows(path, sample, c)[c].to_numpy(np.float32)
                                  for n, c in local.items()}
         print(f"  scored {args.test}/{day.stem} at {time.time() - t0:.0f}s", flush=True)
         del ev, flow
@@ -702,7 +719,8 @@ def main() -> None:
     results = []
     for day in test_days:
         others = [d for d in test_days if d != day]
-        ev, _ = evidence_b(args.test, day, columns=meta_cols + local_cols)
+        ev, _ = evidence_b(args.test, day, columns=meta_cols)
+        path = _bdir(args.test) / day.name
         scores = day_scores.pop(day)
         # Unsupervised detectors fitted on the test network's own benign traffic of the
         # other days; their reference scores are those of the same benign sample.
@@ -710,14 +728,21 @@ def main() -> None:
         for n, c in local.items():
             m = copy.deepcopy(models[n][1]).fit(
                 np.concatenate([benign_feats[d][n] for d in others]))
-            scores[n] = m.score(ev[c].to_numpy(np.float32))
-            if getattr(m, "monotonic_cst", None) is not None:
-                X0 = ev[c].to_numpy(np.float32)
-                cst = np.asarray(m.monotonic_cst)
-                sl = slack(c, specs, EXPORT_TIMEOUT_S).astype(np.float32)
-                scores[f"{n}@cert"] = m.score(worst_case_features(X0, cst, sl))
-                if "cert" in n:
-                    scores[f"{n}@certr"] = m.score(reuse_worst_case(X0, c, cst, sl))
+            mono = getattr(m, "monotonic_cst", None) is not None
+            cst = np.asarray(m.monotonic_cst) if mono else None
+            sl = slack(c, specs, EXPORT_TIMEOUT_S).astype(np.float32) if mono else None
+            acc: dict[str, list] = {"s": [], "cert": [], "certr": []}
+            for X in score_batches(path, c):
+                acc["s"].append(m.score(X))
+                if mono:
+                    acc["cert"].append(m.score(worst_case_features(X, cst, sl)))
+                    if "cert" in n:
+                        acc["certr"].append(m.score(reuse_worst_case(X, c, cst, sl)))
+            scores[n] = np.concatenate(acc["s"])
+            if acc["cert"]:
+                scores[f"{n}@cert"] = np.concatenate(acc["cert"])
+            if acc["certr"]:
+                scores[f"{n}@certr"] = np.concatenate(acc["certr"])
             refs[n] = np.concatenate([m.score(benign_feats[d][n]) for d in others])
         th = {k: v for k, v in thresholds.items() if k[0] not in local}
         for n in [k for k in scores if not k.endswith(("@cert", "@certr"))]:
