@@ -176,14 +176,45 @@ def ablation_table(runs: list[Path], fpr: float, base: str = "proteus") -> str:
     return "\n".join(lines) + "\n"
 
 
+def frontier_table(csvs: list[Path], data_out: Path | None = None) -> str:
+    """Certified harm frontier against the real campaign rate, one block per test
+    network (one ``frontier_*_attr.csv`` per direction). Optionally writes the data of
+    the dumbbell figure (attack, real, plain, certified) for pgfplots."""
+    lines = [r"\begin{tabular}{lrrrr}", r"\toprule",
+             r"Attack & Real rate & Frontier & Certified & Factor \\"]
+    fig = []
+    for path in csvs:
+        d = pd.read_csv(path)
+        key = "__".join(path.parent.name.split("__")[:2])
+        lines += [r"\midrule", rf"\multicolumn{{5}}{{l}}{{\emph{{{DIRECTION.get(key, key)}}}}} \\"]
+        for _, r in d.iterrows():
+            name = ATTACK_NAMES.get(r["attack"], r["attack"])
+            if (d["attack"] == r["attack"]).sum() > 1:
+                name += f" ({r['day'][:3].title()}.)"
+            cert = r["certified_flows_per_h"]
+            fac = r["real_flows_per_h"] / cert if np.isfinite(cert) and cert > 0 else np.nan
+            fmt = lambda v: "--" if not np.isfinite(v) else f"{v:,.0f}".replace(",", "\\,")
+            lines.append(f"{name} & {fmt(r['real_flows_per_h'])} & {fmt(r['plain_flows_per_h'])} & "
+                         f"{fmt(cert)} & " + (f"{fac:,.1f}" if np.isfinite(fac) and fac >= 1
+                                              else "--") + r" \\")
+            fig.append({"direction": key, "attack": name, "real": r["real_flows_per_h"],
+                        "plain": r["plain_flows_per_h"], "certified": cert})
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    if data_out is not None:
+        pd.DataFrame(fig).replace([np.inf, -np.inf], np.nan).to_csv(data_out, index=False)
+    return "\n".join(lines) + "\n"
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("table", choices=["h1", "summary", "ablation"])
+    ap.add_argument("table", choices=["h1", "summary", "ablation", "frontier"])
+    ap.add_argument("--csv", type=Path, nargs="*", default=[], help="frontier CSVs")
+    ap.add_argument("--data-out", type=Path, default=None)
     ap.add_argument("--detectors", nargs="*", default=None)
     ap.add_argument("--base", default="proteus", help="ablation: the full model")
     ap.add_argument("--set", choices=sorted(DETECTOR_SETS), default="v1",
                     help="detector columns of the h1 table")
-    ap.add_argument("--runs", type=Path, nargs="+", required=True)
+    ap.add_argument("--runs", type=Path, nargs="*", default=[])
     ap.add_argument("--extra", type=Path, nargs="*", default=[],
                     help="runs with more detectors for the same direction (e.g. __cert)")
     ap.add_argument("--fpr", type=float, default=1e-3)
@@ -194,6 +225,10 @@ def main() -> None:
         t = summary_table(args.runs, args.extra, args.fpr, args.detectors)
         t.to_csv(args.out, index=False)
         print(t.round(3).to_string())
+        return
+    if args.table == "frontier":
+        args.out.write_text(frontier_table(args.csv, args.data_out))
+        print(args.out.read_text())
         return
     if args.table == "ablation":
         args.out.write_text(ablation_table(args.runs, args.fpr, args.base))

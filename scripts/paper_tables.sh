@@ -39,3 +39,11 @@ $PY proteus.evaluation.tables ablation --runs $(exists ${A}__v3_ablation ${B}__v
 $PY proteus.evaluation.tables ablation --base proteus_cert \
   --runs $(exists ${A}__v3_ablation ${B}__v3_ablation_cert) --out $T/ablation_cert.tex > /dev/null || true
 ls -la "$T"
+
+# Harm frontiers (v3, attributable alerts): table and data of the dumbbell figure.
+for m in proteus_cert proteus; do
+  csvs=$(ls ${A}__v3/frontier_${m}_0.001_attr.csv ${B}__v3/frontier_${m}_0.001_attr.csv 2>/dev/null || true)
+  [ -n "$csvs" ] && $PY proteus.evaluation.tables frontier --csv $csvs \
+    --data-out $T/frontier_${m}.csv --out $T/frontier_${m}.tex > /dev/null
+done
+ls -la "$T"
