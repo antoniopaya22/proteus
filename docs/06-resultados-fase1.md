@@ -567,3 +567,49 @@ cuentan. Sigue siendo monótono en el ritmo. Se aplica en `core.frontier` y en
 **Pendiente:** recalcular con la v3 las fronteras y el envenenamiento. La tabla de
 fronteras certificadas del paper (Hulk 6.238/h, etc.) está menos expuesta, porque el
 peor caso baja las puntuaciones del fondo, pero también se repite.
+
+## 6.16 Evidencia v3 (2026-11-12, parcial)
+
+Evidencia v3: escalas de 1 h y 6 h, entidad par origen→servicio con contadores
+brutos, `conn_s` fuera del núcleo y máximo calibrado de cuatro subnúcleos (destino,
+origen, par y bruto). Detectores `proteus` (todas las escalas) y `proteus_cert`
+(τ ≥ 10 min).
+
+**Detección 18 → 17, FPR 10⁻³:**
+
+| Detector | Volumétricos y escaneos | Fuerza bruta | Alarmas/h (10⁻³ / 10⁻⁴) |
+|---|---|---|---|
+| `proteus` | 11/11 (escaneos 6/6, recall 0,82) | FTP 1/1, SSH 1/2 (recall ≤ 0,03) | 2,7 / 0,18 |
+| `proteus_cert`, alertas certificadas | 8/11 (escaneos 3/6) | — | 1,5 / 0,09 |
+| núcleo certificado v1, alertas certificadas | 9/11 | — | 3,2 / 0,77 |
+| `core_pair` solo | 4/11 (sin escaneos) | — | 0,27 |
+| reglas de tasa locales (v3) | 9/11 | FTP, SSH, botnet, infiltración | 36 |
+
+- `proteus` iguala al núcleo rápido v1 en volumétricos con alarmas parecidas (2,7
+  frente a 1,9 por hora), y ve débilmente la fuerza bruta.
+- Las alertas certificadas cuestan la mitad de alarmas que en la v1.
+- **Los pares brutos solos no ven la fuerza bruta entre redes:** un cliente benigno
+  muy activo (DNS, NTP) tiene tantos flujos por par como un Patator. Respuesta
+  implementada sin ejecutar: la línea base del par por servicio (`PROTEUS_PAIRBASE=1`,
+  commit cf10633).
+- Con la v3, las reglas de tasa empeoran mucho en alarmas (36/h frente a 11): más
+  características significan más formas de superar un percentil por separado.
+
+**Envenenamiento con `proteus_cert` (18 → 17):**
+
+| Ataque | Ritmo real | Frontera día 0 | Tras 8 días envenenando (sin tope) | Techo (línea base ∞) |
+|---|---|---|---|---|
+| SSH | 1.541/h | 3.469/h | 3.469/h | 3.469/h |
+| FTP | 3.910/h | 17.165/h | 17.165/h | 17.165/h |
+
+En la v1, el núcleo certificado pasaba en SSH de 16.001/h a infinito en 4 días.
+**En la v3 el envenenamiento no da nada:** la frontera la fijan los contadores de
+par y brutos, no el exceso sobre la línea base, y el techo coincide con la frontera
+del día 0. El precio: esas fronteras siguen por encima del ritmo real de las campañas
+(2,3× en SSH y 4,4× en FTP). El núcleo certificado no ve esas fuerzas brutas, pero
+envenenar tampoco le sirve al atacante.
+
+**Incidencias:** la v3 17 → 18 y la ablación 18 → 17 murieron por memoria (OOM)
+mientras corrían 4–5 trabajos a la vez. Se corrigió h1 para puntuar por lotes y
+compartir la muestra benigna entre detectores locales (commits 14fcc3a, ebf2d04), y se
+relanzaron.
