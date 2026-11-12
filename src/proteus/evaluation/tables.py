@@ -89,9 +89,64 @@ def h1_table(runs: list[Path], extra: list[Path], fpr: float) -> str:
     return "\n".join(lines) + "\n"
 
 
+VOLUMETRIC = ("dos_", "ddos_", "portscan")
+
+
+def wilson(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
+    """95% Wilson score interval of a proportion k/n."""
+    if n == 0:
+        return (np.nan, np.nan)
+    p = k / n
+    d = 1 + z * z / n
+    c = (p + z * z / (2 * n)) / d
+    h = z * np.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d
+    return (max(0.0, c - h), min(1.0, c + h))
+
+
+def bootstrap_mean(x: np.ndarray, n: int = 2000, seed: int = 0) -> tuple[float, float]:
+    """95% percentile bootstrap interval of a mean (resampling days)."""
+    x = np.asarray(x, dtype=float)
+    if len(x) < 2:
+        return (np.nan, np.nan)
+    rng = np.random.default_rng(seed)
+    m = rng.choice(x, (n, len(x)), replace=True).mean(axis=1)
+    return (float(np.quantile(m, 0.025)), float(np.quantile(m, 0.975)))
+
+
+def summary_table(runs: list[Path], extra: list[Path], fpr: float,
+                  detectors=None) -> pd.DataFrame:
+    """Per detector and direction: campaigns detected (volumetric and scans / other)
+    with Wilson intervals, and alarms per hour with a bootstrap interval over days."""
+    rows = []
+    for run in runs:
+        key = "__".join(run.name.split("__")[:2])
+        c = [pd.read_csv(run / "campaigns.csv")]
+        c += [pd.read_csv(e / "campaigns.csv") for e in extra if e.name.startswith(key)]
+        c = pd.concat(c)
+        c = c[(c["threshold"] == "local") & (c["target_fpr"] == fpr)]
+        for m, g in c.groupby("model"):
+            if detectors and m not in detectors:
+                continue
+            g = g.drop_duplicates(["day", "attack", "flows"])
+            vol = g["attack"].str.startswith(VOLUMETRIC)
+            row = {"direction": DIRECTION.get(key, key), "model": m}
+            for part, sel in (("volumetric", vol), ("other", ~vol)):
+                k, n = int(g.loc[sel, "detected"].sum()), int(sel.sum())
+                lo, hi = wilson(k, n)
+                row.update({f"{part}_detected": k, f"{part}_campaigns": n,
+                            f"{part}_lo": lo, f"{part}_hi": hi})
+            per_day = g.drop_duplicates("day")["alarms_per_hour"].to_numpy()
+            lo, hi = bootstrap_mean(per_day)
+            row.update({"alarms_per_hour": float(per_day.mean()), "alarms_lo": lo,
+                        "alarms_hi": hi, "days": len(per_day)})
+            rows.append(row)
+    return pd.DataFrame(rows)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("table", choices=["h1"])
+    ap.add_argument("table", choices=["h1", "summary"])
+    ap.add_argument("--detectors", nargs="*", default=None)
     ap.add_argument("--runs", type=Path, nargs="+", required=True)
     ap.add_argument("--extra", type=Path, nargs="*", default=[],
                     help="runs with more detectors for the same direction (e.g. __cert)")
@@ -99,6 +154,11 @@ def main() -> None:
     ap.add_argument("--out", type=Path, required=True)
     args = ap.parse_args()
     args.out.parent.mkdir(parents=True, exist_ok=True)
+    if args.table == "summary":
+        t = summary_table(args.runs, args.extra, args.fpr, args.detectors)
+        t.to_csv(args.out, index=False)
+        print(t.round(3).to_string())
+        return
     args.out.write_text(h1_table(args.runs, args.extra, args.fpr))
     print(args.out.read_text())
 
