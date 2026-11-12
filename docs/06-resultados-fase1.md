@@ -452,5 +452,7 @@ Lectura:
   certificado no alertaba, las variantes acaban alertando a la víctima en el 100 % y
   el 45 % de los casos; con el escaneo del viernes, en el 50 %.
 - El núcleo rápido no está certificado, pero tampoco pierde alertas en la práctica.
-  La única bajada (FTP, 141 → 117 flujos alertados) viene de partir flujos, que cambia
-  el conjunto de flujos; la víctima sigue alertada en todas las variantes.
+  La única bajada (FTP, 141 → 117 flujos alertados) aparece en una variante que
+  re-temporiza: alarga flujos 120 s con un paquete insertado y parte el 5 % en dos.
+  Es justo la operación que el certificado cubre con la holgura Δ, y la víctima sigue
+  alertada en todas las variantes.
