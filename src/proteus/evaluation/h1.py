@@ -420,6 +420,9 @@ def main() -> None:
                     help="restrict training to these capture days (file stems)")
     ap.add_argument("--test-days", nargs="*", default=None,
                     help="restrict testing to these capture days (file stems)")
+    ap.add_argument("--reuse", type=Path, default=None,
+                    help="evaluate the fitted models of this run instead of training; "
+                         "--models may name combinations a+b (maximum, MaxCore)")
     ap.add_argument("--train-thresholds", action="store_true",
                     help="also evaluate thresholds calibrated on the training network "
                          "(known not to transfer; slow because of the many alerts)")
@@ -432,39 +435,47 @@ def main() -> None:
     out.mkdir(parents=True, exist_ok=True)
 
     t0 = time.time()
-    tr, specs = training_set(args.train, rng, only=args.train_days)
-    flow_cols = [c for c in tr.columns if c.startswith("flow__")]
-    # Held-out calibration benign flows (30%) are not used for fitting.
-    calib = tr["clean"].to_numpy() & (rng.random(len(tr)) < 0.3)
-    fit = ~calib
-    y = tr["is_attack"].to_numpy()
+    if args.reuse is not None:
+        from proteus.evaluation.poisoning import combined
 
-    models, thresholds, checks = {}, {}, {}
-    chosen = detectors(specs, flow_cols)
-    if args.models:
-        chosen = {k: v for k, v in chosen.items() if k in args.models}
-    for name, (cols, model) in chosen.items():
-        X = tr[cols].to_numpy(np.float32)
-        if isinstance(model, UNSUPERVISED):
-            model.fit(X[fit & tr["clean"].to_numpy()])
-        else:
-            model.fit(X[fit], y[fit])
-            if model.monotonic_cst is not None:
-                checks[name] = monotonicity_violations(
-                    lambda Z, m=model: m.predict_proba(Z)[:, 1], X[fit],
-                    np.asarray(model.monotonic_cst), rng)
-                print(f"  monotonicity {name}: {checks[name]}", flush=True)
-        if args.train_thresholds:
-            s_cal = score(model, X[calib])
-            for fpr in FPRS:
-                thresholds[(name, fpr, "train")] = np.quantile(s_cal, 1 - fpr,
-                                                               method="higher")
-        models[name] = (cols, model)
-        print(f"  fitted {name} ({len(cols)} features) at {time.time() - t0:.0f}s", flush=True)
-    (out / "monotonicity.json").write_text(json.dumps(checks, indent=2))
-    with open(out / "models.pkl", "wb") as fh:
-        pickle.dump(models, fh)
-    del tr
+        fitted = load_models(args.reuse)
+        models = {n: combined(fitted, n) for n in (args.models or list(fitted))}
+        _, specs = evidence_b(args.test, days(args.test)[0], columns=["clean"])
+        thresholds = {}
+    else:
+        tr, specs = training_set(args.train, rng, only=args.train_days)
+        flow_cols = [c for c in tr.columns if c.startswith("flow__")]
+        # Held-out calibration benign flows (30%) are not used for fitting.
+        calib = tr["clean"].to_numpy() & (rng.random(len(tr)) < 0.3)
+        fit = ~calib
+        y = tr["is_attack"].to_numpy()
+
+        models, thresholds, checks = {}, {}, {}
+        chosen = detectors(specs, flow_cols)
+        if args.models:
+            chosen = {k: v for k, v in chosen.items() if k in args.models}
+        for name, (cols, model) in chosen.items():
+            X = tr[cols].to_numpy(np.float32)
+            if isinstance(model, UNSUPERVISED):
+                model.fit(X[fit & tr["clean"].to_numpy()])
+            else:
+                model.fit(X[fit], y[fit])
+                if model.monotonic_cst is not None:
+                    checks[name] = monotonicity_violations(
+                        lambda Z, m=model: m.predict_proba(Z)[:, 1], X[fit],
+                        np.asarray(model.monotonic_cst), rng)
+                    print(f"  monotonicity {name}: {checks[name]}", flush=True)
+            if args.train_thresholds:
+                s_cal = score(model, X[calib])
+                for fpr in FPRS:
+                    thresholds[(name, fpr, "train")] = np.quantile(s_cal, 1 - fpr,
+                                                                   method="higher")
+            models[name] = (cols, model)
+            print(f"  fitted {name} ({len(cols)} features) at {time.time() - t0:.0f}s", flush=True)
+        (out / "monotonicity.json").write_text(json.dumps(checks, indent=2))
+        with open(out / "models.pkl", "wb") as fh:
+            pickle.dump(models, fh)
+        del tr
 
     # Pass 1: score every test day; keep a sample of clean benign scores per day.
     test_days = [d for d in days(args.test) if not args.test_days or d.stem in args.test_days]
