@@ -532,8 +532,8 @@ def main() -> None:
         fitted = load_models(args.reuse)
         _, specs = evidence_b(args.test, days(args.test)[0], columns=["clean"])
         fresh = detectors(specs, [])  # local detectors are fitted per test day anyway
-        models = {n: combined(fitted, n) if (n in fitted or "|" in n or "+" in n)
-                  else fresh[n] for n in (args.models or list(fitted))}
+        models = {n: fresh[n] if (n not in fitted and n in fresh) else combined(fitted, n)
+                  for n in (args.models or list(fitted))}
         thresholds = {}
     else:
         tr, specs = training_set(args.train, rng, only=args.train_days)

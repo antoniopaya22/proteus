@@ -39,7 +39,16 @@ def combined(models: dict, name: str):
     """``a+b``: maximum of already fitted monotone models (``MaxCore``, still monotone),
     e.g. the fast core plus the raw-count core, which bounds poisoning. ``a|b``: the
     same after calibrating each part on local benign traffic (``CalibratedMax``, needs
-    ``fit`` on benign flows)."""
+    ``fit`` on benign flows). ``name-K``: a fitted maximum without its sub-core K
+    (ablation)."""
+    if name not in models and "-" in name and name.rsplit("-", 1)[1].isdigit():
+        # Ablation: a fitted maximum without one of its sub-cores ("proteus-2").
+        base, k = name.rsplit("-", 1)
+        cols, m = models[base]
+        keep = [(list(np.asarray(cols)[idx]), part) for j, (idx, part) in enumerate(m.parts)
+                if j != int(k)]
+        new_cols = list(dict.fromkeys(c for cs, _ in keep for c in cs))
+        return new_cols, type(m)(new_cols, keep)
     sep = "|" if "|" in name else "+" if "+" in name else None
     if sep is None:
         return models[name]

@@ -106,3 +106,18 @@ def test_calibrated_max_is_monotone_max_of_benign_cdfs():
     assert np.allclose(s[inside], np.max(cdf, axis=0)[inside])
     p = m.predict_proba(X)[:, 1]
     assert ((p >= 0) & (p < 1)).all()
+
+
+def test_ablation_drops_one_subcore():
+    from sklearn.ensemble import HistGradientBoostingClassifier
+
+    from proteus.evaluation.poisoning import combined
+
+    rng = np.random.default_rng(0)
+    X = rng.normal(size=(500, 3))
+    y = (X.sum(axis=1) > 0).astype(int)
+    parts = [(["a"], HistGradientBoostingClassifier(max_iter=10).fit(X[:, [0]], y)),
+             (["b", "c"], HistGradientBoostingClassifier(max_iter=10).fit(X[:, [1, 2]], y))]
+    _, full = combined({"x": (["a"], parts[0][1]), "y": (["b", "c"], parts[1][1])}, "x|y")
+    cols, abl = combined({"m": (["a", "b", "c"], full)}, "m-0")
+    assert cols == ["b", "c"] and len(abl.parts) == 1 and type(abl) is type(full)
