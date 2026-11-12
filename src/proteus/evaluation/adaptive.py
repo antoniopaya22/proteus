@@ -103,7 +103,7 @@ def main() -> None:
     rates = np.geomspace(args.rmin, args.rmax, args.grid)
     delta = h1.EXPORT_TIMEOUT_S
     baselines = Baselines(args.test)
-    rows = []
+    rows, ladder = [], []
     for day in h1.days(args.test):
         flows = pd.read_parquet(day, columns=FLOW_COLS)
         want = args.attacks or ATTACKS
@@ -162,6 +162,9 @@ def main() -> None:
                         X = feats[cols].to_numpy(np.float64)
                         clean_min = ~np.isin(minute, noisy[n])
                         quiet = not ((m.predict_proba(X)[:, 1] >= thr[n]) & clean_min).any()
+                        ladder.append({"day": day.stem, "attack": attack, "detector": n,
+                                       "plan": plan, "flows_per_h": float(r) * 3600,
+                                       "detected": not quiet})
                         if quiet and r > best[n]["rate"]:
                             best[n] = {"rate": float(r), "plan": plan}
                         if quiet and plan == "plain":
@@ -183,6 +186,8 @@ def main() -> None:
                 print(rows[-1], flush=True)
     out = pd.DataFrame(rows)
     out.to_csv(args.run / f"adaptive_{args.fpr:g}.csv", index=False)
+    # Dose ladder (METIS-style): detection at every rate and variant.
+    pd.DataFrame(ladder).to_csv(args.run / f"adaptive_ladder_{args.fpr:g}.csv", index=False)
     print(out.pivot_table(index=["day", "attack"], columns="detector",
                           values="adaptive_flows_per_h").round(0).to_string())
 
