@@ -92,12 +92,12 @@ def _features(flows: pd.DataFrame, cols: list[str], base: dict[str, pd.DataFrame
             out[c] = feats[raw].to_numpy(np.float64) - pops[ent][raw].to_numpy()
         elif c.endswith("__x"):
             raw = c[: -len("__x")]
-            ent = raw.split("__")[0]
+            ent = bl.entity_of(raw)
             b = base[ent][raw].reindex(keys[ent].to_numpy()).fillna(0.0).to_numpy()
             out[c] = feats[raw].to_numpy(np.float64) - b
         elif c.endswith("__b"):
             raw = c[: -len("__b")]
-            ent = raw.split("__")[0]
+            ent = bl.entity_of(raw)
             out[c] = base[ent][raw].reindex(keys[ent].to_numpy()).fillna(0.0).to_numpy()
         else:
             out[c] = feats[c].to_numpy(np.float64)

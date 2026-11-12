@@ -23,6 +23,7 @@ all days to keep the per-minute tables small.
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 
 import numpy as np
@@ -39,20 +40,43 @@ COUNTERS = {
 }
 # ``conn_s`` has no baseline: it is not conserved (see features.py), so its excess
 # cannot enter a monotone core.
+
+# Opt-in (PROTEUS_PAIRBASE=1, evidence v3): a baseline for the source-service pair
+# counters keyed by the *service*, i.e. the per-minute maximum over all the pairs of
+# that service, so a pair is compared with the busiest pair the service normally has.
+# A brute force (one source far above every normal client of the service) then stands
+# out even on services whose normal pairs are busy (DNS, NTP), where raw pair counts
+# do not. Poisoning it requires raising a pair of that service day after day, which the
+# deployment masks once it alerts, like any other baseline.
+PREFIX = {"pairsvc": "spair"}  # pseudo-entity -> column prefix
+PAIRBASE = os.environ.get("PROTEUS_PAIRBASE", "0") == "1"
+if PAIRBASE:
+    COUNTERS["pairsvc"] = ("flows", "fbytes", "rst", "noreply")
 QUANTILE = 0.95
 
 
 def baseline_columns(names: list[str]) -> dict[str, list[str]]:
     out: dict[str, list[str]] = {}
     for ent, counters in COUNTERS.items():
-        out[ent] = [n for n in names if n.split("__")[0] == ent and n.split("__")[1] in counters]
+        pre = PREFIX.get(ent, ent)
+        out[ent] = [n for n in names if n.split("__")[0] == pre and n.split("__")[1] in counters]
     return out
+
+
+def entity_of(column: str) -> str:
+    """Entity whose baseline a (raw) feature column uses."""
+    pre = column.split("__")[0]
+    for ent, p in PREFIX.items():
+        if p == pre and ent in COUNTERS:
+            return ent
+    return pre
 
 
 def entity_keys(ev: pd.DataFrame) -> dict[str, pd.Series]:
     dhost = ev["dst_ip"].astype("string")
     dsvc = dhost + ":" + ev["dst_port"].astype("string") + "/" + ev["proto"].astype("string")
-    return {"dsvc": dsvc, "dhost": dhost, "shost": ev["src_ip"].astype("string")}
+    return {"dsvc": dsvc, "dhost": dhost, "shost": ev["src_ip"].astype("string"),
+            "pairsvc": dsvc}
 
 
 class KeyCodes:

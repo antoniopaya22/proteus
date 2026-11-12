@@ -101,7 +101,8 @@ PEER = os.environ.get("PROTEUS_PEER", "0") == "1"
 
 def _bdir(ds: str) -> Path:
     peer = "_peer" if PEER else ""
-    return DATA / ds / f"evidence_b_{BASELINE['mode']}_{BASELINE['mask']}{_vsuffix(ds)}{peer}"
+    pb = "_pb" if bl.PAIRBASE else ""
+    return DATA / ds / f"evidence_b_{BASELINE['mode']}_{BASELINE['mask']}{_vsuffix(ds)}{peer}{pb}"
 
 
 def evidence_b(ds: str, day: Path, columns: list[str] | None = None
@@ -411,6 +412,8 @@ def proteus_detectors(specs, rules, src_rules, raw, raw_of, cst) -> dict:
     pair = raw_of([k for k in specs if k.startswith("spair__")])
     if not pair:
         return {}
+    # Pair excess over the service's busiest normal pair (PROTEUS_PAIRBASE=1).
+    pair = pair + [k for k in specs if k.startswith("spair__") and k.endswith("__x")]
 
     def calmax(parts, keep=lambda c: True):
         parts = [[c for c in cols if keep(c)] for cols in parts]
