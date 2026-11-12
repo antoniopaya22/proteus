@@ -180,6 +180,7 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("table", choices=["h1", "summary", "ablation"])
     ap.add_argument("--detectors", nargs="*", default=None)
+    ap.add_argument("--base", default="proteus", help="ablation: the full model")
     ap.add_argument("--set", choices=sorted(DETECTOR_SETS), default="v1",
                     help="detector columns of the h1 table")
     ap.add_argument("--runs", type=Path, nargs="+", required=True)
@@ -195,7 +196,7 @@ def main() -> None:
         print(t.round(3).to_string())
         return
     if args.table == "ablation":
-        args.out.write_text(ablation_table(args.runs, args.fpr))
+        args.out.write_text(ablation_table(args.runs, args.fpr, args.base))
         print(args.out.read_text())
         return
     DETECTORS[:] = DETECTOR_SETS[args.set]

@@ -36,6 +36,6 @@ done
 # Sub-core ablations.
 $PY proteus.evaluation.tables ablation --runs $(exists ${A}__v3_ablation ${B}__v3_ablation) \
   --out $T/ablation.tex > /dev/null || true
-$PY proteus.evaluation.tables ablation --runs $(exists ${B}__v3_ablation_cert) \
-  --out $T/ablation_cert.tex > /dev/null || true
+$PY proteus.evaluation.tables ablation --base proteus_cert \
+  --runs $(exists ${A}__v3_ablation ${B}__v3_ablation_cert) --out $T/ablation_cert.tex > /dev/null || true
 ls -la "$T"
