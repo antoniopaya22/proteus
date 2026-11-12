@@ -487,8 +487,10 @@ Lectura (parcial):
 - **`core_mono_dst_x` no tiene techo**: con línea base infinita no alerta ni a
   200 flujos/s. Las alertas de fuerza bruta dependen del exceso sobre la línea base,
   no de los contadores brutos. Falta ver `core_cert`.
-- En DoS Slowloris la frontera es 0 desde el día 0 (alerta con el primer flujo): no
-  hay margen para envenenar sin alertar.
+- ~~En DoS la frontera es 0 desde el día 0: no hay margen para envenenar.~~
+  **Corregido (§6.15):** era un artefacto. El tráfico benigno de la víctima ya
+  alertaba solo en algunos minutos, y cualquier flujo de ataque en esos minutos
+  "alertaba". Con la atribución corregida hay que repetirlo.
 - **El tope solo retrasa**: con 0,1 la frontera crece ×1,2 al día (×3,9 en 8 días).
 
 **Coste del tope** (`--growth-only`): crecimiento día a día de las líneas base
@@ -536,3 +538,26 @@ registro (`split_flows`) lo ocultaba porque reparte la duración por construcci�
 `conn_s` pasa a ser una característica de respuesta, sin línea base y fuera de los
 núcleos monótonos (commit 2ab77da). Los resultados anteriores de núcleos con `conn_s`
 deben repetirse con la v3, que ya lo excluye.
+
+## 6.15 Corrección: alertas atribuibles al ataque (2026-11-12)
+
+La frontera y el atacante adaptativo contaban como alerta del ataque cualquier flujo
+de ataque por encima del umbral. En víctimas con mucho tráfico, el fondo benigno solo
+ya supera el umbral local en algunos minutos. En la víctima de Hulk y GoldenEye
+(miércoles de CIC-IDS-2017, `core_cert`, 18 → 17) lo hace el 0,5 % de los flujos de
+fondo, con un máximo de 0,97 frente a un umbral de 0,93. Un flujo de ataque en esos
+minutos hereda la evidencia del fondo y "alerta" a cualquier ritmo. Consecuencias:
+
+- las fronteras de DoS cercanas a 0 (14/h en Hulk, 0 en Slowloris y GoldenEye) no
+  medían el ataque;
+- en el envenenamiento, el primer día "saltaba" (Hulk de 14 a 3.351/h incluso con
+  tope 0,1) porque la nueva línea base absorbía la carga benigna de ese día.
+
+**Arreglo (commit 1edc682):** solo cuentan las alertas en minutos en que el fondo,
+por sí solo, no alerta; los flujos benignos cuya evidencia sube el ataque también
+cuentan. Sigue siendo monótono en el ritmo. Se aplica en `core.frontier` y en
+`evaluation.adaptive`.
+
+**Pendiente:** recalcular con la v3 las fronteras y el envenenamiento. La tabla de
+fronteras certificadas del paper (Hulk 6.238/h, etc.) está menos expuesta, porque el
+peor caso baja las puntuaciones del fondo, pero también se repite.

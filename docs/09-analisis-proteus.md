@@ -9,7 +9,7 @@ queda como motivación.
 | Afirmación | Evidencia |
 |---|---|
 | Las operaciones libres no quitan alertas certificadas | 0 violaciones en 20 variantes por ataque, campañas reales 18→17 (§6.12) |
-| Lo volumétrico no se puede envenenar | En los 4 DoS la frontera es 0: no hay ritmo silencioso con el que envenenar (§6.13) |
+| ~~Lo volumétrico no se puede envenenar~~ | Artefacto de falsos positivos del fondo; corregido (§6.15) y pendiente de repetir |
 | Generaliza entre redes con calibración local | Todo DoS/DDoS y los 6 escaneos, 1,9 alarmas/h (18→17) |
 | La monotonía no cuesta detección | Iguala o supera al modelo libre con la mitad de alarmas (H2) |
 | El máximo calibrado funciona | `core_mono_dst_x\|core_mono_dst`: misma detección, 1,65 frente a 1,88 alarmas/h |
