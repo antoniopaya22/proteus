@@ -45,6 +45,23 @@ queda como motivación.
 | E | **Reutilización como segundo peor caso**: contadores por conexión al mínimo y paquetes hacia delante con holgura log 5 (`@certr`) | 3 | hecho (b1bbb45) |
 | F | **Evaluación**: tabla de daño bajo atacante adaptativo (Proteus frente a núcleo libre, reglas de tasa y KitNET), validación sobre pcaps, UGR'16, intervalos de confianza, ablaciones, coste | todos | pcaps: hecho (0 violaciones, §6.14); IC: `tables summary`; adaptativo y coste: en cola con la v3; UGR y ablaciones: pendiente |
 
+### Desbalanceo de clases (G)
+
+Apollon no lo trata: junta todos los ataques en una clase, partición estratificada
+70/30, modelos sin `class_weight`, umbral 0,5 y métricas accuracy/F1 macro. Los
+ataques grandes (Hulk, DDoS) dominan y el umbral depende de la proporción de clases
+del entrenamiento.
+
+Proteus: tope por tipo de ataque y día, `class_weight="balanced"` y, sobre todo,
+umbral por FPR con benigno local, que no depende de la proporción del entrenamiento.
+Evaluación por campaña y alarmas/h. Sin SMOTE: crea flujos imposibles y agrava los
+duplicados de CIC.
+
+Experimento (`h1 --balance`, en cola tras CTU v3 y ablaciones): `cap` (actual), `type`
+(peso igual por tipo de ataque), `type_entity` (más benigno ponderado por
+1/√flujos de su host destino) y `none` (muestra proporcional, sin pesos). En 18→17 y
+17→18, con `proteus`, `proteus_cert`, núcleo rápido y cáscara.
+
 ## 9.4 Orden
 
 1. A + B + D: evidencia v3 y reentrenar en 18→17 y 17→18 (en cola).
