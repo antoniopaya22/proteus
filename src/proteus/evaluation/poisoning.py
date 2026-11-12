@@ -34,6 +34,38 @@ from proteus.evaluation.frontier_exp import (
 BELOW = 0.95  # poisoning rate as a fraction of the current frontier (stays alert-free)
 
 
+def growth_stats(ds: str, caps: list[float]) -> pd.DataFrame:
+    """How fast benign baselines grow: for consecutive days with causal ("prior")
+    baselines, the increase b_d - b_(d-1) per (entity, counter) seen on both days, and
+    the share above each cap (those baselines would be clipped by the cap, which costs
+    false positives on that entity)."""
+    old = dict(h1.BASELINE)
+    h1.BASELINE["mode"] = "prior"
+    try:
+        bls = Baselines(ds)
+        prev, rows = None, []
+        for day in bls.days[1:]:
+            cur = bls.for_day(day)
+            if prev is not None:
+                for ent, b in cur.items():
+                    common = b.index.intersection(prev[ent].index)
+                    if not len(common):
+                        continue
+                    d = (b.loc[common] - prev[ent].loc[common]).to_numpy().ravel()
+                    nz = d[(b.loc[common].to_numpy().ravel() > 0)]
+                    row = {"day": day.stem, "entity": ent, "pairs": len(nz),
+                           "p50": float(np.median(nz)) if len(nz) else np.nan,
+                           "p99": float(np.quantile(nz, 0.99)) if len(nz) else np.nan,
+                           "max": float(nz.max()) if len(nz) else np.nan}
+                    for c in caps:
+                        row[f"above_{c:g}"] = float((nz > c).mean()) if len(nz) else np.nan
+                    rows.append(row)
+            prev = cur
+    finally:
+        h1.BASELINE.update(old)
+    return pd.DataFrame(rows)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--run", type=Path, required=True)
@@ -46,11 +78,18 @@ def main() -> None:
     ap.add_argument("--rmax", type=float, default=200.0)
     ap.add_argument("--attacks", nargs="*", default=None)
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--growth-only", action="store_true",
+                    help="only measure day-to-day growth of benign baselines")
     args = ap.parse_args()
+    caps = [None if c == "none" else float(c) for c in args.caps]
+    if args.growth_only:
+        g = growth_stats(args.test, [c for c in caps if c is not None])
+        g.to_csv(args.run / f"baseline_growth_{args.test}.csv", index=False)
+        print(g.round(4).to_string())
+        return
     rng = np.random.default_rng(args.seed)
     cols, model = h1.load_models(args.run)[args.model]
     _, specs = h1.evidence_b(args.test, h1.days(args.test)[0], columns=["clean"])
-    caps = [None if c == "none" else float(c) for c in args.caps]
     wanted = args.attacks or ATTACKS
 
     baselines = Baselines(args.test)
