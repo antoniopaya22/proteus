@@ -28,18 +28,55 @@ from proteus.evaluation import h1
 META = ["t_start", "src_ip", "dst_ip", "dst_port", "proto", "family", "clean", "suspect"]
 
 
+def _side(names: list[str]) -> str:
+    if all(c.startswith("shost") for c in names):
+        return "src"
+    if all(c.startswith("spair") for c in names):
+        return "pair"
+    return "dst"
+
+
 def side_scores(model, cols: list[str], X: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    """Score and attributed side ("src"/"dst") of every row."""
+    """Score and attributed side ("src", "dst" or "pair") of every row. For a calibrated
+    maximum, the side of the sub-core with the highest benign-CDF value."""
     parts = getattr(model, "parts", None)
     if not parts:
-        side = "src" if all(c.startswith("shost") for c in cols) else "dst"
-        return h1.score(model, X), np.full(len(X), side)
+        return h1.score(model, X), np.full(len(X), _side(cols))
+    refs = getattr(model, "ref_", None)
     subs, sides = [], []
-    for idx, m in parts:
-        subs.append(m.predict_proba(X[:, idx])[:, 1])
-        sides.append("src" if all(cols[i].startswith("shost") for i in idx) else "dst")
+    for j, (idx, m) in enumerate(parts):
+        s = m.predict_proba(X[:, idx])[:, 1]
+        if refs is not None:
+            s = np.searchsorted(refs[j], s, side="right") / len(refs[j])
+        subs.append(s)
+        sides.append(_side([cols[i] for i in idx]))
     subs = np.vstack(subs)
-    return subs.max(axis=0), np.asarray(sides)[subs.argmax(axis=0)]
+    score = h1.score(model, X) if refs is not None else subs.max(axis=0)
+    return score, np.asarray(sides)[subs.argmax(axis=0)]
+
+
+def _benign_sample(ds, days, cols, rng, per_day: int = 100_000) -> np.ndarray:
+    out = []
+    for d in days:
+        ev, _ = h1.evidence_b(ds, d, columns=[*cols, "clean", "suspect"])
+        X = ev.loc[ev["clean"] & ~ev["suspect"], cols].to_numpy(np.float32)
+        out.append(X[rng.choice(len(X), min(len(X), per_day), replace=False)])
+    return np.concatenate(out)
+
+
+def explain_entities(alerts: pd.DataFrame, top: pd.DataFrame, ds: str, model, cols,
+                     ref: np.ndarray) -> pd.Series:
+    """One-line explanation of the highest-scoring alert of each listed entity."""
+    from proteus.core.explain import describe, explain
+
+    why = pd.Series("", index=top.index, dtype=object)
+    for i, r in top.iterrows():
+        g = alerts[(alerts["side"] == r["side"]) & (alerts["entity"] == r["entity"])]
+        best = g.loc[g["score"].idxmax()]
+        day = next(d for d in h1.days(ds) if d.stem == best["day"])
+        x = h1.read_rows(h1._bdir(ds) / day.name, np.array([int(best["row"])]), cols)
+        why[i] = describe(explain(model, cols, x[cols].to_numpy(np.float32), ref)[0])
+    return why
 
 
 def main() -> None:
@@ -54,14 +91,19 @@ def main() -> None:
     args = ap.parse_args()
     models = h1.load_models(args.run)
     days = [d for d in h1.days(args.test) if args.days is None or d.stem in args.days]
+    rng = np.random.default_rng(0)
     for name in args.models:
         cols, model = models[name]
+        benign_ref = _benign_sample(args.test, days, cols, rng)
+        if getattr(model, "local", False):  # calibrated maximum: fit on local benign
+            model.fit(benign_ref)
         per_day = []
         for day in days:
             ev, _ = h1.evidence_b(args.test, day, columns=[*cols, *META])
             s, side = side_scores(model, cols, ev[cols].to_numpy(np.float32))
             meta = ev[META].copy()
             meta["day"], meta["score"], meta["side"] = day.stem, s, side
+            meta["row"] = np.arange(len(meta))
             per_day.append(meta)
             del ev
         rows, alerts = [], []
@@ -70,8 +112,10 @@ def main() -> None:
                                   for j, o in enumerate(per_day) if j != i])
             thr = float(np.quantile(ref, 1 - args.fpr, method="higher"))
             a = d[d["score"] >= thr].copy()
-            a["entity"] = np.where(a["side"] == "src", a["src_ip"].astype(str),
-                                   a["dst_ip"].astype(str))
+            a["entity"] = np.select(
+                [a["side"] == "src", a["side"] == "pair"],
+                [a["src_ip"].astype(str), a["src_ip"].astype(str) + "->" + a["dst_ip"].astype(str)],
+                a["dst_ip"].astype(str))
             a["bucket"] = a["t_start"].dt.floor(f"{args.bucket_min}min")
             hours = (d["t_start"].max() - d["t_start"].min()).total_seconds() / 3600
             fa = a[a["clean"] & ~a["suspect"]]
@@ -100,6 +144,8 @@ def main() -> None:
             ports=("dst_port", lambda p: ",".join(map(str, p.value_counts().head(3).index))),
             family=("family", lambda f: f.value_counts().index[0])).reset_index()
         desc = desc.sort_values("alarms", ascending=False)
+        desc["why"] = explain_entities(fa, desc.head(args.top), args.test, model, cols,
+                                       benign_ref)
         desc.to_csv(args.run / f"alarms_{name}_{args.fpr:g}.csv", index=False)
         print(desc.head(args.top).to_string(index=False))
 
