@@ -455,3 +455,53 @@ Lectura:
   re-temporiza: alarga flujos 120 s con un paquete insertado y parte el 5 % en dos.
   Es justo la operación que el certificado cubre con la holgura Δ, y la víctima sigue
   alertada en todas las variantes.
+
+## 6.13 Envenenamiento de la línea base (2026-11-12, parcial)
+
+`python -m proteus.evaluation.poisoning` (`proteus.core.poisoning`). Atacante más
+fuerte: en cada minuto del periodo de referencia envía el ataque al 95 % de la
+frontera actual. No alerta, así que el despliegue no enmascara esos minutos. La nueva
+línea base de cada entidad tocada es el cuantil 95 de su evidencia por minuto con ese
+tráfico, y nunca baja. Se itera una vez por día (actualización de la línea base) y se
+mide la frontera tras cada actualización. Variantes:
+
+- sin tope;
+- con tope de crecimiento por actualización (0,25 y 0,1 en unidades log1p);
+- **techo**: línea base infinita en todas las entidades tocadas. Los contadores
+  brutos siguen limitando a un núcleo monótono que los use.
+
+**18 → 17, `core_mono_dst_x`, FPR 10⁻³** (flujos/h; campaña real SSH 1.541/h, FTP
+3.910/h):
+
+| Ataque | Tope | día 0 | 1 | 2 | 4 | 8 |
+|---|---|---|---|---|---|---|
+| SSH | ninguno | 1.193 | 3.882 | 9.994 | 36.102 | 317.831 |
+| SSH | 0,25 | 1.193 | 1.712 | 2.889 | 6.392 | 16.683 |
+| SSH | 0,1 | 1.193 | 1.304 | 1.542 | 2.310 | 4.610 |
+| FTP | ninguno | 417 | 1.606 | 4.097 | 21.254 | 241.124 |
+
+Lectura (parcial):
+
+- **Sin tope, el envenenamiento funciona y es rápido**: la frontera de SSH se
+  multiplica por ~3 al día, y en un día ya supera el ritmo de la campaña real.
+- **`core_mono_dst_x` no tiene techo**: con línea base infinita no alerta ni a
+  200 flujos/s. Las alertas de fuerza bruta dependen del exceso sobre la línea base,
+  no de los contadores brutos. Falta ver `core_cert`.
+- En DoS Slowloris la frontera es 0 desde el día 0 (alerta con el primer flujo): no
+  hay margen para envenenar sin alertar.
+- **El tope solo retrasa**: con 0,1 la frontera crece ×1,2 al día (×3,9 en 8 días).
+
+**Coste del tope** (`--growth-only`): crecimiento día a día de las líneas base
+benignas en CIC-IDS-2017 con referencia causal (1–4 días previos). La mediana es ≈ 0,
+pero:
+
+| Entidad | > 0,1 | > 0,25 | > 0,5 | > 1 |
+|---|---|---|---|---|
+| servicio destino | 13–21 % | 8–17 % | 6–14 % | 3–8 % |
+| host destino | 10–18 % | 7–15 % | 5–12 % | 2–5 % |
+| host origen | 7–12 % | 0,4–2 % | 0–0,4 % | 0 % |
+
+Con tan poca historia, las líneas base benignas no son estables: un tope de 0,1
+recortaría una de cada cinco. Hace falta historia de semanas (UGR'16) para fijar un
+tope con coste bajo. Alternativas: línea base con ventana larga, o limitar el
+crecimiento solo en entidades sin cambios de carga explicables.
