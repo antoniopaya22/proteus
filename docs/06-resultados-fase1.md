@@ -504,7 +504,13 @@ pero:
 | host origen | 7–12 % | 0,4–2 % | 0–0,4 % | 0 % |
 
 Con tan poca historia, las líneas base benignas no son estables: un tope de 0,1
-recortaría una de cada cinco. Hace falta historia de semanas (UGR'16) para fijar un
+recortaría una de cada cinco.
+
+En CSE-CIC-IDS-2018 (referencia causal de 1 a 9 días) se ve lo mismo: entre el 3 % y el
+20 % de los pares (entidad, contador) crecen más de 0,1 al día, y entre el 1 % y el 6 %
+más de 1, sin que baje claramente con más días de historia. **Un tope de crecimiento
+uniforme no sale barato en estos datos.** Hacen falta techos que no dependan de la
+línea base de la víctima: contadores brutos o por par, o líneas base de población. Hace falta historia de semanas (UGR'16) para fijar un
 tope con coste bajo. Alternativas: línea base con ventana larga, o limitar el
 crecimiento solo en entidades sin cambios de carga explicables.
 
