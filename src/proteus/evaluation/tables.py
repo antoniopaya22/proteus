@@ -300,7 +300,8 @@ def adaptive_table(csvs: list[Path]) -> str:
                 c = _rate(v, float(r["rmax_flows_per_h"]))
                 if np.isfinite(v) and v >= a["real_flows_per_h"]:
                     c = rf"\textbf{{{c}}}"
-                if col == "adaptive_flows_per_h" and r["best_plan"] != "plain":
+                if (col == "adaptive_flows_per_h" and isinstance(r["best_plan"], str)
+                        and r["best_plan"] != "plain"):
                     c += r"$^a$"
                 cells.append(c)
             lines.append(f"{name} & {_rate(a['real_flows_per_h'], np.inf)} & "

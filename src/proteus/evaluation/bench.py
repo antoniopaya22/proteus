@@ -40,9 +40,9 @@ LAMBDA = 3.0  # risk aversion of ssd, as fixed in METIS
 VOLUMETRIC = ("dos_", "ddos_", "portscan")
 RMIN_PER_H = 1e-3 * 3600  # lowest rate tried by evaluation.adaptive (flows/h)
 NAMES = {
-    "proteus": "Proteus", "proteus_cert@cert": "Proteus (certified alerts)",
+    "proteus": "Proteus", "proteus_cert@cert": "Proteus (cert.\\ alerts)",
     "proteus_cert": "Proteus certified core", "core_free_dst_b": "Unconstrained core",
-    "rate_rules_local": "Local rate thresholds", "kitnet_local": "KitNET",
+    "rate_rules_local": "Rate thresholds", "kitnet_local": "KitNET",
     "flow_clf": "Per-flow classifier", "core_mono_dst_x": "Monotone core (single)",
 }
 
@@ -141,8 +141,8 @@ def bench(runs: list[Path], adaptive: list[Path], fpr: float,
 def latex(t: pd.DataFrame, dims: list[str]) -> str:
     cols = ["detection", "false_alarms", "robustness", "composite"]
     cols = [c for c in cols if c in t.columns]
-    head = {"detection": "Detection", "false_alarms": "False alarms",
-            "robustness": "Robustness", "composite": "Composite"}
+    head = {"detection": "Det.", "false_alarms": "Alarms",
+            "robustness": "Robust.", "composite": "$A_3$"}
     lines = [r"\begin{tabular}{l" + "r" * len(cols) + "c}", r"\toprule",
              "Defence & " + " & ".join(head[c] for c in cols) + r" & Pareto \\", r"\midrule"]
     for m, r in t.iterrows():

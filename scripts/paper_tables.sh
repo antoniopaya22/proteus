@@ -34,7 +34,7 @@ for pair in "A:18_17" "B:17_18"; do
 done
 
 # Damage under the adaptive attacker, both directions.
-csvs=$(ls ${A}__v3/adaptive_0.001.csv ${B}__v3/adaptive_0.001.csv 2>/dev/null || true)
+csvs=$(for d in ${A}__v3 ${B}__v3; do [ -f $d/adaptive_0.001.csv ] && echo $d/adaptive_0.001.csv; done || true)
 [ -n "$csvs" ] && $PY proteus.evaluation.tables adaptive --csv $csvs --out $T/adaptive.tex > /dev/null
 
 # Sub-core ablations.
