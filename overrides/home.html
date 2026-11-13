@@ -10,7 +10,7 @@
 <header class="lp-nav" id="lp-nav">
   <div class="lp-wrap lp-nav__in">
     <a class="lp-brand" href="{{ (B or '.') | url }}">
-      <img src="{{ 'assets/logo-white.svg' | url }}" alt="" width="24" height="24">
+      <img src="{{ 'assets/logo.svg' | url }}" alt="" width="22" height="22">
       <span>Proteus</span>
     </a>
     <nav class="lp-nav__links" aria-label="Main">
@@ -22,11 +22,10 @@
     </nav>
     <div class="lp-nav__cta">
       <a class="lp-lang" href="{{ ('.' if es else 'es/') | url }}" hreflang="{{ 'en' if es else 'es' }}" title="{{ t.lang_other_name }}">{{ t.lang_other }}</a>
-      <a class="lp-btn lp-btn--line lp-hide-sm" href="https://github.com/antoniopaya22/proteus">
-        <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M8 0a8 8 0 0 0-2.53 15.59c.4.07.55-.17.55-.38v-1.33c-2.23.48-2.7-1.07-2.7-1.07-.36-.92-.89-1.17-.89-1.17-.73-.5.06-.49.06-.49.8.06 1.23.83 1.23.83.72 1.22 1.87.87 2.33.67.07-.52.28-.87.5-1.07-1.78-.2-3.65-.89-3.65-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.28.82 2.15 0 3.07-1.87 3.75-3.66 3.95.29.25.54.73.54 1.48v2.2c0 .21.15.46.55.38A8 8 0 0 0 8 0Z"/></svg>
-        GitHub
+      <a class="lp-gh lp-hide-sm" href="https://github.com/antoniopaya22/proteus" aria-label="GitHub">
+        <svg viewBox="0 0 16 16" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M8 0a8 8 0 0 0-2.53 15.59c.4.07.55-.17.55-.38v-1.33c-2.23.48-2.7-1.07-2.7-1.07-.36-.92-.89-1.17-.89-1.17-.73-.5.06-.49.06-.49.8.06 1.23.83 1.23.83.72 1.22 1.87.87 2.33.67.07-.52.28-.87.5-1.07-1.78-.2-3.65-.89-3.65-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.28.82 2.15 0 3.07-1.87 3.75-3.66 3.95.29.25.54.73.54 1.48v2.2c0 .21.15.46.55.38A8 8 0 0 0 8 0Z"/></svg>
       </a>
-      <a class="lp-btn lp-btn--primary" href="{{ (B ~ 'getting-started/quickstart/') | url }}">{{ t.get_started }}</a>
+      <a class="lp-btn lp-btn--ink" href="{{ (B ~ 'getting-started/quickstart/') | url }}">{{ t.get_started }}</a>
     </div>
   </div>
 </header>
@@ -40,48 +39,60 @@
 <div class="lp" id="lp">
 
   <!-- =========================================================== HERO -->
-  <section class="lp-sec lp-dark lp-hero" id="top">
-    <div class="lp-wrap lp-hero__grid">
-      <div>
-        <p class="lp-eyebrow">{{ t.hero_eyebrow }}</p>
-        <h1 class="lp-display">{{ t.hero_title }}<i class="lp-sq"></i></h1>
-        <p class="lp-lead">{{ t.hero_lead }}</p>
-        <div class="lp-row">
-          <a class="lp-btn lp-btn--primary lp-btn--lg" href="{{ (B ~ 'getting-started/quickstart/') | url }}">{{ t.get_started }}</a>
-          <a class="lp-btn lp-btn--line lp-btn--lg" href="#how">{{ t.read_docs }}</a>
-        </div>
-        <ul class="lp-facts">
-          <li>{{ t.fact1 }}</li>
-          <li>{{ t.fact2 }}</li>
-          <li>{{ t.fact3 }}</li>
-        </ul>
-      </div>
-      <figure class="lp-card lp-hero__viz pv" aria-label="{{ t.hero_aria }}">
-        <div class="lp-card__head">{{ t.hero_card }}<span class="lp-card__tag">{{ t.simulation }}</span></div>
-        <div class="pv-op"><span>{{ t.op_label }} <b id="pv-n">0</b>/4</span><b id="pv-op">·</b></div>
-        <div class="pv-grid">
-          <div class="pv-col">
-            <div class="pv-col__head">{{ t.perflow }}</div>
-            <ul class="pv-counters pv-feats" id="pv-feats">
-              {% for c in t.pf_feats %}<li><span>{{ c }}</span><i><b></b></i></li>{% endfor %}
-            </ul>
-            <div class="pv-gauge" id="pv-g1"><i class="pv-gauge__thr"></i><i class="pv-gauge__bar"></i></div>
-            <div class="pv-thr">{{ t.thr }}</div>
-            <div class="pv-verdict" id="pv-v1">{{ t.v_alert }}</div>
+  <section class="lp-hero" id="top">
+    <div class="lp-wrap">
+      <p class="lp-tag">{{ t.hero_eyebrow }}</p>
+      <div class="lp-hero__head">
+        <h1 class="lp-display">{{ t.hero_title }}</h1>
+        <div class="lp-hero__side">
+          <p class="lp-lead">{{ t.hero_lead }}</p>
+          <div class="lp-row">
+            <a class="lp-btn lp-btn--ink lp-btn--lg" href="{{ (B ~ 'getting-started/quickstart/') | url }}">{{ t.get_started }}</a>
+            <a class="lp-btn lp-btn--ghost lp-btn--lg" href="#how">{{ t.read_docs }} <span aria-hidden="true">↓</span></a>
           </div>
-          <div class="pv-col">
-            <div class="pv-col__head">{{ t.proteus_core }}</div>
-            <ul class="pv-counters" id="pv-counters">
-              {% for c in t.counters %}<li><span>{{ c }}</span><i><b></b></i></li>{% endfor %}
-            </ul>
-            <div class="pv-gauge" id="pv-g2"><i class="pv-gauge__thr"></i><i class="pv-gauge__worst"></i><i class="pv-gauge__bar"></i></div>
-            <div class="pv-thr">{{ t.thr }} · <span class="pv-worst-l">{{ t.worst }}</span></div>
-            <div class="pv-verdict is-alert" id="pv-v2">{{ t.v_cert }}</div>
+        </div>
+      </div>
+
+      <figure class="sc" id="sc" aria-label="{{ t.hero_aria }}">
+        <figcaption class="sc-cap"><span>{{ t.hero_card }}</span><span class="sc-cap__r">{{ t.simulation }} · t = <b id="sc-clock">00:00</b></span></figcaption>
+        <div class="sc-net">
+          <div class="sc-node sc-node--atk">
+            <i class="sc-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></i>
+            <b>{{ t.sc_attacker }}</b><span id="sc-src">198.51.100.7 :41022</span>
+          </div>
+          <div class="sc-wire" id="sc-w1"></div>
+          <div class="sc-node sc-node--exp">
+            <i class="sc-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="10" rx="2"/><path d="M7 12h.01M11 12h.01M15 12h2"/></svg></i>
+            <b>{{ t.sc_exporter }}</b><span>Δ = 120 s</span>
+          </div>
+          <div class="sc-wire" id="sc-w2"></div>
+          <div class="sc-node sc-node--vic">
+            <i class="sc-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="7" rx="1.5"/><rect x="4" y="14" width="16" height="7" rx="1.5"/><path d="M8 6.5h.01M8 17.5h.01"/></svg></i>
+            <b>{{ t.sc_victim }}</b><span>10.0.4.17 :443</span>
+          </div>
+        </div>
+        <div class="sc-read">
+          <div class="sc-col">
+            <h3>{{ t.op_label }}</h3>
+            <ol class="sc-ops" id="sc-ops">{% for o in t.ops %}<li><span>0{{ loop.index }}</span>{{ o }}</li>{% endfor %}</ol>
+          </div>
+          <div class="sc-col">
+            <h3>{{ t.perflow }}</h3>
+            <div class="sc-meter" id="sc-m1"><i class="sc-meter__thr"></i><i class="sc-meter__bar"></i></div>
+            <div class="sc-scale"><span>0</span><span>{{ t.thr }}</span><span>1</span></div>
+            <p class="sc-verdict" id="sc-v1">{{ t.v_alert }}</p>
+            <p class="sc-note">{{ t.sc_flow_note }}</p>
+          </div>
+          <div class="sc-col sc-col--ev">
+            <h3>{{ t.proteus_core }}</h3>
+            <ul class="sc-ctr" id="sc-ctr">{% for c in t.counters %}<li><span>{{ c }}</span><b>0</b><i>↑</i></li>{% endfor %}</ul>
+            <div class="sc-meter sc-meter--ev" id="sc-m2"><i class="sc-meter__thr"></i><i class="sc-meter__bar"></i><i class="sc-meter__worst"></i></div>
+            <div class="sc-scale"><span>0</span><span>{{ t.thr }} · <em>{{ t.worst }}</em></span><span>1</span></div>
+            <p class="sc-verdict is-cert" id="sc-v2">{{ t.v_cert }}</p>
           </div>
         </div>
       </figure>
-    </div>
-    <div class="lp-wrap">
+
       <div class="lp-strip">
         {% for k, v in t.strip %}<div><span>{{ k }}</span><b>{{ v }}</b></div>{% endfor %}
       </div>
@@ -89,21 +100,22 @@
   </section>
 
   <!-- ======================================================== PROBLEM -->
-  <section class="lp-sec lp-light" id="problem">
+  <section class="lp-sec lp-paper" id="problem">
     <div class="lp-wrap">
+      <p class="lp-tag"><b>01</b>{{ t.p_eyebrow }}</p>
       <div class="lp-split">
-        <div>
-          <p class="lp-eyebrow">{{ t.p_eyebrow }}</p>
-          <h2 class="lp-h2">{{ t.p_title }}<i class="lp-sq"></i></h2>
-        </div>
+        <h2 class="lp-h2">{{ t.p_title }}</h2>
         <p class="lp-text">{{ t.p_text }}</p>
       </div>
-      <div class="lp-cols">
-        {% for h, p in t.p_cols %}<div><h3>{{ h }}</h3><p>{{ p }}</p></div>{% endfor %}
-      </div>
+      <ol class="lp-steps">
+        {% for h, p in t.p_cols %}<li><h3>{{ h }}</h3><p>{{ p }}</p></li>{% endfor %}
+      </ol>
       <div class="om" id="om" data-up="{{ t.om_up }}" data-down="{{ t.om_down }}" data-same="{{ t.om_same }}">
-        <div class="om-ops" role="tablist">
-          {% for o in t.om_ops %}<button type="button" role="tab" data-op="{{ loop.index0 }}"{% if loop.first %} class="is-on" aria-selected="true"{% endif %}>{{ o }}</button>{% endfor %}
+        <div class="om-head">
+          <p>{{ t.om_hint }}</p>
+          <div class="om-ops" role="tablist">
+            {% for o in t.om_ops %}<button type="button" role="tab" data-op="{{ loop.index0 }}"{% if loop.first %} class="is-on" aria-selected="true"{% endif %}>{{ o }}</button>{% endfor %}
+          </div>
         </div>
         <div class="om-grid">
           <div class="om-panel">
@@ -115,67 +127,58 @@
             <ul id="om-e">{% for r in t.om_erows %}<li><span>{{ r }}</span><b></b></li>{% endfor %}</ul>
           </div>
         </div>
-        <p class="lp-note">{{ t.om_hint }}</p>
       </div>
     </div>
   </section>
 
   <!-- ============================================================ HOW -->
-  <section class="lp-sec lp-dark" id="how">
+  <section class="lp-sec lp-ink" id="how">
     <div class="lp-wrap">
+      <p class="lp-tag"><b>02</b>{{ t.h_eyebrow }}</p>
       <div class="lp-split">
-        <div>
-          <p class="lp-eyebrow">{{ t.h_eyebrow }}</p>
-          <h2 class="lp-h2">{{ t.h_title }}<i class="lp-sq"></i></h2>
-        </div>
+        <h2 class="lp-h2">{{ t.h_title }}</h2>
         <p class="lp-text">{{ t.h_text }}</p>
       </div>
-      <div class="lp-cols lp-cols--dark lp-cols--4">
-        {% for h, p in t.h_cols %}<div><h3>{{ h }}</h3><p>{{ p }}</p></div>{% endfor %}
-      </div>
+      <ol class="lp-steps lp-steps--4">
+        {% for h, p in t.h_cols %}<li><h3>{{ h }}</h3><p>{{ p }}</p></li>{% endfor %}
+      </ol>
       <div class="pw-grid">
-        <div class="lp-card pw" id="cs">
-          <div class="lp-card__head">{{ t.cs_title }}<span class="lp-card__tag">{{ t.interactive }}</span></div>
-          <div class="pw-body">
-            <label class="pw-label" for="cs-tau">{{ t.cs_scale }}: <b id="cs-tau-v">10 min</b></label>
-            <input type="range" id="cs-tau" min="0" max="4" step="1" value="2">
-            <div class="pw-scale"><span>10 s</span><span>1 min</span><span>10 min</span><span>1 h</span><span>6 h</span></div>
-            <div class="cs-bars">
-              <div class="cs-row"><span>{{ t.cs_ev }}</span><i><b id="cs-x"></b></i></div>
-              <div class="cs-row"><span>{{ t.cs_worst }}</span><i><b id="cs-w"></b></i></div>
-              <i class="cs-thr" id="cs-thr"></i>
-            </div>
-            <p class="pw-meta">{{ t.cs_delta }} · {{ t.cs_slack }} = <b id="cs-s">0.40</b></p>
-            <p class="pw-out" id="cs-out" data-yes="{{ t.cs_yes }}" data-no="{{ t.cs_no }}"></p>
+        <div class="pw" id="cs">
+          <div class="pw-head"><span>{{ t.cs_title }}</span><span>{{ t.interactive }}</span></div>
+          <label class="pw-label" for="cs-tau">{{ t.cs_scale }} <b id="cs-tau-v">10 min</b></label>
+          <input type="range" id="cs-tau" min="0" max="4" step="1" value="2">
+          <div class="pw-scale"><span>10 s</span><span>1 min</span><span>10 min</span><span>1 h</span><span>6 h</span></div>
+          <div class="cs-bars">
+            <div class="cs-row"><span>{{ t.cs_ev }}</span><i><b id="cs-x"></b></i></div>
+            <div class="cs-row"><span>{{ t.cs_worst }}</span><i><b id="cs-w"></b></i></div>
+            <i class="cs-thr" id="cs-thr"></i>
           </div>
+          <p class="pw-meta">{{ t.cs_delta }} · {{ t.cs_slack }} = <b id="cs-s">0.40</b></p>
+          <p class="pw-out" id="cs-out" data-yes="{{ t.cs_yes }}" data-no="{{ t.cs_no }}"></p>
         </div>
-        <div class="lp-card pw" id="fr">
-          <div class="lp-card__head">{{ t.fr_title }}<span class="lp-card__tag">{{ t.interactive }}</span></div>
-          <div class="pw-body">
-            <label class="pw-label" for="fr-rate">{{ t.fr_rate }}: <b id="fr-v">–</b> {{ t.fr_unit }}</label>
-            <input type="range" id="fr-rate" min="0" max="100" step="1" value="85">
-            <div class="fr-axis">
-              <i class="fr-zone" id="fr-zone"></i>
-              <i class="fr-mark fr-mark--front" id="fr-front"><span>{{ t.fr_front }}</span></i>
-              <i class="fr-mark fr-mark--real" id="fr-real"><span>{{ t.fr_real }}</span></i>
-              <i class="fr-dot" id="fr-dot"></i>
-            </div>
-            <p class="pw-out" id="fr-out" data-pass="{{ t.fr_pass }}" data-caught="{{ t.fr_caught }}" data-slower="{{ t.fr_slower }}"></p>
-            <p class="pw-meta">{{ t.fr_note }}</p>
+        <div class="pw" id="fr">
+          <div class="pw-head"><span>{{ t.fr_title }}</span><span>{{ t.interactive }}</span></div>
+          <label class="pw-label" for="fr-rate">{{ t.fr_rate }} <b><span id="fr-v">–</span> {{ t.fr_unit }}</b></label>
+          <input type="range" id="fr-rate" min="0" max="100" step="1" value="85">
+          <div class="fr-axis">
+            <i class="fr-zone" id="fr-zone"></i>
+            <i class="fr-mark fr-mark--front" id="fr-front"><span>{{ t.fr_front }}</span></i>
+            <i class="fr-mark fr-mark--real" id="fr-real"><span>{{ t.fr_real }}</span></i>
+            <i class="fr-dot" id="fr-dot"></i>
           </div>
+          <p class="pw-out" id="fr-out" data-pass="{{ t.fr_pass }}" data-caught="{{ t.fr_caught }}" data-slower="{{ t.fr_slower }}"></p>
+          <p class="pw-meta">{{ t.fr_note }}</p>
         </div>
       </div>
     </div>
   </section>
 
   <!-- ========================================================== BUILD -->
-  <section class="lp-sec lp-light" id="build">
+  <section class="lp-sec lp-sand" id="build">
     <div class="lp-wrap">
+      <p class="lp-tag"><b>03</b>{{ t.b_eyebrow }}</p>
       <div class="lp-split">
-        <div>
-          <p class="lp-eyebrow">{{ t.b_eyebrow }}</p>
-          <h2 class="lp-h2">{{ t.b_title }}<i class="lp-sq"></i></h2>
-        </div>
+        <h2 class="lp-h2">{{ t.b_title }}</h2>
         <p class="lp-text">{{ t.b_text }}</p>
       </div>
       <div class="lp-code">
@@ -194,37 +197,38 @@ bash scripts/reproduce.sh h1 tables</code></pre>
           <pre class="lp-win__body" id="ap-term" aria-label="{{ t.term_aria }}"></pre>
         </div>
       </div>
-      <div class="lp-features">
-        {% for path, h, p, link in t.features %}<a href="{{ (B ~ path) | url }}"><h3>{{ h }}</h3><p>{{ p }}</p><span>{{ link }}</span></a>{% endfor %}
+      <div class="lp-links">
+        {% for path, h, p, link in t.features %}<a href="{{ (B ~ path) | url }}"><span class="lp-links__n">0{{ loop.index }}</span><h3>{{ h }}</h3><p>{{ p }}</p><span class="lp-links__go" aria-hidden="true">→</span></a>{% endfor %}
       </div>
     </div>
   </section>
 
   <!-- =========================================================== EVAL -->
-  <section class="lp-sec lp-dark" id="eval">
+  <section class="lp-sec lp-paper" id="eval">
     <div class="lp-wrap">
+      <p class="lp-tag"><b>04</b>{{ t.e_eyebrow }}</p>
       <div class="lp-split">
-        <div>
-          <p class="lp-eyebrow">{{ t.e_eyebrow }}</p>
-          <h2 class="lp-h2">{{ t.e_title }}<i class="lp-sq"></i></h2>
-        </div>
+        <h2 class="lp-h2">{{ t.e_title }}</h2>
         <p class="lp-text">{{ t.e_text }}</p>
       </div>
       <div class="lp-table">
         <div class="lp-table__row lp-table__head">{% for h in t.e_head %}<span>{{ h }}</span>{% endfor %}</div>
         {% for d, tr, at in t.e_rows %}<div class="lp-table__row"><b>{{ d }}</b><span>{{ tr }}</span><span>{{ at }}</span></div>{% endfor %}
       </div>
-      <div class="lp-cols lp-cols--dark">
-        {% for h, p in t.e_cols %}<div><h3>{{ h }}</h3><p>{{ p }}</p></div>{% endfor %}
-      </div>
-      <div class="lp-row"><a class="lp-btn lp-btn--line" href="{{ (B ~ 'guide/reproduce/') | url }}">{{ t.e_btn }}</a></div>
+      <ol class="lp-steps">
+        {% for h, p in t.e_cols %}<li><h3>{{ h }}</h3><p>{{ p }}</p></li>{% endfor %}
+      </ol>
+      <div class="lp-row"><a class="lp-btn lp-btn--ghost" href="{{ (B ~ 'guide/reproduce/') | url }}">{{ t.e_btn }}</a></div>
     </div>
   </section>
 
   <!-- ============================================================ FAQ -->
-  <section class="lp-sec lp-light" id="faq">
+  <section class="lp-sec lp-sand" id="faq">
     <div class="lp-wrap lp-faq">
-      <h2 class="lp-h2">{{ t.q_title }}<i class="lp-sq"></i></h2>
+      <div>
+        <p class="lp-tag"><b>05</b>{{ t.q_title }}</p>
+        <h2 class="lp-h2">{{ t.q_head }}</h2>
+      </div>
       <div class="lp-faq__list">
         {% for q, ans in t.faq %}<details{% if loop.first %} open{% endif %}><summary>{{ q }}</summary><p>{{ ans | replace("{cite}", (B ~ "about/citation/") | url) }}</p></details>{% endfor %}
       </div>
@@ -232,17 +236,18 @@ bash scripts/reproduce.sh h1 tables</code></pre>
   </section>
 
   <!-- ============================================================ CTA -->
-  <section class="lp-sec lp-cta">
+  <section class="lp-sec lp-ink lp-cta">
     <div class="lp-wrap">
-      <h2 class="lp-display lp-display--md">{{ t.cta_title }}<i class="lp-sq"></i></h2>
+      <div class="lp-tally" aria-hidden="true"><span>{{ t.cta_tally }}</span><b id="lp-tally">0</b></div>
+      <h2 class="lp-display lp-display--md">{{ t.cta_title }}</h2>
       <p class="lp-lead">{{ t.cta_lead }}</p>
       <div class="lp-install">
         <span>$</span><code id="ap-install-cmd">git clone https://github.com/antoniopaya22/proteus &amp;&amp; cd proteus &amp;&amp; uv venv &amp;&amp; uv pip install -e ".[dev]"</code>
         <button class="ap-install__copy" type="button">{{ t["copy"] }}</button>
       </div>
       <div class="lp-row">
-        <a class="lp-btn lp-btn--dark lp-btn--lg" href="{{ (B ~ 'getting-started/quickstart/') | url }}">{{ t.read_quick }}</a>
-        <a class="lp-btn lp-btn--onblue lp-btn--lg" href="https://github.com/antoniopaya22/proteus">{{ t.star }}</a>
+        <a class="lp-btn lp-btn--paper lp-btn--lg" href="{{ (B ~ 'getting-started/quickstart/') | url }}">{{ t.read_quick }}</a>
+        <a class="lp-btn lp-btn--ghost lp-btn--lg" href="https://github.com/antoniopaya22/proteus">{{ t.star }}</a>
       </div>
     </div>
   </section>
@@ -260,7 +265,7 @@ bash scripts/reproduce.sh h1 tables</code></pre>
     {% for title, links in t.foot_cols %}<div><h4>{{ title }}</h4>
       {% for href, label in links %}<a href="{{ href if href.startswith('http') else (B ~ href) | url }}">{{ label }}</a>{% endfor %}</div>{% endfor %}
   </div>
-  <div class="lp-wrap lp-foot__base">© 2026 A. Payá González, S. Arroni del Riego</div>
+  <div class="lp-wrap"><div class="lp-foot__base"><span>© 2026 A. Payá González, S. Arroni del Riego</span><span>Apache 2.0</span></div></div>
 </footer>
 {% endblock %}
 
