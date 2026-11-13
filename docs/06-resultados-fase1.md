@@ -845,3 +845,37 @@ mismas filas con el mismo generador y luego lee solo los grupos de filas necesar
 Mismas filas, mismo orden (test `test_sample_clean.py`); pico medido 4,5 GB. Afecta
 también al adaptativo de 17 → 18, que usa `local_benign`. Frontera relanzada bajo el
 cerrojo (`fix3.sh`).
+
+## 6.28 Atacante adaptativo v3, 2018 → 2017 (2026-11-13)
+
+Daño: el ritmo más alto de la rejilla (20 puntos de 10⁻³ a 200 flujos/s, factor 1,9
+entre puntos) al que el ataque no da alerta propia, eligiendo además operaciones
+libres (8 combinaciones aleatorias y mimetismo). Flujos/h, FPR 10⁻³. **Negrita** en el
+paper: el ataque pasa a su ritmo real.
+
+| Ataque | Real | proteus | cert | cert certificado | sin monotonía | reglas | KitNET |
+|---|---|---|---|---|---|---|---|
+| SSH | 1.541 | 614 | 2.220 | 4.220 | 55.122 | 2.220 | 28.995 |
+| FTP | 3.910 | 323 | 15.252 | 15.252 | 28.995 | 614 | 1.168 |
+| Hulk | 518.525 | 1.168 | 8.023 | 8.023 | 8.023 | 1.168 | 104.792 |
+| GoldenEye | 44.976 | 1.168 | 8.023 | 8.023 | 8.023 | 1.168 | 28.995 |
+| Slowloris | 10.461 | 614 | 2.220 | 4.220 | 8.023 | 1.168 | 4.220 |
+| Slowhttptest | 5.107 | 614 | 2.220 | 4.220 | 8.023 | 1.168 | 15.252 |
+| Escaneo (jue.) | 10.418 | 7 | 13 | 614 | 170 | 47 | 1.168 (mim.) |
+| Escaneo (vie.) | 107.850 | 323 | 2.220 | 4.220 | 8.023 (mim.) | 1.168 | 2.220 (mim.) |
+| LOIC-HTTP | 290.167 | 1.168 | 8.023 | 15.252 | 15.252 | 2.220 | 28.995 |
+
+- `proteus` deja el menor daño en los 9 ataques (empata con las reglas en Hulk y
+  GoldenEye): obliga a ir 2,5× (SSH) a ~1.500× (escaneo del jueves) más lento.
+- Contra `proteus`, `proteus_cert` y las reglas, el mejor plan es siempre el ataque
+  simple: las operaciones libres no ayudan (monotonía). Contra KitNET y el núcleo sin
+  monotonía, el mimetismo sube el daño en los escaneos.
+- Pasan a ritmo real: KitNET en SSH y Slowhttptest; sin monotonía en SSH, FTP y
+  Slowhttptest; reglas y cert en SSH. El daño certificado de cert queda bajo el ritmo
+  real salvo en las dos fuerzas brutas.
+- Banco con robustez (solo 18 → 17, provisional hasta tener KitNET en h1 y 17 → 18):
+  `proteus` 0,60 / 0,68 / 0,40 → compuesto 0,54 (Pareto); alertas certificadas
+  0,41 / 0,78 / 0,15 → 0,36 (Pareto); reglas 0,66 / 0,12 / 0,30 → 0,30 (Pareto); sin
+  monotonía 0,41 / 0,54 / 0,14 → 0,32.
+- Código: `tables.py adaptive` (tabla del paper) y `bench` toma la robustez de las
+  alertas certificadas del daño certificado (commit 65a8d03).
