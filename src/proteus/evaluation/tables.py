@@ -254,10 +254,66 @@ def frontier_system_table(runs: list[Path], fpr: float = 1e-3,
     return "\n".join(lines) + "\n"
 
 
+ADAPTIVE = [("proteus", "Proteus", "adaptive_flows_per_h"),
+            ("proteus_cert", "Cert.", "adaptive_flows_per_h"),
+            ("proteus_cert", "Certified", "certified_flows_per_h"),
+            ("core_free_dst_b", "Unc.", "adaptive_flows_per_h"),
+            ("rate_rules_local", "Rules", "adaptive_flows_per_h"),
+            ("kitnet_local", "KitNET", "adaptive_flows_per_h")]
+
+
+def _rate(v: float, rmax: float) -> str:
+    """Compact flows/h: 614, 1.2k, 15k; the highest rate tried as >=720k."""
+    if not np.isfinite(v):
+        return "--"
+    ge = r"$\geq$" if v >= rmax else ""
+    if v < 1000:
+        return f"{ge}{v:.0f}"
+    return f"{ge}{v / 1000:.1f}k" if v < 10_000 else f"{ge}{v / 1000:.0f}k"
+
+
+def adaptive_table(csvs: list[Path]) -> str:
+    """Damage under the adaptive attacker: the highest rate (flows/h) at which each
+    attack raises no attributable alert of its own, when the attacker also picks its
+    free operations, per detector; one block per direction. Bold: the attack passes at
+    its real rate. a: free operations or mimicry raised the damage over the plain attack."""
+    n = len(ADAPTIVE)
+    lines = [r"\begin{tabular}{l" + "r" * (n + 1) + "}", r"\toprule",
+             "Attack & Real & " + " & ".join(h for _, h, _ in ADAPTIVE) + r" \\"]
+    for path in csvs:
+        d = pd.read_csv(path)
+        key = "__".join(path.parent.name.split("__")[:2])
+        lines += [r"\midrule", rf"\multicolumn{{{n + 2}}}{{l}}{{\emph{{{DIRECTION.get(key, key)}}}}} \\"]
+        attacks = d.drop_duplicates(["day", "attack"])[["day", "attack", "real_flows_per_h"]]
+        for _, a in attacks.iterrows():
+            name = ATTACK_NAMES.get(a["attack"], a["attack"])
+            if (attacks["attack"] == a["attack"]).sum() > 1:
+                name += f" ({a['day'][:3].title()}.)"
+            g = d[(d["day"] == a["day"]) & (d["attack"] == a["attack"])].set_index("detector")
+            cells = []
+            for m, _, col in ADAPTIVE:
+                if m not in g.index:
+                    cells.append("--")
+                    continue
+                r = g.loc[m]
+                v = float(r[col])
+                c = _rate(v, float(r["rmax_flows_per_h"]))
+                if np.isfinite(v) and v >= a["real_flows_per_h"]:
+                    c = rf"\textbf{{{c}}}"
+                if col == "adaptive_flows_per_h" and r["best_plan"] != "plain":
+                    c += r"$^a$"
+                cells.append(c)
+            lines.append(f"{name} & {_rate(a['real_flows_per_h'], np.inf)} & "
+                         + " & ".join(cells) + r" \\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    return "\n".join(lines) + "\n"
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("table", choices=["h1", "summary", "ablation", "frontier", "frontier_system"])
-    ap.add_argument("--csv", type=Path, nargs="*", default=[], help="frontier CSVs")
+    ap.add_argument("table", choices=["h1", "summary", "ablation", "frontier", "frontier_system",
+                                       "adaptive"])
+    ap.add_argument("--csv", type=Path, nargs="*", default=[], help="frontier or adaptive CSVs")
     ap.add_argument("--data-out", type=Path, default=None)
     ap.add_argument("--detectors", nargs="*", default=None)
     ap.add_argument("--base", default="proteus", help="ablation: the full model")
@@ -277,6 +333,10 @@ def main() -> None:
         return
     if args.table == "frontier":
         args.out.write_text(frontier_table(args.csv, args.data_out))
+        print(args.out.read_text())
+        return
+    if args.table == "adaptive":
+        args.out.write_text(adaptive_table(args.csv))
         print(args.out.read_text())
         return
     if args.table == "frontier_system":

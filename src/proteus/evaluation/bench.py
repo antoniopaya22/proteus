@@ -111,6 +111,11 @@ def robustness(adaptive: list[Path]) -> pd.DataFrame:
         cert["score"] = [damage_score(r, d) for r, d in zip(cert["real_flows_per_h"],
                                                              cert["certified_flows_per_h"])]
         out = out.join(cert.groupby("detector")["score"].agg(ssd).rename("robustness_certified"))
+        # Certified alerts (``model@cert`` in the h1 runs) are robust to the certified
+        # damage: the worst case over every combination of free operations.
+        c = out["robustness_certified"].dropna().rename("robustness").to_frame()
+        c.index = c.index + "@cert"
+        out = pd.concat([out, c])
     return out
 
 
@@ -119,13 +124,17 @@ def bench(runs: list[Path], adaptive: list[Path], fpr: float,
     d = detection_alarms(runs, fpr)
     if detectors:
         d = d.loc[[m for m in detectors if m in d.index]]
-    t = d.join(robustness(adaptive), how="inner") if adaptive else d
+    # Left join: a defence without an adaptive run keeps its row, with no composite.
+    t = d.join(robustness(adaptive), how="left") if adaptive else d
     t["detection"] = t[["det_volumetric", "det_other"]].mean(axis=1)
     t["false_alarms"] = t["alarms_per_hour"].map(alarm_score)
     dims = ["detection", "false_alarms"] + (["robustness"] if adaptive else [])
-    t["composite"] = t[dims].apply(lambda r: ssd(r.to_numpy()), axis=1)
-    t["mean_composite"] = t[dims].mean(axis=1)
-    t["pareto"] = pareto(t[dims])
+    full = t[dims].notna().all(axis=1)
+    t["composite"] = t[dims].apply(lambda r: ssd(r.to_numpy()), axis=1).where(full)
+    t["mean_composite"] = t[dims].mean(axis=1).where(full)
+    t["pareto"] = False
+    if full.any():
+        t.loc[full, "pareto"] = pareto(t.loc[full, dims])
     return t.sort_values("composite", ascending=False)
 
 
