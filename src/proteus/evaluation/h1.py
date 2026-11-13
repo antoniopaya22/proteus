@@ -874,8 +874,13 @@ def main() -> None:
             cand = []
             for n in local:
                 sc = loc[n][clean_pos]
+                k = int(np.ceil(0.01 * len(sc)))
                 cut = np.quantile(sc, 0.99) if len(sc) else np.inf
-                cand.append(clean_pos[sc >= cut])
+                top = np.flatnonzero(sc >= cut)
+                if len(top) > 2 * k:  # ties at the cut (saturated scores): keep the top k
+                    top = np.argsort(-sc, kind="stable")[:k]
+                    print(f"    {n}: ties at {cut:.6g}, candidates capped at {k}", flush=True)
+                cand.append(clean_pos[top])
             cand = np.unique(np.concatenate(cand)) if cand else np.array([], dtype=np.int64)
             union = sorted({c for cols in local.values() for c in cols})
             feats = read_rows(path, cand, union).astype(np.float32)
