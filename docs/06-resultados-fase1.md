@@ -1085,3 +1085,26 @@ días de prueba, puntuados por el detector del día evaluado. Comparamos a ritmo
 - `__v3_budget2` de 18 → 17 (sin tope de candidatos) da exactamente los mismos resultados
   en todos los detectores: en ese sentido el tope no cambia nada (comprobado sobre
   `false_alarms.csv` y `summary.csv`).
+
+## 6.35 CTU-13 v3 con `--exclude-saturated` (2026-11-13, 22:50)
+
+- **Fold B** (entrena s05/07/08/09/11/12/13, prueba s01/02/03/04/06/10), FPR 10⁻³: Proteus da
+  2,66 alarmas/h, 0,66 por entidad/h, FPR medido 1,16·10⁻³, y 9/181 sospechosos. Sin exclusión
+  daba 120/h. Detecta 3/5 DDoS de ctu10, los dos spam y 3/59 escaneos de ctu3.
+  `proteus_cert@certr` = 0.
+- **Fold A** (prueba s05/07/08/09/11/12/13): Proteus sigue en 1.114 alarmas/h de media por
+  escenario. Todo viene de **s11** (Rbot, DDoS ICMP; 16 min de captura): FPR 0,030 y 7.757
+  alarmas/h. Los demás escenarios dan 0–25 alarmas/h (s08 14,0; s09 25,1). Ponderando por
+  horas: 56,6/h con s11 y 9,4/h sin él. La exclusión de saturados no cambia s11.
+- `alarms.py` sobre el mismo fold da 2,03 alarmas/h, 5 de ellas en s11. No es comparable:
+  ajusta el máximo calibrado una vez con el benigno de **todos** los días, incluido el
+  evaluado (en muestra), y excluye a los sospechosos. `h1` deja fuera el día evaluado, que
+  es el protocolo del paper. El benigno de s11, fuera de distribución para un detector
+  ajustado con capturas de otras semanas, es lo que dispara las alarmas.
+- Frontera de escaneo a 1 h con exclusión: idéntica a la de sin exclusión (26/139/273/539
+  sondas/min en s03/s12/s08/s06). El certificado no acota ninguna por debajo de 200 sondas/s.
+- Pendiente antes de escribir CTU en el paper:
+  1. decidir cómo informar de s11: por escenario, ponderado por horas, o con s11 aparte;
+  2. explicar las alarmas de s11 con el protocolo de `h1` (hoy `alarms.py` solo calibra
+     en muestra);
+  3. la frontera a 6 h.
