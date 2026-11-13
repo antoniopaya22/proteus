@@ -1108,3 +1108,21 @@ días de prueba, puntuados por el detector del día evaluado. Comparamos a ritmo
   2. explicar las alarmas de s11 con el protocolo de `h1` (hoy `alarms.py` solo calibra
      en muestra);
   3. la frontera a 6 h.
+
+## 6.36 Frontera de escaneo de CTU-13 a 6 h y OOM del balanceo (2026-11-14, 00:15)
+
+Frontera de escaneo de CTU-13 a 6 h (fold B, `--exclude-saturated 1e-3`, `--rmax 20`), en sondas/min:
+
+| Escenario | Bot real | 1 h | 6 h |
+|---|---|---|---|
+| s03 | 6,8 | 26,3 | 14,3 |
+| s12 | 12,8 | 139,1 | 132,7 |
+| s08 | 5,2 | 273,4 | 235,0 |
+| s06 | 36,1 | 539,3 | 430,0 |
+
+El bot más lento sigue a la mitad de la frontera. El certificado no acota ninguna por debajo de
+1.200 sondas/min (límite de la búsqueda). Añadido a la discusión del paper.
+
+OOM n.º 5 (22:15): el balanceo `type_entity` de 17 → 18 murió puntuando (16,5 GB). A la misma hora
+corría mi `alarms.py` de CTU fuera del cerrojo; desde ahora todo va bajo el cerrojo. Relanzado con
+`--reuse` (`fix9.sh`).
