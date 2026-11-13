@@ -809,3 +809,39 @@ el techo con línea base infinita.
 
 Solo se mueve el escaneo del jueves (víctima casi sin tráfico); con tope 0,1 llega a
 24. El SSH sigue alertando a su ritmo real aunque la línea base esté envenenada.
+
+## 6.26 Ablación v3 de 2017 → 2018 (2026-11-13)
+
+Todas las alertas, FPR 10⁻³ (volumétricos y escaneos / resto / alarmas por hora).
+
+| Variante | `proteus` 18→17 | `proteus` 17→18 | `proteus_cert` 18→17 | `proteus_cert` 17→18 |
+|---|---|---|---|---|
+| Completo | 1,00 / 0,20 / 2,7 | 1,00 / 0,08 / 16,0 | 0,82 / 0,10 / 4,3 | 1,00 / 0,08 / 42,0 |
+| Sin destino (exceso) | 1,00 / 0,20 / 0,7 | 0,92 / 0,08 / 15,3 | 0,82 / 0,10 / 3,6 | 0,92 / 0,08 / 41,3 |
+| Sin origen | 1,00 / 0,20 / 3,1 | 1,00 / 0,08 / 11,8 | 0,82 / 0,10 / 7,6 | 1,00 / 0,08 / 35,0 |
+| Sin par | 1,00 / 0,20 / 3,1 | 1,00 / 0,08 / 18,7 | 0,82 / 0,00 / 7,1 | 1,00 / 0,08 / 41,8 |
+| Sin destino bruto | 0,82 / 0,00 / 2,7 | 1,00 / 0,08 / 21,0 | 0,82 / 0,10 / 5,3 | 1,00 / 0,17 / 37,2 |
+
+- Ningún subnúcleo sobra en los dos sentidos.
+- Destino con exceso: en 18 → 17 cuesta 2 alarmas/h y no aporta campañas; en 17 → 18
+  es el que encuentra LOIC-HTTP y los flujos de escaneo (sin él, el recall de escaneos
+  cae de 0,41 a 0,008 y el SSH tarda 126 s en vez de 47 s). **Decisión: se queda.**
+  Elegir subnúcleos por sentido sería ajustar el detector a los ataques de prueba.
+- Origen y par no cambian la detección de `proteus` en ningún sentido; las alarmas se
+  mueven en ambos sentidos al recalibrar el umbral.
+- En `proteus_cert`: sin par se pierde la Infiltration de 2017; sin destino, una
+  campaña volumétrica de 2018. Quitar el destino bruto en 17 → 18 encuentra la botnet
+  y baja las alarmas (42,0 → 37,2): único caso en que quitar ayuda en las dos cosas,
+  pero en `proteus` 18 → 17 esa misma retirada pierde dos campañas y todo lo demás.
+
+## 6.27 Incidencia: OOM de la frontera de `proteus` 17 → 18 (2026-11-13)
+
+La frontera murió a las 00:43 UTC con 28,8 GB, sola en la máquina (2.º OOM tras el
+reinicio). Causa: `local_threshold` y `local_benign` leían el día entero de la caché
+con todas las columnas de `proteus` (218 × 7,4 M filas el viernes 16-02-2018, unos
+26 GB en float64) antes de muestrear 300.000 filas. `proteus_cert` tiene menos columnas
+y cabía. Arreglo (commit 15fe433): `h1.sample_clean` lee la columna `clean`, elige las
+mismas filas con el mismo generador y luego lee solo los grupos de filas necesarios.
+Mismas filas, mismo orden (test `test_sample_clean.py`); pico medido 4,5 GB. Afecta
+también al adaptativo de 17 → 18, que usa `local_benign`. Frontera relanzada bajo el
+cerrojo (`fix3.sh`).
