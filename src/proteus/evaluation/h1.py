@@ -753,6 +753,7 @@ def main() -> None:
     top_of: dict = {}  # day -> model -> (top clean scores, dst key, minute)
     day_sides: dict = {}  # day -> model -> alert about the source host
     hours_of: dict = {}
+    local_scores: dict = {}  # day -> spilled scores of the local detectors (pass 3)
     for day in test_days:
         # Only metadata in full; every model is scored on its own columns, in batches
         # of rows (a 2018 day with every model's columns does not fit in memory).
@@ -857,6 +858,24 @@ def main() -> None:
             if acc["certr"]:
                 scores[f"{n}@certr"] = np.concatenate(acc["certr"])
             refs[n] = np.concatenate([m.score(benign_feats[d][c].to_numpy()) for d in others])
+        if args.entity_budgets and local:
+            # Local detectors exist only once fitted on the other days, so their
+            # entity budgets are set in pass 3; keep this day's scores and its top
+            # clean scores (out of sample: the detector did not see this day).
+            loc = {k: np.asarray(v, dtype=np.float32) for k, v in scores.items()
+                   if k.removesuffix("@certr").removesuffix("@cert") in local}
+            np.savez(spill / f"{day.stem}.local.npz", **{k.replace("@", "__AT__"): v
+                                                        for k, v in loc.items()})
+            local_scores[day] = spill / f"{day.stem}.local.npz"
+            clean = ev["clean"].to_numpy()
+            key = pd.util.hash_array(ev["dst_ip"].astype(str).to_numpy()).astype(np.uint64)
+            minute = (ev["t_start"].astype("int64") // 60_000_000).to_numpy().astype(np.uint64)
+            for n in local:
+                sc = loc[n][clean]
+                cut = np.quantile(sc, 0.99) if len(sc) else np.inf
+                hi = sc >= cut
+                top_of[day][n] = (sc[hi], key[clean][hi], minute[clean][hi])
+            del loc
         th = {k: v for k, v in thresholds.items() if k[0] not in local}
         for n in [k for k in scores if not k.endswith(("@cert", "@certr"))]:
             if n in refs:
@@ -865,7 +884,7 @@ def main() -> None:
                 ref = np.concatenate([benign_sample[d][n] for d in others])
             for fpr in FPRS:
                 th[(n, fpr, "local")] = np.quantile(ref, 1 - fpr, method="higher")
-        for n in top_of.get(day, {}):
+        for n in [k for k in top_of.get(day, {}) if k not in local]:  # local: pass 3
             for budget in args.entity_budgets:
                 th[(n, budget, "entity")] = entity_threshold(
                     [top_of[d][n] for d in others], sum(hours_of[d] for d in others), budget)
@@ -877,6 +896,26 @@ def main() -> None:
         results.append(evaluate(ev, scores, th, day_sides.pop(day, None)))
         print(f"  evaluated {args.test}/{day.stem} at {time.time() - t0:.0f}s", flush=True)
         del ev
+
+    # Pass 3: entity budgets of the local detectors. The threshold of a day comes from
+    # the top clean scores of the other days, each scored by the detector fitted
+    # without that day (its benign traffic only; no labels are used).
+    for day in list(local_scores):
+        others = [d for d in test_days if d != day]
+        ev, _ = evidence_b(args.test, day, columns=meta_cols)
+        with np.load(local_scores.pop(day)) as z:
+            scores = {k.replace("__AT__", "@"): z[k] for k in z.files}
+        th = {}
+        for n in local:
+            for budget in args.entity_budgets:
+                v = entity_threshold([top_of[d][n] for d in others],
+                                     sum(hours_of[d] for d in others), budget)
+                for m_ in (n, f"{n}@cert", f"{n}@certr"):
+                    if m_ in scores:
+                        th[(m_, budget, "entity")] = v
+        results.append(evaluate(ev, scores, th))
+        print(f"  budgets {args.test}/{day.stem} at {time.time() - t0:.0f}s", flush=True)
+        del ev, scores
 
     import shutil
 
