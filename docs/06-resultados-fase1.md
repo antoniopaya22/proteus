@@ -1055,3 +1055,33 @@ empates en 1,0, así que a presupuestos bajos (≤ 1/h) el umbral salta a "> 1".
   con solo la escala de 10 min, eran ~3.900 en s03. Los bots reales van a 5–36 sondas/min.
   El certificado no acota ninguno por debajo de 200 sondas/s. Pendiente de repetir con
   exclusión.
+
+## 6.34 Detección a igual presupuesto de alarmas (`__v3_budget3`, 2026-11-13)
+
+Umbral por presupuesto B de grupos (destino, minuto)/h en los flujos limpios de los otros
+días de prueba, puntuados por el detector del día evaluado. Comparamos a ritmo
+**realizado** en el día de prueba, que no coincide con B. Volumétricos y escaneos (11 en
+18 → 17, 13 en 17 → 18):
+
+| Detector | 18 → 17 | 17 → 18 |
+|---|---|---|
+| `proteus` | 9/11 a 0,06/h; 11/11 a 0,67/h | 12/13 a 6,4/h (recall 0,61); 13/13 a 8,8/h |
+| `proteus_cert` | 6/11 a 0,36/h; 9/11 a 7,0/h | 13/13 a 0,40/h (recall 0,80) |
+| `proteus_cert@cert` | 5/11 a 0,09/h | 6/13 a 0,08/h |
+| `rate_rules_local` | 9/11 a 27,5/h (no baja más) | 13/13 a 6,6/h (recall 0,95) |
+| `core_free_dst_b` | 7/11 a 0,09/h; 9/11 a 0,68/h | 13/13 a 0,70/h |
+| `proteus_cert@certr` | 2/11 | 0/13 |
+
+- En 18 → 17 Proteus gana con claridad. Las reglas no bajan de 27,5 alarmas/h: cada día
+  nuevo tiene flujos por encima de cualquier máximo benigno, así que el umbral
+  más estricto (> 1) sigue alarmando.
+- En 17 → 18 cambia el orden. Las reglas igualan al Proteus de todas las escalas
+  (6,6 frente a 8,8 alarmas/h para los 13), y el detector de 10 min (`proteus_cert`) los
+  detecta a 0,4/h. No hemos aislado por qué las escalas de 1 h y 6 h cuestan alarmas en
+  esa red.
+- Paper: párrafo nuevo en la evaluación. La introducción y la conclusión matizan que la
+  ventaja en falsas alarmas es a igual FPR objetivo; a igual presupuesto, las reglas
+  igualan a Proteus en 17 → 18.
+- `__v3_budget2` de 18 → 17 (sin tope de candidatos) da exactamente los mismos resultados
+  en todos los detectores: en ese sentido el tope no cambia nada (comprobado sobre
+  `false_alarms.csv` y `summary.csv`).
