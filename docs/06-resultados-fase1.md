@@ -879,3 +879,48 @@ paper: el ataque pasa a su ritmo real.
   monotonía 0,41 / 0,54 / 0,14 → 0,32.
 - Código: `tables.py adaptive` (tabla del paper) y `bench` toma la robustez de las
   alertas certificadas del daño certificado (commit 65a8d03).
+
+## 6.29 Atacante adaptativo v3, 2017 → 2018, y banco con robustez (2026-11-13)
+
+Daño en flujos/h (FPR 10⁻³). «0»: alerta a todos los ritmos probados. (v): una
+variante con operaciones libres subió el daño.
+
+| Ataque | Real | proteus | cert | cert certificado | sin monotonía | reglas | KitNET |
+|---|---|---|---|---|---|---|---|
+| SSH | 62.340 | 8.023 | 8.023 | 8.023 | 0 | 55.122 | 55.122 |
+| GoldenEye | 38.445 | 4.220 | 8.023 | 15.252 | 4 | 4.220 | 15.252 |
+| Slowloris | 12.184 | 2.220 | 2.220 | 4.220 | 0 | 4.220 | 4.220 |
+| Hulk | 8.383.527 | 8.023 | 15.252 | 15.252 | 13 | 4.220 | 55.122 |
+| LOIC-HTTP | 275.992 | 1.168 | 55.122 | 104.792 | 7 | 170 (v) | 4.220 |
+| LOIC-UDP (mar.) | 3.192 | 7 | 47 | 323 | 0 | 0 | 0 |
+| HOIC | 1.185.992 | 104.792 | 55.122 | 104.792 | 4.220 (v) | 4.220 | 378.731 |
+| LOIC-UDP (mié.) | 2.983 | 7 | 170 | 323 | 7 (v) | 0 | 0 |
+| Escaneo (28-02) | 2.882 | **55.122** | **28.995** | **104.792** | 0 | 170 | **4.220** (v) |
+| Escaneo (01-03) | 1.567 | **4.220** | **28.995** | **104.792** | 0 | 170 | **4.220** (v) |
+
+- Resultado negativo en este sentido: `proteus` obliga a bajar de 5,5× (Slowloris) a
+  ~1.000× (Hulk) en volumétricos y SSH, pero los dos escaneos de 2018 (1.600–2.900/h)
+  pasan a su ritmo real (coherente con su recall 0,41).
+- Las reglas dejan menos daño en 7 de 10 ataques y el núcleo sin monotonía no deja
+  pasar nada salvo HOIC por encima de 13/h; ambos lo pagan en alarmas (45,5 y 124,6/h
+  frente a 16,0).
+- Contra `proteus` y `proteus_cert` el mejor plan es siempre el simple. Las reglas
+  ganan un escalón con una variante en LOIC-HTTP (89 → 170): la monotonía solo
+  descarta ganancias salvo el desfase de exportación que absorbe la holgura del
+  certificado; los detectores no certificados no la tienen. Corregida en el paper la
+  frase de 18 → 17 que decía «como predice la monotonía» para los tres.
+- Daño certificado de cert: bajo el ritmo real salvo las fuerzas brutas de 2017 y los
+  escaneos de 2018.
+
+Banco (detección / alarmas / robustez → compuesto, Pareto):
+
+| Defensa | 18 → 17 | 17 → 18 |
+|---|---|---|
+| `proteus` | 0,60 / 0,68 / 0,40 → **0,54** • | 0,54 / 0,31 / 0,25 → **0,35** • |
+| alertas certificadas | 0,41 / 0,78 / 0,15 → 0,36 • | 0,27 / 0,30 / 0,15 → 0,24 |
+| sin monotonía | 0,41 / 0,54 / 0,14 → 0,32 | 0,62 / 0,00 / 0,86 → 0,30 • |
+| reglas | 0,66 / 0,12 / 0,30 → 0,30 • | 0,58 / 0,07 / 0,35 → 0,27 • |
+| por flujo | 0,65 / 0,16 / — | 0,35 / 0,00 / — |
+
+`proteus` sigue primero en los dos sentidos. KitNET entra cuando acabe su ejecución h1.
+El paper pasa a 21 páginas (tabla adaptativa a doble columna).
