@@ -1,0 +1,3 @@
+# Certificate
+
+::: proteus.core.certify
