@@ -754,6 +754,7 @@ def main() -> None:
     day_sides: dict = {}  # day -> model -> alert about the source host
     hours_of: dict = {}
     local_scores: dict = {}  # day -> spilled scores of the local detectors (pass 3)
+    budget_cand: dict = {}  # day -> spilled candidate flows for their budgets (pass 3)
     for day in test_days:
         # Only metadata in full; every model is scored on its own columns, in batches
         # of rows (a 2018 day with every model's columns does not fit in memory).
@@ -859,23 +860,32 @@ def main() -> None:
                 scores[f"{n}@certr"] = np.concatenate(acc["certr"])
             refs[n] = np.concatenate([m.score(benign_feats[d][c].to_numpy()) for d in others])
         if args.entity_budgets and local:
-            # Local detectors exist only once fitted on the other days, so their
-            # entity budgets are set in pass 3; keep this day's scores and its top
-            # clean scores (out of sample: the detector did not see this day).
-            loc = {k: np.asarray(v, dtype=np.float32) for k, v in scores.items()
+            # Local detectors exist only once fitted on the other days, so their entity
+            # budgets are set in pass 3. Keep this day's scores and, as candidates for
+            # the alarms of the other days' detectors, the features of its top 1% clean
+            # flows by each local detector (the detectors differ only in the benign days
+            # they were fitted on, so their top flows nearly coincide).
+            loc = {k: v for k, v in scores.items()
                    if k.removesuffix("@certr").removesuffix("@cert") in local}
             np.savez(spill / f"{day.stem}.local.npz", **{k.replace("@", "__AT__"): v
                                                         for k, v in loc.items()})
             local_scores[day] = spill / f"{day.stem}.local.npz"
-            clean = ev["clean"].to_numpy()
-            key = pd.util.hash_array(ev["dst_ip"].astype(str).to_numpy()).astype(np.uint64)
-            minute = (ev["t_start"].astype("int64") // 60_000_000).to_numpy().astype(np.uint64)
+            clean_pos = np.flatnonzero(ev["clean"].to_numpy())
+            cand = []
             for n in local:
-                sc = loc[n][clean]
+                sc = loc[n][clean_pos]
                 cut = np.quantile(sc, 0.99) if len(sc) else np.inf
-                hi = sc >= cut
-                top_of[day][n] = (sc[hi], key[clean][hi], minute[clean][hi])
-            del loc
+                cand.append(clean_pos[sc >= cut])
+            cand = np.unique(np.concatenate(cand)) if cand else np.array([], dtype=np.int64)
+            union = sorted({c for cols in local.values() for c in cols})
+            feats = read_rows(path, cand, union).astype(np.float32)
+            feats["__key"] = pd.util.hash_array(
+                ev["dst_ip"].iloc[cand].astype(str).to_numpy()).astype(np.uint64)
+            feats["__minute"] = (ev["t_start"].iloc[cand].astype("int64")
+                                 // 60_000_000).to_numpy().astype(np.uint64)
+            feats.to_parquet(spill / f"{day.stem}.cand.parquet")
+            budget_cand[day] = spill / f"{day.stem}.cand.parquet"
+            del loc, feats
         th = {k: v for k, v in thresholds.items() if k[0] not in local}
         for n in [k for k in scores if not k.endswith(("@cert", "@certr"))]:
             if n in refs:
@@ -897,25 +907,37 @@ def main() -> None:
         print(f"  evaluated {args.test}/{day.stem} at {time.time() - t0:.0f}s", flush=True)
         del ev
 
-    # Pass 3: entity budgets of the local detectors. The threshold of a day comes from
-    # the top clean scores of the other days, each scored by the detector fitted
-    # without that day (its benign traffic only; no labels are used).
+    # Pass 3: entity budgets of the local detectors. Each day's detector (fitted on the
+    # benign traffic of the other days, as for the local thresholds) scores the
+    # candidate flows of the other days; the threshold is the lowest giving at most
+    # the budget of (destination, minute) alarms on them. No labels are used.
+    cands = {d: pd.read_parquet(p_) for d, p_ in budget_cand.items()}
     for day in list(local_scores):
         others = [d for d in test_days if d != day]
         ev, _ = evidence_b(args.test, day, columns=meta_cols)
         with np.load(local_scores.pop(day)) as z:
             scores = {k.replace("__AT__", "@"): z[k] for k in z.files}
         th = {}
-        for n in local:
+        hours = sum(hours_of[d] for d in others)
+        for n, c in local.items():
+            m = copy.deepcopy(models[n][1]).fit(
+                np.concatenate([benign_feats[d][c].to_numpy() for d in others]))
+            tops = [(np.asarray(m.score(cands[d][c].to_numpy())),
+                     cands[d]["__key"].to_numpy(), cands[d]["__minute"].to_numpy())
+                    for d in others]
             for budget in args.entity_budgets:
-                v = entity_threshold([top_of[d][n] for d in others],
-                                     sum(hours_of[d] for d in others), budget)
+                v = entity_threshold(tops, hours, budget)
                 for m_ in (n, f"{n}@cert", f"{n}@certr"):
                     if m_ in scores:
                         th[(m_, budget, "entity")] = v
         results.append(evaluate(ev, scores, th))
         print(f"  budgets {args.test}/{day.stem} at {time.time() - t0:.0f}s", flush=True)
+        for n in local:
+            print(f"    {n}: max {np.nanmax(scores[n]):.6g}, "
+                  + ", ".join(f"{b:g}/h > {th[(n, b, 'entity')]:.6g}" for b in args.entity_budgets),
+                  flush=True)
         del ev, scores
+    del cands
 
     import shutil
 
