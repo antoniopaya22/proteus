@@ -962,3 +962,19 @@ Temporizador de re-puntuación (18 → 17, `PROTEUS_TIMER_S`), alertas certifica
 | 60 s | 8/11 | 0,604 | 1,48 |
 
 La holgura (2Δ+δ)/τ apenas cambia nada; añadido a la sección de diseño del paper.
+
+## 6.31 KitNET v3 y fallo de `proteus_free` (2026-11-13)
+
+KitNET sobre los mismos contadores por entidad (no supervisado), FPR 10⁻³:
+
+| Sentido | Volumétricos y escaneos | Otros | Alarmas/h | TTD mediano | Compuesto (Pareto) |
+|---|---|---|---|---|---|
+| 18 → 17 | 9/11 (LOIC-HTTP 0,84; escaneos 4/6) | FTP, 1 infiltración | 11,8 | 11 s | 0,30 (no) |
+| 17 → 18 | 12/13 (falla LOIC-HTTP; GoldenEye 0,01, Slowloris 0,22) | SSH (0,20), 3/4 infiltraciones | 31,2 | 521 s | 0,26 (sí) |
+
+`proteus` sigue con el mejor compuesto en los dos sentidos (0,54 y 0,35).
+
+`proteus_free` 18 → 17 murió tras entrenar: la comprobación de monotonía indexaba
+`monotonic_cst=None`. Arreglado (commit c5d000d, se salta la comprobación sin
+restricciones) y relanzado bajo el cerrojo (`fix4.sh`); el de 17 → 18 aún no había
+empezado y ya usa el código corregido.
