@@ -1019,3 +1019,13 @@ pasada 2, y las puntuaciones altas limpias se recogían en la pasada 1. Arreglad
 pasada 3 (commit c903249). El umbral de cada día sale de las puntuaciones altas limpias de los
 otros días, cada uno puntuado por el detector ajustado sin ese día; solo usa tráfico
 benigno. Relanzado bajo el cerrojo como `__v3_budget2` (`fix5.sh`) en los dos sentidos.
+
+**Segundo fallo de los presupuestos (2026-11-13, 16:30).** El primer `__v3_budget2` de
+18 → 17 dio 0 alarmas y 0 detecciones para Proteus en todos los presupuestos. Las
+puntuaciones altas de cada día se hacían con el detector ajustado *sin* ese día. Un host
+benigno del lunes, fuera de muestra, puntuaba 1,019 y subía el umbral de los demás días por
+encima de cualquier ataque. Ahora la pasada 2 guarda los rasgos del 1 % de flujos limpios más
+altos de cada día, y la pasada 3 los puntúa con el detector del día evaluado, igual que los
+umbrales locales (commit 00263dd). Con las probabilidades discretas del boosting hay muchos
+empates en 1,0, así que a presupuestos bajos (≤ 1/h) el umbral salta a "> 1". 18 → 17 se rehace
+(`fix6.sh`); 17 → 18 aún no había empezado y ya usa el código corregido.
