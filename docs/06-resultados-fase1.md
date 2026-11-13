@@ -1029,3 +1029,29 @@ altos de cada día, y la pasada 3 los puntúa con el detector del día evaluado,
 umbrales locales (commit 00263dd). Con las probabilidades discretas del boosting hay muchos
 empates en 1,0, así que a presupuestos bajos (≤ 1/h) el umbral salta a "> 1". 18 → 17 se rehace
 (`fix6.sh`); 17 → 18 aún no había empezado y ya usa el código corregido.
+
+## 6.33 Dos OOM más y CTU-13 v3 sin excluir subnúcleos saturados (2026-11-13, 18:30)
+
+- **OOM 17:12, presupuestos 17 → 18 (pasada 3, 28,6 GB).** Las puntuaciones de las reglas de
+  tasa saturan, así que "en o por encima del percentil 99" se llevaba mucho más del 1 % de
+  un día de 2018 como candidatos (17 GB en `_scores`). Ahora, si los empates pasan del
+  doble del 1 %, se queda el 1 % más alto por puntuación (commit 2a6d075). Se rehacen los
+  dos sentidos como `__v3_budget3` (`fix7.sh`); el `__v3_budget2` de 18 → 17 sirve de
+  comprobación.
+- **OOM 17:35, frontera de escaneo de CTU-13 a 6 h.** La búsqueda probaba hasta 200
+  sondas/s: 4,3 M flujos inyectados en 6 h. Se relanza con `--rmax 20` (1.200
+  sondas/min). Las fronteras sin certificar a 1 h quedan en 26–540 sondas/min.
+- **CTU-13 v3 se ejecutó sin `--exclude-saturated`.** Proteus (máximo calibrado) da 120
+  alarmas/h en el fold B y 784–1.211 en el A, con un FPR medido 3–5 veces por encima del
+  objetivo. Los subnúcleos saturados empatan en su máximo con más del 10⁻³ del tráfico
+  benigno (el caso para el que existe la opción, commit 0ca4b14). Sí sirve el núcleo de
+  origen y destino `core_both_x`: 0,31 alarmas por entidad/h y 27/181 sospechosos en el
+  fold B (v1: 0,12 y 28/181); 1,10/h y 19/119 en el A (v1: 1/119). Se rehace con
+  `--reuse --exclude-saturated 1e-3` para `proteus` y `proteus_cert`, y la frontera de
+  escaneo a 1 y 6 h con la misma exclusión (`fix8.sh`; `frontier_scan` admite ahora la
+  opción, commit 186afcd).
+- Frontera de escaneo v3 a 1 h, sin exclusión: Proteus alerta a un escáner nuevo que
+  repite las sondas del bot a 26 (s03), 139 (s12), 273 (s08) y 539 (s06) sondas/min. En v1,
+  con solo la escala de 10 min, eran ~3.900 en s03. Los bots reales van a 5–36 sondas/min.
+  El certificado no acota ninguno por debajo de 200 sondas/s. Pendiente de repetir con
+  exclusión.
