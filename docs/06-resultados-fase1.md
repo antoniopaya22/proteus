@@ -924,3 +924,41 @@ Banco (detección / alarmas / robustez → compuesto, Pareto):
 
 `proteus` sigue primero en los dos sentidos. KitNET entra cuando acabe su ejecución h1.
 El paper pasa a 21 páginas (tabla adaptativa a doble columna).
+
+## 6.30 Frontera v3 del sistema en 2017 → 2018 y temporizador (2026-11-13)
+
+Frontera del sistema (alerta `proteus` o `proteus_cert`), flujos/h; factor = cuántas
+veces más lento que la campaña real.
+
+| Ataque | Real | Simple | Factor | Certificada | Factor |
+|---|---|---|---|---|---|
+| SSH | 62.340 | 11.963 | 5,2 | 12.105 | 5,2 |
+| GoldenEye | 38.445 | 5.523 | 7,0 | 16.301 | 2,4 |
+| Slowloris | 12.184 | 2.223 | 5,5 | 5.058 | 2,4 |
+| Hulk | 8.383.527 | 14.114 | 594 | 28.011 | 299 |
+| LOIC-HTTP | 275.992 | 1.317 | 210 | 188.314 | 1,5 |
+| LOIC-UDP (mar.) | 3.192 | 8 | 407 | 348 | 9,2 |
+| HOIC | 1.185.992 | 72.618 | 16 | 126.517 | 9,4 |
+| LOIC-UDP (mié.) | 2.983 | 7 | 400 | 343 | 8,7 |
+| Escaneo (28-02) | 2.882 | 7.480 | — | 126.995 | — |
+| Escaneo (01-03) | 1.567 | 6.917 | — | 113.965 | — |
+
+- Todo DoS/DDoS y SSH quedan por debajo de su ritmo real, también con la frontera
+  certificada (Hulk 299×, LOIC-UDP y HOIC ~9×, SSH 5,2×, GoldenEye y Slowloris 2,4×,
+  LOIC-HTTP 1,5×).
+- Los dos escaneos de 2018 (1.600–2.900/h) van por debajo de ambas fronteras: pasan a
+  su ritmo real. Coherente con el recall 0,41 y con el adaptativo (6.29).
+- Ya no hay OOM: la ejecución alcanzó ~11 GB con el muestreo por grupos de filas (6.27).
+- La figura del paper sigue solo con 18 → 17 (`data/frontier.csv`); los dos sentidos
+  están en `data/frontier_both.csv`.
+
+Temporizador de re-puntuación (18 → 17, `PROTEUS_TIMER_S`), alertas certificadas de
+`proteus_cert`, FPR 10⁻³:
+
+| δ | Campañas vol./escaneo | Recall de flujos | Alarmas/h |
+|---|---|---|---|
+| 0 | 8/11 | 0,613 | 1,48 |
+| 10 s | 8/11 | 0,612 | 1,48 |
+| 60 s | 8/11 | 0,604 | 1,48 |
+
+La holgura (2Δ+δ)/τ apenas cambia nada; añadido a la sección de diseño del paper.
