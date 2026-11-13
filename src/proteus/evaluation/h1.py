@@ -127,6 +127,36 @@ def _schema(path: Path) -> list[str]:
     return pq.read_schema(path).names
 
 
+def sample_clean(ds: str, day: Path, cols: list[str], n: int,
+                 rng: np.random.Generator) -> np.ndarray:
+    """``n`` random clean benign rows of ``cols`` (float32), the same rows as
+    ``evidence_b(...)[clean][rng.choice(...)]`` but read row group by row group, so a
+    2018 day with every Proteus column (~7 M rows x 100+ columns) is never in memory."""
+    import pyarrow.parquet as pq
+
+    if bl.PAIRBASE:  # side cache: rows split over two files, use the plain path
+        ev, _ = evidence_b(ds, day, columns=[*cols, "clean"])
+        X = ev.loc[ev["clean"], cols].to_numpy(np.float32)
+        return X[rng.choice(len(X), min(len(X), n), replace=False)]
+    path = cache_parts(ds, day)[0]
+    clean = np.flatnonzero(pd.read_parquet(path, columns=["clean"])["clean"].to_numpy())
+    rows = clean[rng.choice(len(clean), min(len(clean), n), replace=False)]
+    order = np.argsort(rows, kind="stable")
+    want = rows[order]
+    pf = pq.ParquetFile(path)
+    out, lo = [], 0
+    for g in range(pf.num_row_groups):
+        hi = lo + pf.metadata.row_group(g).num_rows
+        a, b = np.searchsorted(want, [lo, hi])
+        if b > a:
+            tbl = pf.read_row_group(g, columns=cols).to_pandas()
+            out.append(tbl[cols].to_numpy(np.float32)[want[a:b] - lo])
+        lo = hi
+    X = np.empty((len(rows), len(cols)), np.float32)
+    X[order] = np.concatenate(out) if out else X[:0]
+    return X
+
+
 def evidence_b(ds: str, day: Path, columns: list[str] | None = None
                ) -> tuple[pd.DataFrame, dict[str, str]]:
     """Evidence plus per-entity baselines from other days (cached). ``columns``

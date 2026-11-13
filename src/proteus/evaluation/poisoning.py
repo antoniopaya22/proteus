@@ -64,9 +64,7 @@ def local_benign(ds: str, day: Path, cols: list[str], rng: np.random.Generator,
     for d in h1.days(ds):
         if d == day:
             continue
-        ev, _ = h1.evidence_b(ds, d, columns=[*cols, "clean"])
-        X = ev.loc[ev["clean"], cols].to_numpy(np.float32)
-        out.append(X[rng.choice(len(X), min(len(X), per_day), replace=False)])
+        out.append(h1.sample_clean(ds, d, cols, per_day, rng))
     return np.concatenate(out)
 
 

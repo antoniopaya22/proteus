@@ -70,9 +70,7 @@ def local_threshold(ds: str, day: Path, model, cols: list[str], fpr: float,
     for d in h1.days(ds):
         if d == day:
             continue
-        ev, _ = h1.evidence_b(ds, d, columns=[*cols, "clean"])
-        X = ev.loc[ev["clean"], cols].to_numpy(np.float32)
-        X = X[rng.choice(len(X), min(len(X), 300_000), replace=False)]
+        X = h1.sample_clean(ds, d, cols, 300_000, rng)
         ref.append(model.predict_proba(X)[:, 1])
     return float(np.quantile(np.concatenate(ref), 1 - fpr, method="higher"))
 
