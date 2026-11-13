@@ -35,6 +35,9 @@ def main() -> None:
     ap.add_argument("--fpr", type=float, default=1e-3)
     ap.add_argument("--delta", type=float, default=h1.EXPORT_TIMEOUT_S)
     ap.add_argument("--rmax", type=float, default=200.0, help="highest rate tried (probes/s)")
+    ap.add_argument("--exclude-saturated", type=float, default=None,
+                    help="drop sub-cores whose local benign scores tie at their maximum "
+                         "for more than this share (as h1 --exclude-saturated)")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--hours", type=float, default=WINDOW_S / 3600,
                     help="duration of the replayed scan (long time scales need hours)")
@@ -42,6 +45,8 @@ def main() -> None:
     window_s = args.hours * 3600
     rng = np.random.default_rng(args.seed)
     cols, model = h1.load_models(args.run)[args.model]
+    if args.exclude_saturated is not None:
+        model.exclude_fpr = args.exclude_saturated
     _, specs = h1.evidence_b(args.test, h1.days(args.test)[0], columns=["clean"])
     baselines = Baselines(args.test)
     rows = []
@@ -81,7 +86,8 @@ def main() -> None:
         rows.append(row)
         print(row, flush=True)
     out = pd.DataFrame(rows)
-    out.to_csv(args.run / f"frontier_scan_{args.model}_{args.fpr:g}_{args.hours:g}h.csv",
+    xs = "" if args.exclude_saturated is None else f"_xs{args.exclude_saturated:g}"
+    out.to_csv(args.run / f"frontier_scan_{args.model}_{args.fpr:g}_{args.hours:g}h{xs}.csv",
                index=False)
     print(out.to_string())
 
