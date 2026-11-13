@@ -10,10 +10,8 @@ copyright: Copyright &copy; 2026 Antonio Payá González, Sergio Arroni del Rieg
 theme:
   name: material
   custom_dir: overrides
-  font:
-    text: Archivo
-    code: JetBrains Mono
-  logo: assets/logo-white.svg
+  font: false
+  logo: assets/logo.svg
   favicon: assets/favicon.svg
   icon:
     repo: fontawesome/brands/github
