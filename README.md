@@ -1,105 +1,136 @@
-# Proteus
+<p align="center">
+  <img src="website/assets/logo.svg" width="72" alt="Proteus logo">
+</p>
 
-Sucesor de [Apollon](https://doi.org/10.1016/j.cose.2023.103546): detección de
-intrusiones en red robusta frente a evasión adversaria. En lugar de ocultar qué modelo
-responde, Proteus detecta sobre **evidencia conservada**: contadores por entidad que
-las operaciones gratuitas del atacante (relleno, paquetes añadidos, partir conexiones,
-señuelos, cambiar el puerto origen) solo pueden aumentar. Lo hace con un **núcleo
-monótono** en esa evidencia. Cada alerta se **certifica** frente a cualquier
-combinación de esas operaciones con una sola evaluación más del modelo, y lo que le
-queda al atacante (ir más despacio) se mide como **frontera de daño**.
+<h1 align="center">Proteus</h1>
 
-El paper está en un repositorio aparte (`proteus-paper`).
+<p align="center">
+  <b>Certified network intrusion detection from conserved traffic evidence</b>
+</p>
 
-## Instalación
+<p align="center">
+  <a href="https://github.com/antoniopaya22/proteus/actions/workflows/ci.yml"><img src="https://github.com/antoniopaya22/proteus/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://antoniopaya22.github.io/proteus/"><img src="https://img.shields.io/badge/docs-online-244ded" alt="Documentation"></a>
+  <img src="https://img.shields.io/badge/python-3.11%20|%203.12-244ded?logo=python&logoColor=white" alt="Python">
+  <img src="https://img.shields.io/badge/paper-in%20preparation-f5a524" alt="Paper">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-244ded" alt="License"></a>
+</p>
 
-Python ≥ 3.11 (los experimentos se hicieron con 3.12.3).
+<p align="center">
+  <a href="https://antoniopaya22.github.io/proteus/">Documentation</a> ·
+  <a href="https://antoniopaya22.github.io/proteus/getting-started/quickstart/">Quickstart</a> ·
+  <a href="https://antoniopaya22.github.io/proteus/concepts/">Concepts</a> ·
+  <a href="https://antoniopaya22.github.io/proteus/guide/reproduce/">Reproduce</a> ·
+  <a href="README.es.md">Español</a>
+</p>
+
+<p align="center">
+  <a href="https://antoniopaya22.github.io/proteus/"><img src="website/assets/screenshot-home.png" alt="Proteus website: evasion only adds evidence" width="860"></a>
+</p>
+
+---
+
+Successor of [Apollon](https://doi.org/10.1016/j.cose.2023.103546): network intrusion
+detection that is robust to adversarial evasion. Instead of hiding which model answers,
+Proteus detects on **conserved evidence**: per-entity counters that the attacker's free
+operations (padding, inserted packets, split connections, decoys, new source ports) can
+only increase. A **monotone core** scores that evidence, so every alert is **certified**
+against any combination of those operations with a single extra model evaluation, and
+what is left to the attacker, going slower, is measured as the **harm frontier**.
+
+The paper is in preparation. Full documentation, in English and Spanish, at
+**https://antoniopaya22.github.io/proteus/**.
+
+## Installation
+
+Python ≥ 3.11 (the experiments used 3.12.3).
 
 ```sh
-uv venv && uv pip install -e ".[dev]"            # núcleo y tests
-uv pip install -e ".[attacks,packets]"            # ART (ataques a la cáscara) y dpkt (pcap)
-uv run pytest                                     # unos 120 tests, < 1 min
+uv venv && uv pip install -e ".[dev]"            # core and tests
+uv pip install -e ".[attacks,packets]"            # ART (attacks on the shell) and dpkt (pcap)
+uv run pytest                                     # about 120 tests, under a minute
 ```
 
-Versiones usadas en el paper: numpy 2.5.4, pandas 3.1.1, scikit-learn 1.9.1, scipy
-1.18.1, numba 0.68.1, pyarrow 26.0.1, adversarial-robustness-toolbox 1.20.1, dpkt
-1.9.8.
+Versions used for the paper: numpy 2.5.4, pandas 3.1.1, scikit-learn 1.9.1, scipy
+1.18.1, numba 0.68.1, pyarrow 26.0.1, adversarial-robustness-toolbox 1.20.1, dpkt 1.9.8.
 
-## Datos
+## Command line
 
-Los datasets no se versionan. Cómo descargarlos y convertirlos está en
-[`data/README.md`](data/README.md). Resumen:
+Every experiment is one command (`proteus <command> --help` for its options):
 
-| Dataset | Uso en el paper | Origen |
+```sh
+proteus --help                                    # list of commands
+python examples/certificate.py                    # certify alerts on synthetic evidence
+proteus prepare --dataset cicids2017 --raw data/raw/cicids2017 --out data/processed/cicids2017
+PROTEUS_EVIDENCE=v3 proteus detect --train csecicids2018 --test cicids2017 --models proteus proteus_cert
+```
+
+## Data
+
+Datasets are not versioned. How to download and convert them is in
+[`data/README.md`](data/README.md) and in the
+[datasets guide](https://antoniopaya22.github.io/proteus/guide/datasets/).
+
+| Dataset | Use | Source |
 |---|---|---|
-| CIC-IDS-2017 y CSE-CIC-IDS-2018 corregidos (Liu et al., CNS 2022) | detección entre redes, fronteras, ataques | [distrinet](https://intrusion-detection.distrinet-research.be/CNS2022/Datasets/) |
-| pcap del viernes de CIC-IDS-2017 | comprobación del certificado con paquetes | CIC (formulario de descarga) |
-| CTU-13 | tráfico real con fondo sin etiquetar | Stratosphere Lab (CTU) |
-| UNSW-NB15 | atacantes de un generador | UNSW Canberra (oficial) |
-| UGR'16, CIC-DDoS-2019, CTU-SME-11 | en curso | ver `data/README.md` |
+| Corrected CIC-IDS2017 and CSE-CIC-IDS2018 (Liu et al., CNS 2022) | detection across networks, frontiers, attacks | [distrinet](https://intrusion-detection.distrinet-research.be/CNS2022/Datasets/) |
+| CIC-IDS2017 Friday pcap | checking the certificate on packets | CIC (download form) |
+| CTU-13 | real traffic with an unlabelled background | Stratosphere Lab (CTU) |
+| UNSW-NB15 | attackers from a traffic generator | UNSW Canberra (official) |
+| UGR'16, CIC-DDoS2019, CTU-SME-11 | in progress | see `data/README.md` |
 
-## Reproducir el paper
+## Reproducing the experiments
 
-`scripts/reproduce.sh` lanza cada experimento con sus parámetros exactos, por etapas;
-`scripts/paper_tables.sh` regenera después las tablas y los datos de las figuras en
+`scripts/reproduce.sh` runs every experiment with its exact parameters, stage by stage;
+`scripts/paper_tables.sh` then regenerates tables and figure data in
 `experiments/outputs/paper_tables/`.
 
 ```sh
-bash scripts/reproduce.sh data        # convertir los datasets (una vez)
-bash scripts/reproduce.sh h1 tables   # detección entre redes y tablas
-bash scripts/reproduce.sh all         # todo, en orden
+bash scripts/reproduce.sh data        # convert the datasets (once)
+bash scripts/reproduce.sh h1 tables   # detection across networks, then tables
+bash scripts/reproduce.sh all         # everything, in order
 ```
 
-| Etapa | Resultado del paper | Notas |
-|---|---|---|
-| `h1` | Detección entre redes (`tab:h1`, `tab:h1-1e-4`), KitNET | v3 17→18: ~1,5 h, pico ~16 GB |
-| `single` | Núcleos de un solo modelo (apéndice), operaciones libres sobre campañas reales | evidencia v1 |
-| `review` | Máximo sin monotonía, igual presupuesto de alarmas, holgura con temporizador | |
-| `ablation` | Ablación de subnúcleos (`tab:ablation`) | |
-| `packets` | Certificado sobre 1,2 M paquetes reales | necesita el pcap y `dpkt` |
-| `budget` | Certificado por presupuesto (BARS) frente a operaciones libres (`tab:budget`) | |
-| `frontier` | Frontera de daño (`tab:frontier`, `fig:frontier`) | |
-| `adaptive` | Atacante adaptativo y robustez de la comparación de defensas | |
-| `poisoning` | Envenenamiento de líneas base (`fig:poisoning`) | |
-| `real` | CTU-13 y UNSW-NB15 | |
-| `shell` | Ataques por consultas a detectores por flujo (`tab:aml`), contador de sondas | ART; horas |
-| `cost` | Coste por etapa | un núcleo de CPU |
+Every stage, with what it produces and its memory and time needs, is described in the
+[reproduction guide](https://antoniopaya22.github.io/proteus/guide/reproduce/).
+Experiments ran on an AWS c6a.4xlarge (16 vCPU, 32 GB RAM, no GPU); runs that evaluate
+on CSE-CIC-IDS2018 reach 16–18 GB, so do not launch two at once on 32 GB.
 
-Máquina de los experimentos: AWS c6a.4xlarge (16 vCPU, 32 GB de RAM, sin GPU). Las
-ejecuciones que evalúan sobre CSE-CIC-IDS-2018 llegan a 16–18 GB: en 32 GB no se deben
-lanzar dos a la vez.
+**Determinism.** Fixed seeds; thresholds are calibrated only on benign traffic of the
+test network (other days), without attack labels.
 
-**Determinismo.** Semilla fija (`--seed 0` en los experimentos y en los generadores
-de variantes; `random_state=0` en todos los modelos). Los umbrales se calibran solo con tráfico benigno de
-la red de prueba (otros días), sin etiquetas de ataque. Apollon responde al azar por
-diseño, así que sus respuestas varían entre ejecuciones; el paper evalúa cada ejemplo
-adversario con 10 tiradas.
+**Environment variables.** `PROTEUS_EVIDENCE` (`v1` by default; `v3` for Proteus and
+Proteus-cert), `PROTEUS_TIMER_S` (re-scoring period δ in the certificate slack),
+`PROTEUS_PEER` and `PROTEUS_PAIRBASE` (experimental population and pair baselines).
 
-**Variables de entorno.** `PROTEUS_EVIDENCE` (`v1` por defecto; `v3` para Proteus y
-Proteus-cert), `PROTEUS_TIMER_S` (periodo de re-puntuación δ en la holgura del
-certificado), `PROTEUS_PEER` y `PROTEUS_PAIRBASE` (líneas base de población y de par
-relativas al servicio, experimentales).
+## Layout
 
-## Estructura
-
-| Carpeta | Contenido |
+| Folder | Content |
 |---|---|
-| `src/proteus/datasets` | Lectores y conversión a Parquet (CIC, CTU-13, UNSW-NB15, UGR'16, CIC-DDoS-2019, CTU-SME-11) |
-| `src/proteus/evidence` | Contadores con decaimiento por entidad y líneas base por entidad |
-| `src/proteus/core` | Monotonía, certificado, máximo calibrado, frontera, explicaciones, reglas, envenenamiento |
-| `src/proteus/packets` | Lectura de pcap, exportador de flujos y operaciones libres sobre paquetes |
-| `src/proteus/shell` | Cáscara por flujo |
-| `src/proteus/attacks` | Operaciones del atacante sobre registros de flujo |
-| `src/proteus/baselines` | Apollon (publicado y corregido), reglas de tasa, KitNET, suavizado aleatorio |
-| `src/proteus/evaluation` | Experimentos (`h1`, `frontier_exp`, `adaptive`, `poisoning`, `packet_check`, `smoothing`, `aml_feature`, …) y tablas |
-| `tests/` | Tests, incluidos los de las propiedades que sostienen la garantía |
-| `scripts/` | `reproduce.sh` y `paper_tables.sh` |
-| `docs/` | Análisis de Apollon, estado del arte, diseño, plan y resultados (`06`) |
-| `experiments/outputs/` | Resultados (CSV/JSON), no versionados |
+| `src/proteus/datasets` | Readers and conversion to Parquet (CIC, CTU-13, UNSW-NB15, UGR'16, CIC-DDoS2019, CTU-SME-11) |
+| `src/proteus/evidence` | Decayed per-entity counters and per-entity baselines |
+| `src/proteus/core` | Monotonicity, certificate, calibrated maximum, frontier, explanations, rules, poisoning |
+| `src/proteus/packets` | pcap reading, flow exporter and free operations on packets |
+| `src/proteus/shell` | Per-flow shell |
+| `src/proteus/attacks` | Attacker operations on flow records |
+| `src/proteus/baselines` | Apollon, rate rules, KitNET, randomised smoothing |
+| `src/proteus/evaluation` | Experiments (`h1`, `frontier_exp`, `adaptive`, `poisoning`, `packet_check`, …) and tables |
+| `tests/` | Tests, including the properties the guarantee rests on |
+| `examples/` | Runnable examples (no dataset needed) |
+| `scripts/` | `reproduce.sh` and `paper_tables.sh` |
+| `website/` | Documentation website (MkDocs Material, English and Spanish) |
+| `docs/` | Research notes (Spanish): analysis of Apollon, related work, design, plan and results log |
+| `experiments/outputs/` | Results (CSV/JSON), not versioned |
 
-## Citar
+## Citation
 
-> A. Payá González, S. Arroni del Riego. Proteus: Certified Network Intrusion Detection from
-> Conserved Traffic Evidence. Manuscrito en preparación, 2026 (título provisional).
+> A. Payá González, S. Arroni del Riego. Proteus: Certified Network Intrusion Detection
+> from Conserved Traffic Evidence. Manuscript in preparation, 2026 (provisional title).
 
-Licencia: pendiente de decidir antes de publicar el repositorio.
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## License
+
+[Apache License 2.0](LICENSE).

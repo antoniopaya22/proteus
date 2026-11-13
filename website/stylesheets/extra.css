@@ -1,0 +1,152 @@
+/* ==========================================================================
+   Proteus documentation theme for MkDocs Material, in the design system of the
+   landing page: Archivo, navy and bone, one blue (#244ded). */
+
+:root {
+  --ap-radius: 14px;
+  --ap-radius-sm: 10px;
+  --ap-blue: #244ded;
+  --ap-benign: #1f9d6b;
+  --ap-attack: #e5484d;
+  --ap-amber: #f5a524;
+  --ap-head: "Archivo", "Helvetica Neue", Arial, sans-serif;
+}
+
+/* ---- Palette ------------------------------------------------------------ */
+
+[data-md-color-scheme="default"] {
+  --lp-bg: #fbfbf8;
+  --lp-bg-soft: #f6f6f2;
+  --lp-surface: #ffffff;
+  --lp-line: #e4e5df;
+  --lp-line-strong: #d3d5cd;
+  --lp-ink: #0b0e16;
+  --lp-text: #3a404c;
+  --lp-muted: #5b626e;
+  --lp-accent: #244ded;
+  --lp-accent-hover: #1b3fd6;
+  --lp-on-accent: #ffffff;
+  --lp-shadow: 0 1px 2px #0b0e160d, 0 8px 24px -12px #0b0e1626;
+  --md-default-bg-color: var(--lp-bg);
+  --md-default-fg-color: #0b0e16e6;
+  --md-default-fg-color--light: #0b0e16a3;
+  --md-typeset-color: var(--lp-text);
+  --md-typeset-a-color: var(--lp-accent);
+  --md-code-bg-color: #f1f1ec;
+  --md-code-fg-color: #1d2230;
+}
+
+[data-md-color-scheme="slate"] {
+  --md-hue: 225;
+  --lp-bg: #0b0e16;
+  --lp-bg-soft: #121726;
+  --lp-surface: #121726;
+  --lp-line: #1e2537;
+  --lp-line-strong: #2b3349;
+  --lp-ink: #e9ebf2;
+  --lp-text: #c3c9d6;
+  --lp-muted: #8f97aa;
+  --lp-accent: #7d95ff;
+  --lp-accent-hover: #a5b5ff;
+  --lp-on-accent: #0b0e16;
+  --lp-shadow: 0 1px 2px #0000004d, 0 10px 30px -14px #00000099;
+  --md-default-bg-color: var(--lp-bg);
+  --md-default-fg-color: #e9ebf2e6;
+  --md-default-fg-color--light: #e9ebf2a3;
+  --md-typeset-color: var(--lp-text);
+  --md-typeset-a-color: var(--lp-accent);
+  --md-code-bg-color: #121726;
+}
+
+[data-md-color-primary="custom"] {
+  --md-primary-fg-color: #0b0e16;
+  --md-primary-fg-color--light: #181e30;
+  --md-primary-fg-color--dark: #06080d;
+  --md-primary-bg-color: #ffffff;
+  --md-primary-bg-color--light: #ffffffb3;
+}
+
+[data-md-color-accent="custom"] {
+  --md-accent-fg-color: var(--lp-accent);
+  --md-accent-fg-color--transparent: #244ded1a;
+  --md-accent-bg-color: #ffffff;
+}
+
+/* ---- Documentation pages ------------------------------------------------ */
+
+.md-grid { max-width: 64rem; }
+.md-typeset { font-size: 0.82rem; line-height: 1.7; }
+.md-typeset h1, .md-typeset h2, .md-typeset h3, .md-typeset h4 {
+  color: var(--lp-ink);
+  font-family: var(--ap-head);
+  letter-spacing: -0.02em;
+}
+.md-typeset h1 { font-weight: 760; font-size: 2.3em; letter-spacing: -0.045em; margin-bottom: 0.8em; }
+.md-typeset h2 { font-weight: 720; font-size: 1.55em; letter-spacing: -0.035em; margin-top: 2.2em; }
+.md-typeset h3 { font-weight: 680; font-size: 1.12em; letter-spacing: -0.02em; }
+.md-typeset h1 code, .md-typeset h2 code { padding: 0 0.15em; background: none; font-size: 0.85em; color: var(--lp-accent); }
+
+.md-nav__title { font-family: var(--ap-head); }
+.md-nav__item--section > .md-nav__link { font-weight: 700; color: var(--lp-ink); }
+.md-nav__link--active { color: var(--lp-accent) !important; font-weight: 600; }
+.md-footer { background: #0b0e16; }
+.md-footer-meta { background: #06080d; }
+
+.md-typeset table:not([class]) {
+  border: 1px solid var(--lp-line);
+  border-radius: var(--ap-radius-sm);
+  overflow: hidden;
+  font-size: 0.74rem;
+}
+.md-typeset table:not([class]) th { background: var(--lp-bg-soft); color: var(--lp-ink); font-weight: 600; }
+.md-typeset table:not([class]) td { border-color: var(--lp-line); }
+
+.md-typeset .admonition, .md-typeset details {
+  border-radius: var(--ap-radius-sm);
+  border-width: 1px;
+  box-shadow: none;
+  font-size: 0.78rem;
+}
+.md-typeset pre > code, .md-typeset .highlight pre { border-radius: var(--ap-radius-sm); }
+.md-typeset .highlight { border: 1px solid var(--lp-line); border-radius: var(--ap-radius-sm); }
+.md-typeset .tabbed-set { border-radius: var(--ap-radius-sm); }
+
+.md-typeset .md-button { border-radius: var(--ap-radius-sm); font-weight: 600; }
+.md-typeset .md-button--primary { background: var(--lp-accent); border-color: var(--lp-accent); color: var(--lp-on-accent); }
+.md-typeset .md-button--primary:hover { background: var(--lp-accent-hover); border-color: var(--lp-accent-hover); color: var(--lp-on-accent); }
+
+.md-typeset .grid.cards > ul > li, .md-typeset .grid > .card {
+  border: 1px solid var(--lp-line);
+  border-radius: var(--ap-radius);
+  background: var(--lp-surface);
+  box-shadow: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.md-typeset .grid.cards > ul > li:hover, .md-typeset .grid > .card:hover { border-color: var(--lp-line-strong); box-shadow: var(--lp-shadow); }
+
+/* ---- Product header (overrides/partials/header.html) -------------------- */
+
+.site-header { background: #0b0e16; box-shadow: 0 1px 0 #e9ebf21a; }
+.site-header .md-header__inner { gap: 0.2rem; }
+.site-brand.md-logo { display: inline-flex; align-items: center; gap: 0.5rem; margin-right: 0.6rem; color: #fff; text-decoration: none; }
+.site-header .site-brand__name { font-family: var(--ap-head); font-size: 0.95rem; font-weight: 720; letter-spacing: -0.03em; letter-spacing: -0.01em; white-space: nowrap; }
+.site-nav { display: flex; align-items: center; gap: 0.2rem; margin: 0 0 0 0.6rem; padding: 0; list-style: none; }
+.site-nav li { margin: 0; }
+.site-nav__link { display: block; padding: 0.35rem 0.6rem; border-radius: 999px; color: #b6bdcd !important; font-size: 0.7rem; font-weight: 500; text-decoration: none; transition: color 0.15s ease, background 0.15s ease; }
+.site-nav__link:hover { color: #fff !important; background: #e9ebf214; }
+.site-nav__link.is-active { color: #fff !important; background: #e9ebf21a; }
+.site-header__spacer { flex: 1; }
+.site-header__repo { color: #b6bdcd; }
+.site-header__repo:hover { color: #fff; }
+.site-header__cta { margin-left: 0.4rem; padding: 0.4rem 0.85rem; border-radius: 999px; background: var(--ap-blue); color: #fff !important; font-size: 0.68rem; font-weight: 700; white-space: nowrap; text-decoration: none; transition: background 0.15s ease; }
+.site-header__cta:hover { background: #1b3fd6; }
+.site-header .md-select__inner { font-size: 0.7rem; }
+
+@media screen and (max-width: 59.9844em) {
+  .site-nav, .site-header__cta { display: none; }
+  .site-header .md-header__inner > label[for="__drawer"] { order: 10; }
+}
+@media screen and (min-width: 76.25em) {
+  .site-header label[for="__drawer"] { display: none; }
+}
+

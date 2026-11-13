@@ -1,0 +1,174 @@
+site_name: Proteus
+site_description: Certified network intrusion detection from conserved traffic evidence
+site_url: https://antoniopaya22.github.io/proteus/
+repo_url: https://github.com/antoniopaya22/proteus
+repo_name: antoniopaya22/proteus
+edit_uri: edit/main/website/
+docs_dir: website
+copyright: Copyright &copy; 2026 Antonio Payá González, Sergio Arroni del Riego
+
+theme:
+  name: material
+  custom_dir: overrides
+  font:
+    text: Archivo
+    code: JetBrains Mono
+  logo: assets/logo-white.svg
+  favicon: assets/favicon.svg
+  icon:
+    repo: fontawesome/brands/github
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle: { icon: material/weather-night, name: Dark mode }
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle: { icon: material/weather-sunny, name: Light mode }
+  features:
+    - navigation.sections
+    - navigation.top
+    - navigation.tracking
+    - navigation.footer
+    - navigation.indexes
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+    - toc.follow
+
+nav:
+  - Home: index.md
+  - Getting started:
+      - getting-started/index.md
+      - Installation: getting-started/installation.md
+      - Quickstart: getting-started/quickstart.md
+  - Concepts:
+      - How Proteus works: concepts/index.md
+      - Conserved evidence: concepts/conserved-evidence.md
+      - Monotone core: concepts/monotone-core.md
+      - Certificate: concepts/certificate.md
+      - Harm frontier: concepts/harm-frontier.md
+      - Threat model: concepts/threat-model.md
+  - Guide:
+      - Datasets: guide/datasets.md
+      - Reproducing the experiments: guide/reproduce.md
+      - Experiment modules: guide/experiments.md
+      - Checking the certificate on packets: guide/packets.md
+  - API reference:
+      - reference/index.md
+      - Certificate: reference/certify.md
+      - Combination of sub-cores: reference/combine.md
+      - Harm frontier: reference/frontier.md
+      - Evidence counters: reference/counters.md
+      - Baselines: reference/baselines.md
+  - About:
+      - Citing Proteus: about/citation.md
+      - Changelog: about/changelog.md
+      - Contributing: about/contributing.md
+      - License: about/license.md
+
+plugins:
+  - search
+  - i18n:
+      docs_structure: suffix
+      fallback_to_default: true
+      reconfigure_material: true
+      reconfigure_search: true
+      languages:
+        - locale: en
+          default: true
+          name: English
+          build: true
+        - locale: es
+          name: Español
+          build: true
+          site_description: Detección de intrusiones en red certificada a partir de evidencia conservada del tráfico
+          nav_translations:
+            Home: Inicio
+            Getting started: Primeros pasos
+            Installation: Instalación
+            Quickstart: Inicio rápido
+            Concepts: Conceptos
+            How Proteus works: Cómo funciona Proteus
+            Conserved evidence: Evidencia conservada
+            Monotone core: Núcleo monótono
+            Certificate: Certificado
+            Harm frontier: Frontera de daño
+            Threat model: Modelo de amenaza
+            Guide: Guía
+            Datasets: Datasets
+            Reproducing the experiments: Reproducir los experimentos
+            Experiment modules: Módulos de experimentos
+            Checking the certificate on packets: Comprobar el certificado con paquetes
+            API reference: Referencia de la API
+            Combination of sub-cores: Combinación de subnúcleos
+            Evidence counters: Contadores de evidencia
+            Baselines: Líneas base
+            About: Acerca de
+            Citing Proteus: Cómo citar Proteus
+            Changelog: Cambios
+            Contributing: Contribuir
+            License: Licencia
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+          options:
+            docstring_style: google
+            show_source: true
+            show_root_heading: true
+            show_root_full_path: false
+            members_order: source
+            separate_signature: true
+            show_signature_annotations: true
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - footnotes
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets:
+      base_path: [".", "website"]
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+extra_css:
+  - stylesheets/extra.css
+
+extra_javascript:
+  - https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js
+  - https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js
+
+extra:
+  header_nav:
+    - { title: Docs, title_es: Documentación, url: getting-started/, section: getting-started/ }
+    - { title: Concepts, title_es: Conceptos, url: concepts/, section: concepts/ }
+    - { title: Guide, title_es: Guía, url: guide/datasets/, section: guide/ }
+    - { title: API, title_es: API, url: reference/, section: reference/ }
+    - { title: About, title_es: Acerca de, url: about/citation/, section: about/ }
+  header_cta: { title: Get started, title_es: Empezar, url: getting-started/quickstart/ }
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/antoniopaya22/proteus

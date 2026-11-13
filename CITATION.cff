@@ -1,0 +1,37 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below. A paper is in preparation."
+title: "Proteus: Certified Network Intrusion Detection from Conserved Traffic Evidence"
+type: software
+license: Apache-2.0
+version: 0.1.0
+url: "https://antoniopaya22.github.io/proteus/"
+repository-code: "https://github.com/antoniopaya22/proteus"
+authors:
+  - family-names: "Payá González"
+    given-names: "Antonio"
+    orcid: "https://orcid.org/0000-0003-3733-3805"
+  - family-names: "Arroni del Riego"
+    given-names: "Sergio"
+    orcid: "https://orcid.org/0000-0002-4907-8576"
+keywords:
+  - intrusion detection
+  - adversarial machine learning
+  - certified robustness
+  - network security
+references:
+  - type: article
+    title: "Apollon: A robust defense system against Adversarial Machine Learning attacks in Intrusion Detection Systems"
+    authors:
+      - family-names: "Payá"
+        given-names: "Antonio"
+      - family-names: "Arroni"
+        given-names: "Sergio"
+      - family-names: "García-Díaz"
+        given-names: "Vicente"
+      - family-names: "Gómez"
+        given-names: "Alberto"
+    journal: "Computers & Security"
+    volume: 136
+    start: 103546
+    year: 2024
+    doi: "10.1016/j.cose.2023.103546"

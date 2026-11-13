@@ -1,9 +1,27 @@
 [project]
 name = "proteus"
-version = "0.0.1"
-description = "Certified-by-construction detection over conserved evidence for ML-based network intrusion detection"
+version = "0.1.0"
+description = "Certified network intrusion detection from conserved traffic evidence"
 readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
 requires-python = ">=3.11"
+authors = [
+  { name = "Antonio Payá González" },
+  { name = "Sergio Arroni del Riego" },
+]
+keywords = ["intrusion detection", "adversarial machine learning", "certified robustness",
+            "network security", "monotone models", "flow analysis"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "License :: OSI Approved :: Apache Software License",
+  "Intended Audience :: Science/Research",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Security",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 dependencies = [
     "numba",
     "numpy",
@@ -24,6 +42,21 @@ dev = [
     "pytest",
     "ruff",
 ]
+docs = [
+    "mkdocs-material>=9.5",
+    "mkdocstrings[python]>=0.25",
+    "mkdocs-static-i18n>=1.2",
+]
+
+[project.scripts]
+proteus = "proteus.cli:main"
+
+[project.urls]
+Homepage = "https://antoniopaya22.github.io/proteus/"
+Documentation = "https://antoniopaya22.github.io/proteus/"
+Repository = "https://github.com/antoniopaya22/proteus"
+Issues = "https://github.com/antoniopaya22/proteus/issues"
+Predecessor = "https://antoniopaya22.github.io/apollon/"
 
 [build-system]
 requires = ["hatchling"]

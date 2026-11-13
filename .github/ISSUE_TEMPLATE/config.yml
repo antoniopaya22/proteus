@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Documentation
+    url: https://antoniopaya22.github.io/proteus/
+    about: Concepts, reproduction of the experiments and API reference.

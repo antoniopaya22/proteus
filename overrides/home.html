@@ -1,0 +1,271 @@
+{% extends "main.html" %}
+
+{% block extrahead %}
+{{ super() }}
+<link rel="stylesheet" href="{{ 'stylesheets/landing.css' | url }}">
+{% endblock %}
+
+{% block header %}
+{% from "partials/landing_i18n.html" import STRINGS %}{% set es = config.theme.language == "es" %}{% set t = STRINGS["es" if es else "en"] %}{% set B = "es/" if es else "" %}
+<header class="lp-nav" id="lp-nav">
+  <div class="lp-wrap lp-nav__in">
+    <a class="lp-brand" href="{{ (B or '.') | url }}">
+      <img src="{{ 'assets/logo-white.svg' | url }}" alt="" width="24" height="24">
+      <span>Proteus</span>
+    </a>
+    <nav class="lp-nav__links" aria-label="Main">
+      <a href="#how">{{ t.nav_how }}</a>
+      <a href="{{ (B ~ 'getting-started/') | url }}">{{ t.nav_docs }}</a>
+      <a href="{{ (B ~ 'concepts/') | url }}">{{ t.nav_concepts }}</a>
+      <a href="{{ (B ~ 'reference/') | url }}">{{ t.nav_api }}</a>
+      <a href="#faq">{{ t.nav_faq }}</a>
+    </nav>
+    <div class="lp-nav__cta">
+      <a class="lp-lang" href="{{ ('.' if es else 'es/') | url }}" hreflang="{{ 'en' if es else 'es' }}" title="{{ t.lang_other_name }}">{{ t.lang_other }}</a>
+      <a class="lp-btn lp-btn--line lp-hide-sm" href="https://github.com/antoniopaya22/proteus">
+        <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M8 0a8 8 0 0 0-2.53 15.59c.4.07.55-.17.55-.38v-1.33c-2.23.48-2.7-1.07-2.7-1.07-.36-.92-.89-1.17-.89-1.17-.73-.5.06-.49.06-.49.8.06 1.23.83 1.23.83.72 1.22 1.87.87 2.33.67.07-.52.28-.87.5-1.07-1.78-.2-3.65-.89-3.65-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 0 1 4 0c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.28.82 2.15 0 3.07-1.87 3.75-3.66 3.95.29.25.54.73.54 1.48v2.2c0 .21.15.46.55.38A8 8 0 0 0 8 0Z"/></svg>
+        GitHub
+      </a>
+      <a class="lp-btn lp-btn--primary" href="{{ (B ~ 'getting-started/quickstart/') | url }}">{{ t.get_started }}</a>
+    </div>
+  </div>
+</header>
+{% endblock %}
+
+{% block site_nav %}{% endblock %}
+{% block container %}{% endblock %}
+
+{% block tabs %}
+{% from "partials/landing_i18n.html" import STRINGS %}{% set es = config.theme.language == "es" %}{% set t = STRINGS["es" if es else "en"] %}{% set B = "es/" if es else "" %}
+<div class="lp" id="lp">
+
+  <!-- =========================================================== HERO -->
+  <section class="lp-sec lp-dark lp-hero" id="top">
+    <div class="lp-wrap lp-hero__grid">
+      <div>
+        <p class="lp-eyebrow">{{ t.hero_eyebrow }}</p>
+        <h1 class="lp-display">{{ t.hero_title }}<i class="lp-sq"></i></h1>
+        <p class="lp-lead">{{ t.hero_lead }}</p>
+        <div class="lp-row">
+          <a class="lp-btn lp-btn--primary lp-btn--lg" href="{{ (B ~ 'getting-started/quickstart/') | url }}">{{ t.get_started }}</a>
+          <a class="lp-btn lp-btn--line lp-btn--lg" href="#how">{{ t.read_docs }}</a>
+        </div>
+        <ul class="lp-facts">
+          <li>{{ t.fact1 }}</li>
+          <li>{{ t.fact2 }}</li>
+          <li>{{ t.fact3 }}</li>
+        </ul>
+      </div>
+      <figure class="lp-card lp-hero__viz pv" aria-label="{{ t.hero_aria }}">
+        <div class="lp-card__head">{{ t.hero_card }}<span class="lp-card__tag">{{ t.simulation }}</span></div>
+        <div class="pv-op"><span>{{ t.op_label }} <b id="pv-n">0</b>/4</span><b id="pv-op">·</b></div>
+        <div class="pv-grid">
+          <div class="pv-col">
+            <div class="pv-col__head">{{ t.perflow }}</div>
+            <ul class="pv-counters pv-feats" id="pv-feats">
+              {% for c in t.pf_feats %}<li><span>{{ c }}</span><i><b></b></i></li>{% endfor %}
+            </ul>
+            <div class="pv-gauge" id="pv-g1"><i class="pv-gauge__thr"></i><i class="pv-gauge__bar"></i></div>
+            <div class="pv-thr">{{ t.thr }}</div>
+            <div class="pv-verdict" id="pv-v1">{{ t.v_alert }}</div>
+          </div>
+          <div class="pv-col">
+            <div class="pv-col__head">{{ t.proteus_core }}</div>
+            <ul class="pv-counters" id="pv-counters">
+              {% for c in t.counters %}<li><span>{{ c }}</span><i><b></b></i></li>{% endfor %}
+            </ul>
+            <div class="pv-gauge" id="pv-g2"><i class="pv-gauge__thr"></i><i class="pv-gauge__worst"></i><i class="pv-gauge__bar"></i></div>
+            <div class="pv-thr">{{ t.thr }} · <span class="pv-worst-l">{{ t.worst }}</span></div>
+            <div class="pv-verdict is-alert" id="pv-v2">{{ t.v_cert }}</div>
+          </div>
+        </div>
+      </figure>
+    </div>
+    <div class="lp-wrap">
+      <div class="lp-strip">
+        {% for k, v in t.strip %}<div><span>{{ k }}</span><b>{{ v }}</b></div>{% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================== PROBLEM -->
+  <section class="lp-sec lp-light" id="problem">
+    <div class="lp-wrap">
+      <div class="lp-split">
+        <div>
+          <p class="lp-eyebrow">{{ t.p_eyebrow }}</p>
+          <h2 class="lp-h2">{{ t.p_title }}<i class="lp-sq"></i></h2>
+        </div>
+        <p class="lp-text">{{ t.p_text }}</p>
+      </div>
+      <div class="lp-cols">
+        {% for h, p in t.p_cols %}<div><h3>{{ h }}</h3><p>{{ p }}</p></div>{% endfor %}
+      </div>
+      <div class="om" id="om" data-up="{{ t.om_up }}" data-down="{{ t.om_down }}" data-same="{{ t.om_same }}">
+        <div class="om-ops" role="tablist">
+          {% for o in t.om_ops %}<button type="button" role="tab" data-op="{{ loop.index0 }}"{% if loop.first %} class="is-on" aria-selected="true"{% endif %}>{{ o }}</button>{% endfor %}
+        </div>
+        <div class="om-grid">
+          <div class="om-panel">
+            <h4>{{ t.om_feature }}</h4>
+            <ul id="om-f">{% for r in t.om_frows %}<li><span>{{ r }}</span><b></b></li>{% endfor %}</ul>
+          </div>
+          <div class="om-panel om-panel--ev">
+            <h4>{{ t.om_evidence }}</h4>
+            <ul id="om-e">{% for r in t.om_erows %}<li><span>{{ r }}</span><b></b></li>{% endfor %}</ul>
+          </div>
+        </div>
+        <p class="lp-note">{{ t.om_hint }}</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ HOW -->
+  <section class="lp-sec lp-dark" id="how">
+    <div class="lp-wrap">
+      <div class="lp-split">
+        <div>
+          <p class="lp-eyebrow">{{ t.h_eyebrow }}</p>
+          <h2 class="lp-h2">{{ t.h_title }}<i class="lp-sq"></i></h2>
+        </div>
+        <p class="lp-text">{{ t.h_text }}</p>
+      </div>
+      <div class="lp-cols lp-cols--dark lp-cols--4">
+        {% for h, p in t.h_cols %}<div><h3>{{ h }}</h3><p>{{ p }}</p></div>{% endfor %}
+      </div>
+      <div class="pw-grid">
+        <div class="lp-card pw" id="cs">
+          <div class="lp-card__head">{{ t.cs_title }}<span class="lp-card__tag">{{ t.interactive }}</span></div>
+          <div class="pw-body">
+            <label class="pw-label" for="cs-tau">{{ t.cs_scale }}: <b id="cs-tau-v">10 min</b></label>
+            <input type="range" id="cs-tau" min="0" max="4" step="1" value="2">
+            <div class="pw-scale"><span>10 s</span><span>1 min</span><span>10 min</span><span>1 h</span><span>6 h</span></div>
+            <div class="cs-bars">
+              <div class="cs-row"><span>{{ t.cs_ev }}</span><i><b id="cs-x"></b></i></div>
+              <div class="cs-row"><span>{{ t.cs_worst }}</span><i><b id="cs-w"></b></i></div>
+              <i class="cs-thr" id="cs-thr"></i>
+            </div>
+            <p class="pw-meta">{{ t.cs_delta }} · {{ t.cs_slack }} = <b id="cs-s">0.40</b></p>
+            <p class="pw-out" id="cs-out" data-yes="{{ t.cs_yes }}" data-no="{{ t.cs_no }}"></p>
+          </div>
+        </div>
+        <div class="lp-card pw" id="fr">
+          <div class="lp-card__head">{{ t.fr_title }}<span class="lp-card__tag">{{ t.interactive }}</span></div>
+          <div class="pw-body">
+            <label class="pw-label" for="fr-rate">{{ t.fr_rate }}: <b id="fr-v">–</b> {{ t.fr_unit }}</label>
+            <input type="range" id="fr-rate" min="0" max="100" step="1" value="85">
+            <div class="fr-axis">
+              <i class="fr-zone" id="fr-zone"></i>
+              <i class="fr-mark fr-mark--front" id="fr-front"><span>{{ t.fr_front }}</span></i>
+              <i class="fr-mark fr-mark--real" id="fr-real"><span>{{ t.fr_real }}</span></i>
+              <i class="fr-dot" id="fr-dot"></i>
+            </div>
+            <p class="pw-out" id="fr-out" data-pass="{{ t.fr_pass }}" data-caught="{{ t.fr_caught }}" data-slower="{{ t.fr_slower }}"></p>
+            <p class="pw-meta">{{ t.fr_note }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================== BUILD -->
+  <section class="lp-sec lp-light" id="build">
+    <div class="lp-wrap">
+      <div class="lp-split">
+        <div>
+          <p class="lp-eyebrow">{{ t.b_eyebrow }}</p>
+          <h2 class="lp-h2">{{ t.b_title }}<i class="lp-sq"></i></h2>
+        </div>
+        <p class="lp-text">{{ t.b_text }}</p>
+      </div>
+      <div class="lp-code">
+        <div class="lp-win">
+          <div class="lp-win__bar"><span>shell</span><span>bash</span></div>
+<pre class="lp-win__body"><code><span class="c">{{ t.c_comment1 }}</span>
+uv venv &amp;&amp; uv pip install -e <span class="s">".[dev,attacks,packets]"</span>
+bash scripts/reproduce.sh data
+
+<span class="c">{{ t.c_comment2 }}</span>
+<span class="k">export</span> PROTEUS_EVIDENCE=v3
+bash scripts/reproduce.sh h1 tables</code></pre>
+        </div>
+        <div class="lp-win">
+          <div class="lp-win__bar"><span>scripts/reproduce.sh</span><span>stages</span></div>
+          <pre class="lp-win__body" id="ap-term" aria-label="{{ t.term_aria }}"></pre>
+        </div>
+      </div>
+      <div class="lp-features">
+        {% for path, h, p, link in t.features %}<a href="{{ (B ~ path) | url }}"><h3>{{ h }}</h3><p>{{ p }}</p><span>{{ link }}</span></a>{% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================== EVAL -->
+  <section class="lp-sec lp-dark" id="eval">
+    <div class="lp-wrap">
+      <div class="lp-split">
+        <div>
+          <p class="lp-eyebrow">{{ t.e_eyebrow }}</p>
+          <h2 class="lp-h2">{{ t.e_title }}<i class="lp-sq"></i></h2>
+        </div>
+        <p class="lp-text">{{ t.e_text }}</p>
+      </div>
+      <div class="lp-table">
+        <div class="lp-table__row lp-table__head">{% for h in t.e_head %}<span>{{ h }}</span>{% endfor %}</div>
+        {% for d, tr, at in t.e_rows %}<div class="lp-table__row"><b>{{ d }}</b><span>{{ tr }}</span><span>{{ at }}</span></div>{% endfor %}
+      </div>
+      <div class="lp-cols lp-cols--dark">
+        {% for h, p in t.e_cols %}<div><h3>{{ h }}</h3><p>{{ p }}</p></div>{% endfor %}
+      </div>
+      <div class="lp-row"><a class="lp-btn lp-btn--line" href="{{ (B ~ 'guide/reproduce/') | url }}">{{ t.e_btn }}</a></div>
+    </div>
+  </section>
+
+  <!-- ============================================================ FAQ -->
+  <section class="lp-sec lp-light" id="faq">
+    <div class="lp-wrap lp-faq">
+      <h2 class="lp-h2">{{ t.q_title }}<i class="lp-sq"></i></h2>
+      <div class="lp-faq__list">
+        {% for q, ans in t.faq %}<details{% if loop.first %} open{% endif %}><summary>{{ q }}</summary><p>{{ ans | replace("{cite}", (B ~ "about/citation/") | url) }}</p></details>{% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ CTA -->
+  <section class="lp-sec lp-cta">
+    <div class="lp-wrap">
+      <h2 class="lp-display lp-display--md">{{ t.cta_title }}<i class="lp-sq"></i></h2>
+      <p class="lp-lead">{{ t.cta_lead }}</p>
+      <div class="lp-install">
+        <span>$</span><code id="ap-install-cmd">git clone https://github.com/antoniopaya22/proteus &amp;&amp; cd proteus &amp;&amp; uv venv &amp;&amp; uv pip install -e ".[dev]"</code>
+        <button class="ap-install__copy" type="button">{{ t["copy"] }}</button>
+      </div>
+      <div class="lp-row">
+        <a class="lp-btn lp-btn--dark lp-btn--lg" href="{{ (B ~ 'getting-started/quickstart/') | url }}">{{ t.read_quick }}</a>
+        <a class="lp-btn lp-btn--onblue lp-btn--lg" href="https://github.com/antoniopaya22/proteus">{{ t.star }}</a>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}
+
+{% block footer %}
+{% from "partials/landing_i18n.html" import STRINGS %}{% set es = config.theme.language == "es" %}{% set t = STRINGS["es" if es else "en"] %}{% set B = "es/" if es else "" %}
+<footer class="lp-foot">
+  <div class="lp-wrap lp-foot__grid">
+    <div>
+      <a class="lp-brand" href="{{ (B or '.') | url }}"><img src="{{ 'assets/logo-white.svg' | url }}" alt="" width="20" height="20"><span>Proteus</span></a>
+      <p>{{ t.foot_desc }}</p>
+    </div>
+    {% for title, links in t.foot_cols %}<div><h4>{{ title }}</h4>
+      {% for href, label in links %}<a href="{{ href if href.startswith('http') else (B ~ href) | url }}">{{ label }}</a>{% endfor %}</div>{% endfor %}
+  </div>
+  <div class="lp-wrap lp-foot__base">© 2026 A. Payá González, S. Arroni del Riego</div>
+</footer>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="{{ 'javascripts/home.js' | url }}"></script>
+{% endblock %}
