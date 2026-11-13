@@ -978,3 +978,44 @@ KitNET sobre los mismos contadores por entidad (no supervisado), FPR 10⁻³:
 `monotonic_cst=None`. Arreglado (commit c5d000d, se salta la comprobación sin
 restricciones) y relanzado bajo el cerrojo (`fix4.sh`); el de 17 → 18 aún no había
 empezado y ya usa el código corregido.
+
+## 6.32 Experimentos de la revisión: reglas certificadas, reutilización y máximo sin monotonía (2026-11-13)
+
+Corridas `__v3_budget` (reutilizan los modelos de `__v3`) y `__v3_free`, FPR 10⁻³, umbrales
+locales. Campañas detectadas sobre el total del sentido (21 en 18 → 17, 25 en 17 → 18):
+
+| Detector | 18 → 17 | Alarmas/h | 17 → 18 | Alarmas/h |
+|---|---|---|---|---|
+| `proteus` | 13/21 | 2,7 | 14/25 | 16,0 |
+| `proteus_cert@cert` | 9/21 | 1,5 | 7/25 | 17,0 |
+| `proteus_cert@certr` (también frente a reutilización) | 2/21 | 0,0 | 0/25 | 0,0 |
+| `rate_rules_local` | 14/21 | 36,3 | 15/25 | 45,5 |
+| `rate_rules_local@cert` | 14/21 | 28,4 | 15/25 | 27,6 |
+| `proteus_free` (los cuatro subnúcleos sin restricciones) | 15/21 | 5,7 | 18/25 | 62,9 |
+
+A 10⁻⁴: `proteus_free` 11/21 a 0,2/h (TTD mediano 74 s) frente a `proteus` 9/21 a 0,2/h (1 s);
+en 17 → 18, 17/25 a 9,1/h frente a 14/25 a 6,7/h. Reglas certificadas a 10⁻⁴: 13/21 a 25,5/h
+y 12/25 a 10,2/h.
+
+Lectura:
+- **Reglas certificadas.** Las reglas de tasa son monótonas en la evidencia y su certificado
+  conserva casi todo, a unas 28 alarmas/h. Lo que separa a Proteus de ellas son las falsas
+  alarmas, no el certificado. Los subnúcleos aprendidos pagan las alarmas bajas con
+  cobertura certificada, sobre todo de escaneos.
+- **Reutilización de conexiones.** El certificado frente a reutilización deja a
+  `proteus_cert` casi sin nada: GoldenEye y un poco de Hulk en 18 → 17, ninguna en 17 → 18.
+  Los subnúcleos se apoyan en flujos, RST y flujos sin respuesta, justo lo que la
+  reutilización baja. Haría falta un detector entrenado solo con bytes de carga y
+  conteos distintos (trabajo futuro).
+- **Máximo sin monotonía.** Detecta más campañas, sobre todo las que dejan poca evidencia
+  conservada: SSH, web y botnet. En volumétricos y escaneos no gana (8/11 frente a 11/11 en
+  18 → 17; 13/13 en ambos en 17 → 18). Cuesta más alarmas en 17 → 18 y no tiene certificado.
+  La conclusión del paper pasa de "robustness does not cost detection" a "costs little
+  detection on the attacks that leave conserved evidence".
+
+**Fallo detectado:** los presupuestos por alarmas/h (`--entity-budgets`) solo se aplicaron a
+`core_free_dst_b`. Los detectores locales (`proteus`, `proteus_cert`, reglas) se ajustan en la
+pasada 2, y las puntuaciones altas limpias se recogían en la pasada 1. Arreglado con una
+pasada 3 (commit c903249). El umbral de cada día sale de las puntuaciones altas limpias de los
+otros días, cada uno puntuado por el detector ajustado sin ese día; solo usa tráfico
+benigno. Relanzado bajo el cerrojo como `__v3_budget2` (`fix5.sh`) en los dos sentidos.
