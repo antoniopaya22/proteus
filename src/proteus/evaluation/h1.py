@@ -714,10 +714,11 @@ def main() -> None:
                 MaxCore.fit(model, X[fit], y[fit],
                             sample_weight=None if sw is None else sw[fit])
                 model.fit(X[fit & tr["clean"].to_numpy()])
-                checks[name] = monotonicity_violations(
-                    lambda Z, m=model: m.predict_proba(Z)[:, 1], X[fit],
-                    np.asarray(model.monotonic_cst), rng)
-                print(f"  monotonicity {name}: {checks[name]}", flush=True)
+                if model.monotonic_cst is not None:  # proteus_free has no constraints
+                    checks[name] = monotonicity_violations(
+                        lambda Z, m=model: m.predict_proba(Z)[:, 1], X[fit],
+                        np.asarray(model.monotonic_cst), rng)
+                    print(f"  monotonicity {name}: {checks[name]}", flush=True)
             elif isinstance(model, UNSUPERVISED):
                 model.fit(X[fit & tr["clean"].to_numpy()])
             else:
