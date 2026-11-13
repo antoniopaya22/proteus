@@ -36,3 +36,22 @@ def test_alert_side_follows_the_sub_core_that_fires():
     assert side.tolist() == [False, True]
     assert alert_side(object(), ["shost__n_dhost__t60"], np.zeros((3, 1))).all()
     assert not alert_side(object(), ["dsvc__flows__t60"], np.zeros((3, 1))).any()
+
+
+def test_ties_at_the_top_push_the_threshold_above_them():
+    # Ten hosts tie at the benign maximum (a saturated score): a budget of five alarms
+    # cannot be met inside the tie, so the threshold goes above it (zero alarms).
+    sc = np.r_[np.ones(10), 0.9]
+    key = np.arange(11, dtype=np.uint64)
+    minute = np.zeros(11, dtype=np.uint64)
+    t = entity_threshold([(sc, key, minute)], hours=1.0, budget=5.0)
+    assert t > 1.0
+    # a budget that covers the whole tie lets it through
+    assert entity_threshold([(sc, key, minute)], hours=1.0, budget=10.0) <= 1.0
+
+
+def test_budget_pools_the_hours_of_every_day():
+    # two days with one alarm each; one alarm per hour over two hours allows both
+    day = (np.array([0.9]), np.array([1], dtype=np.uint64), np.array([0], dtype=np.uint64))
+    assert entity_threshold([day, day], hours=2.0, budget=1.0) <= 0.9
+    assert entity_threshold([day, day], hours=2.0, budget=0.5) > 0.9
