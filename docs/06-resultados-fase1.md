@@ -1190,3 +1190,7 @@ determinista independiente de la del fondo, y rasgos en float32. La evidencia si
 los flujos; solo el recall de esas horas se estima sobre la muestra. Ningún día anterior llegaba
 al tope, así que no cambia. Se reanuda desde 2016-08-07 bajo el cerrojo (`fix10.sh`), tras
 `july_week5`.
+
+Además (06:15): `july_week5` corría con el código antiguo y llegó al 2016-07-31 con 612.148 flujos de
+ataque por hora (06:00). Se paró antes de que acumulara el día y se reanuda desde el 31 con el tope
+(`fix11.sh`). Escritos: 07-27 a 07-30.
