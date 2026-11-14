@@ -1178,3 +1178,15 @@ eran multihilo y con la VM cargada. Medido con `OMP_NUM_THREADS=1 taskset -c 15`
 | Puntuar el núcleo de un solo modelo (122) | 84.500 |
 
 Paper corregido (discusión, "Deployment and cost").
+
+## 6.39 OOM n.º 6: UGR'16, 7 de agosto de 2016 (2026-11-14, 05:20)
+
+La conversión de `august_week1` murió a las 04:41 (28,6 GB) al cerrar el día 2016-08-07. Ese día
+tiene ~1 M de flujos de ataque por hora (1.064.134 a las 21:00), y se guardaban todos en memoria
+hasta escribir el día. Escritos: 08-01 a 08-06.
+
+Arreglo (commit fe9432a): como mucho 100.000 flujos de ataque guardados por hora, por una muestra
+determinista independiente de la del fondo, y rasgos en float32. La evidencia sigue contando todos
+los flujos; solo el recall de esas horas se estima sobre la muestra. Ningún día anterior llegaba
+al tope, así que no cambia. Se reanuda desde 2016-08-07 bajo el cerrojo (`fix10.sh`), tras
+`july_week5`.
