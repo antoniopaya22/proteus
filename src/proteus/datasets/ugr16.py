@@ -16,7 +16,10 @@ Notes:
 * labels: ``label_binary == "malicious"`` → attack, family from ``label_attack``;
   the rest is ``background`` (unknown, real ISP traffic), never benign;
 * per-entity baselines are later computed from the stored sample only, so they are
-  biased low (minutes where the entity was not sampled count as 0).
+  biased low (minutes where the entity was not sampled count as 0);
+* hours with more than ``attack_cap`` attack flows (2016-08-07 has about a million per
+  hour) store a deterministic sample of them: evidence still counts every flow, but
+  flow recall on those hours is estimated on the sample.
 """
 
 from __future__ import annotations
@@ -78,9 +81,24 @@ def _keep(df: pd.DataFrame, rate: float, salt: int) -> np.ndarray:
     return df["is_attack"].to_numpy() | (u < rate)
 
 
+def _cap_attacks(df: pd.DataFrame, keep: np.ndarray, cap: int | None, salt: int) -> np.ndarray:
+    """Keep at most about ``cap`` of the attack flows in ``keep``, by a deterministic hash
+    (independent of the background sample)."""
+    att = keep & df["is_attack"].to_numpy()
+    n = int(att.sum())
+    if cap is None or n <= cap:
+        return keep
+    key = pd.util.hash_pandas_object(df[["t_end", "src_ip", "dst_ip", "src_port", "dst_port"]],
+                                     index=False).to_numpy()
+    u = ((key ^ np.uint64(salt + 0x9E3779B97F4A7C15)) % np.uint64(1_000_000)
+         ).astype(np.float64) / 1e6
+    return keep & (~att | (u < cap / n))
+
+
 def convert_week(path: Path, out_dir: Path, sample_rate: float = 0.01,
                  window_s: float = 3600.0, warmup_s: float = 1800.0, salt: int = 0,
-                 max_hours: float | None = None, start: float | None = None) -> list[dict]:
+                 max_hours: float | None = None, start: float | None = None,
+                 attack_cap: int | None = 100_000) -> list[dict]:
     ds = pads.dataset(path, format="parquet")
     md = pq.ParquetFile(path).metadata
     ci = md.schema.to_arrow_schema().names.index("ts_end")
@@ -105,9 +123,9 @@ def convert_week(path: Path, out_dir: Path, sample_rate: float = 0.01,
         if len(df):
             feats, specs = build(df, DEFAULT_TAUS)
             own = (df["t_end"] >= pd.Timestamp(lo, unit="s")).to_numpy()
-            keep = own & _keep(df, sample_rate, salt)
+            keep = _cap_attacks(df, own & _keep(df, sample_rate, salt), attack_cap, salt)
             part = pd.concat([df.loc[keep].reset_index(drop=True),
-                              feats.loc[keep].reset_index(drop=True)], axis=1)
+                              feats.loc[keep].reset_index(drop=True).astype(np.float32)], axis=1)
             for day, g in part.groupby("day"):
                 buffers.setdefault(day, []).append(g)
             stats.append({"window": pd.Timestamp(lo, unit="s").isoformat(), "flows": int(own.sum()),

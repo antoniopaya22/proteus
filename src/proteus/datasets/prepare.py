@@ -20,6 +20,8 @@ def main() -> None:
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--sample-rate", type=float, default=0.01, help="ugr16: background kept")
     ap.add_argument("--max-hours", type=float, default=None, help="ugr16: smoke tests")
+    ap.add_argument("--attack-cap", type=int, default=100_000,
+                    help="ugr16: attack flows stored per hour at most (sampled beyond)")
     ap.add_argument("--weeks", nargs="*", default=None, help="ugr16: week files to convert")
     ap.add_argument("--start", default=None,
                     help="ugr16: resume at this UTC time (days before it must already be written)")
@@ -48,7 +50,8 @@ def main() -> None:
         for week in weeks:
             print(f"ugr16 {week.name}", flush=True)
             rows += ugr16.convert_week(week, args.out, args.sample_rate,
-                                       max_hours=args.max_hours, start=start)
+                                       max_hours=args.max_hours, start=start,
+                                       attack_cap=args.attack_cap)
             start = None
         summary = pd.DataFrame(rows)
     else:
