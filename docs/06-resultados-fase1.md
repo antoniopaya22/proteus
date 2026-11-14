@@ -1205,3 +1205,10 @@ ataque por hora (06:00). Se paró antes de que acumulara el día y se reanuda de
   pueden quedar por debajo de los del calentamiento de 30 min. Tests: coincide con el cálculo exacto
   cuando una subventana lo cubre todo, y nunca lo supera.
 - **Relanzado** bajo el cerrojo (`fix12.sh`, reutiliza `_stage`) tras CTU-SME-11, que está corriendo.
+
+**OOM n.º 8 (07:48):** CIC-DDoS-2019 volvió a morir una hora después de la de 14,5 M. `process()`
+guardaba en memoria todas las ventanas del calentamiento (30 min de esa hora), y el 2018-12-01
+13:00 es aún mayor (845 MB en staging). Ahora cada ventana y su calentamiento se leen del disco
+con filtro por tiempo, y las ventanas de más de 3 M flujos se calculan en tramos de unos 3 M flujos
+(al menos 2 min), cada uno con un calentamiento tan largo como el tramo (commit 28170af; test nuevo
+del camino denso en `process`). Relanzado (`fix13.sh`). CTU-SME-11 convertido sin errores.
