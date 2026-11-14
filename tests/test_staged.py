@@ -54,3 +54,22 @@ def test_process_keeps_benign_samples_attacks_and_bounds_evidence(tmp_path):
         assert np.all(a <= e + 1e-3 * (1 + e)), c  # warm-up only drops old events
         # missing mass <= exp(-warmup/tau) x counter value at the start of the warm-up
         assert np.all(e - a <= np.exp(-1800 / tau) * e.max() + 1e-2), c
+
+
+def test_dense_windows_are_sliced_and_never_exceed_exact(tmp_path):
+    df = flows(n=4000, horizon_s=2 * 3600)
+    st = tmp_path / "stage"
+    staged.partition(st, df, "a", minutes=60)
+    stats = staged.process(st, tmp_path / "out", "toy", attack_rate=1.0, warmup_s=1800,
+                           dense_rows=300)
+    assert sum(s["flows"] for s in stats) == len(df)
+    ev = pd.concat([pd.read_parquet(d) for d in
+                    sorted((tmp_path / "out" / "evidence").glob("*.parquet"))],
+                   ignore_index=True)
+    assert len(ev) == len(df)
+    exact, _ = build(df)
+    exact = pd.concat([df[["t_end", "src_port", "src_ip"]], exact], axis=1)
+    m = ev.merge(exact, on=["t_end", "src_ip"], suffixes=("", "_e"))
+    for c in ("dhost__flows__t600", "dsvc__fpkts__t60", "dhost__flows__t10"):
+        a, e = np.expm1(m[c].to_numpy()), np.expm1(m[c + "_e"].to_numpy())
+        assert np.all(a <= e + 1e-3 * (1 + e)), c
