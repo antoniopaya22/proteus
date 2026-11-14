@@ -1,10 +1,10 @@
 import numpy as np
 import pandas as pd
 import pytest
-from test_chunked import flows
 
 from proteus.evidence.features import build
 from proteus.evidence.stream import StreamingEvidence
+from test_chunked import flows
 
 
 def _windows(df, window_s):
