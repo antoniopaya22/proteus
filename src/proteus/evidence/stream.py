@@ -126,7 +126,7 @@ def _last_per_key(sorted_keys: np.ndarray) -> np.ndarray:
 class StreamingEvidence:
     def __init__(self, taus=None, version: str | None = None,
                  horizon_s: float | None = None, recent_s: float | None = None,
-                 min_value: float = 1.5):
+                 min_value: float = 3.0):
         self.version = version or EVIDENCE_VERSION
         self.taus = np.asarray(tuple(taus) if taus is not None else taus_for(self.version),
                                dtype=np.float64)
