@@ -88,8 +88,15 @@ CHUNKED = ("ugr16", "cicddos2019", "ctusme11")
 def _vsuffix(ds: str) -> str:
     if EVIDENCE_VERSION == "v1":
         return ""
-    if ds in CHUNKED:
-        raise ValueError(f"{ds}: evidence {EVIDENCE_VERSION} needs a new conversion")
+    if ds in CHUNKED:  # written by the converter: check it has this version's counters
+        from proteus.evidence.features import taus_for
+
+        specs = DATA / ds / "evidence" / "specs.json"
+        need = {f"dhost__noreply__t{int(max(taus_for()))}"} if EVIDENCE_VERSION == "v3" else {
+            "dhost__noreply__t600"}
+        if not specs.exists() or not need <= set(json.loads(specs.read_text())):
+            raise ValueError(f"{ds}: evidence {EVIDENCE_VERSION} needs a new conversion")
+        return ""
     return f"_{EVIDENCE_VERSION}"
 
 

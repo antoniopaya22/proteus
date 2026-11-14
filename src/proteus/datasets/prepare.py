@@ -47,12 +47,9 @@ def main() -> None:
         if args.weeks:
             weeks = [w for w in weeks if w.stem in args.weeks]
         start = pd.Timestamp(args.start).timestamp() if args.start else None
-        for week in weeks:
-            print(f"ugr16 {week.name}", flush=True)
-            rows += ugr16.convert_week(week, args.out, args.sample_rate,
-                                       max_hours=args.max_hours, start=start,
-                                       attack_cap=args.attack_cap)
-            start = None
+        print(f"ugr16 {[w.name for w in weeks]}", flush=True)
+        rows += ugr16.convert(weeks, args.out, args.sample_rate, max_hours=args.max_hours,
+                              start=start, attack_cap=args.attack_cap)
         summary = pd.DataFrame(rows)
     else:
         summary = convert(args.raw, args.out, args.dataset)

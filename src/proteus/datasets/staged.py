@@ -79,59 +79,55 @@ def _rows(files: list[Path]) -> int:
 
 
 def process(stage_dir: Path, out_dir: Path, dataset: str, attack_rate: float = 0.02,
-            warmup_s: float = 1800.0, salt: int = 0, label=None,
-            key: list[str] | None = None, dense_rows: int = 2_000_000) -> list[dict]:
+            warmup_s: float | None = None, salt: int = 0, label=None,
+            key: list[str] | None = None, dense_rows: int = 2_000_000,
+            horizon_s: float | None = None) -> list[dict]:
     """``label(df) -> (attack, family)`` relabels raw flows; ``None`` keeps the staged
     ``attack``/``family``/``is_attack`` columns.
 
-    Each window is read from disk together with its warm-up (from the preceding window
-    only), so no window is held in memory for the next one. A window with more than
-    ``dense_rows`` flows is computed in slices of about ``dense_rows`` flows each (cut by
-    row count, since attacks come in bursts), each with a warm-up as long as the slice:
-    CIC-DDoS-2019 has hours of up to 23.5 M flows. Shorter warm-ups can only lower
-    counters."""
+    Windows are read from disk one at a time, in time order, and the counter state is
+    carried from one to the next (``proteus.evidence.stream``), so every time scale is
+    exact up to the pruning bound and no warm-up is needed (``warmup_s`` is ignored). A
+    window with more than ``dense_rows`` flows is read in slices of about that many
+    flows, cut at row quantiles of its ``t_end`` (CIC-DDoS-2019 has hours of up to
+    23.5 M flows, in bursts)."""
     import pyarrow as pa
     import pyarrow.dataset as pads
+
+    from proteus.evidence.stream import StreamingEvidence
 
     key = key or KEY
     ev_dir = out_dir / "evidence"
     ev_dir.mkdir(parents=True, exist_ok=True)
     windows = sorted((d.name, w) for d in stage_dir.iterdir() if d.is_dir()
                      for w in d.iterdir() if w.is_dir())
-    starts = [_window_start(d, w.name) for d, w in windows]
-    gaps = [b - a for a, b in pairwise(starts) if b > a]
-    base = min([*gaps, pd.Timedelta(hours=1)])  # window length of HHMM partitions
+    stream = StreamingEvidence(horizon_s=horizon_s)
     stats, specs, parts = [], None, []
     current_day = None
-    for i, (day, wdir) in enumerate(windows):
+    for day, wdir in windows:
         if current_day is not None and day != current_day and parts:
             _flush(dataset, current_day, parts, out_dir, ev_dir)
             parts = []
         current_day = day
-        start = starts[i]
-        win = pd.Timedelta(hours=1) if len(wdir.name) == 2 else base
-        own_files = sorted(wdir.glob("*.parquet"))
-        n = _rows(own_files)
-        full_warm = pd.Timedelta(seconds=warmup_s)
-        if n <= dense_rows:
-            bounds = [start, start + win]
-        else:  # slices of at most ~dense_rows flows: attacks come in bursts
-            tt = np.sort(pads.dataset([str(f) for f in own_files], format="parquet")
-                         .to_table(columns=["t_end"]).column(0).to_numpy())
-            bounds = sorted({start, start + win,
-                             *(pd.Timestamp(x) for x in tt[dense_rows::dense_rows])})
-            del tt
-        files, j = list(own_files), i - 1
-        while j >= 0 and starts[j] + pd.Timedelta(hours=1) > start - full_warm:
-            files = sorted(windows[j][1].glob("*.parquet")) + files
-            j -= 1
+        files = sorted(wdir.glob("*.parquet"))
+        n = _rows(files)
         ds = pads.dataset([str(f) for f in files], format="parquet")
+        if n <= dense_rows:
+            bounds = [None, None]
+        else:  # slices of at most ~dense_rows flows: attacks come in bursts
+            tt = np.sort(ds.to_table(columns=["t_end"]).column(0).to_numpy())
+            bounds = [None, *sorted({pd.Timestamp(x) for x in tt[dense_rows::dense_rows]}),
+                      None]
+            del tt
         ttype = ds.schema.field("t_end").type
         tot = {"flows": 0, "attacks": 0, "stored": 0}
         for s_lo, e0 in pairwise(bounds):
-            warm = full_warm if n <= dense_rows else min(full_warm, e0 - s_lo)
-            f = ((pads.field("t_end") >= pa.scalar((s_lo - warm).to_datetime64(), type=ttype))
-                 & (pads.field("t_end") < pa.scalar(e0.to_datetime64(), type=ttype)))
+            f = None
+            if s_lo is not None:
+                f = pads.field("t_end") >= pa.scalar(s_lo.to_datetime64(), type=ttype)
+            if e0 is not None:
+                g = pads.field("t_end") < pa.scalar(e0.to_datetime64(), type=ttype)
+                f = g if f is None else f & g
             df = ds.to_table(filter=f).to_pandas()
             if df.empty:
                 continue
@@ -143,21 +139,19 @@ def process(stage_dir: Path, out_dir: Path, dataset: str, attack_rate: float = 0
                 df["is_attack"] = family != "benign"
                 df["attempted"] = False
             df["dataset"], df["day"] = dataset, day
-            own = (df["t_end"] >= s_lo).to_numpy()
-            if not own.any():
-                continue
             h = pd.util.hash_pandas_object(df[key], index=False).to_numpy()
             u = ((h ^ np.uint64(salt)) % np.uint64(1_000_000)).astype(np.float64) / 1e6
-            keep = own & (~df["is_attack"].to_numpy() | (u < attack_rate))
-            feats, sp = features_kept(df, keep, warm.total_seconds())
+            keep = ~df["is_attack"].to_numpy() | (u < attack_rate)
+            feats, sp = stream.build(df)
             specs = sp or specs
             parts.append(pd.concat([df.loc[keep].reset_index(drop=True),
-                                    feats.astype(np.float32)], axis=1))
-            tot["flows"] += int(own.sum())
-            tot["attacks"] += int(df.loc[own, "is_attack"].sum())
+                                    feats.loc[keep].reset_index(drop=True).astype(np.float32)],
+                                   axis=1))
+            tot["flows"] += len(df)
+            tot["attacks"] += int(df["is_attack"].sum())
             tot["stored"] += int(keep.sum())
             del df, feats
-        stats.append({"day": day, "window": wdir.name, **tot})
+        stats.append({"day": day, "window": wdir.name, **tot, "state": stream.size()})
         print(f"  {stats[-1]}", flush=True)
     if parts:
         _flush(dataset, current_day, parts, out_dir, ev_dir)

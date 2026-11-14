@@ -73,3 +73,19 @@ def test_dense_windows_are_sliced_and_never_exceed_exact(tmp_path):
     for c in ("dhost__flows__t600", "dsvc__fpkts__t60", "dhost__flows__t10"):
         a, e = np.expm1(m[c].to_numpy()), np.expm1(m[c + "_e"].to_numpy())
         assert np.all(a <= e + 1e-3 * (1 + e)), c
+
+
+def test_process_is_exact_with_carried_state(tmp_path):
+    df = flows(n=3000, horizon_s=3 * 3600)
+    st = tmp_path / "stage"
+    staged.partition(st, df, "a", minutes=10)
+    staged.process(st, tmp_path / "out", "toy", attack_rate=1.0, horizon_s=float("inf"))
+    ev = pd.concat([pd.read_parquet(d) for d in
+                    sorted((tmp_path / "out" / "evidence").glob("*.parquet"))],
+                   ignore_index=True)
+    exact, _ = build(df)
+    exact = pd.concat([df[["t_end", "src_ip", "dst_ip", "dst_port"]], exact], axis=1)
+    m = ev.merge(exact, on=["t_end", "src_ip", "dst_ip", "dst_port"], suffixes=("", "_e"))
+    assert len(m) >= len(df) * 0.99
+    for c in exact.columns[4:]:
+        assert np.allclose(m[c].to_numpy(), m[c + "_e"].to_numpy(), atol=1e-4), c

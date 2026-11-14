@@ -3,9 +3,9 @@
 Source: the Hugging Face mirror ``Lystea/UGR16-PARQUET`` (unofficial; the official site
 returned HTTP 403 on 2026-11-11). One parquet per week, ~540 M unidirectional flows.
 
-A week is far too large to hold in memory, so evidence is computed hour by hour with a
-warm-up (see ``proteus.evidence.chunked``): counters use **every** flow, but only a
-sample is stored: all attack flows and ``sample_rate`` of the background, chosen by a
+A week is far too large to hold in memory, so evidence is computed hour by hour with
+the counter state carried over (see ``proteus.evidence.stream``): counters use
+**every** flow, but only a sample is stored: all attack flows and ``sample_rate`` of the background, chosen by a
 deterministic hash of the row. The output goes straight to the evidence cache
 (``data/processed/ugr16/evidence/<day>.parquet``) plus a small per-day parquet of the
 stored flows, so the H1 pipeline can use it as any other dataset.
@@ -32,7 +32,7 @@ import pandas as pd
 import pyarrow.dataset as pads
 import pyarrow.parquet as pq
 
-from proteus.evidence.features import DEFAULT_TAUS, build
+from proteus.evidence.stream import StreamingEvidence
 
 FAMILY = {"dos": "dos", "scan11": "portscan", "scan44": "portscan", "nerisbotnet": "botnet",
           "anomaly-spam": "spam", "anomaly-sshscan": "portscan", "anomaly-udpscan": "portscan",
@@ -95,41 +95,53 @@ def _cap_attacks(df: pd.DataFrame, keep: np.ndarray, cap: int | None, salt: int)
     return keep & (~att | (u < cap / n))
 
 
-def convert_week(path: Path, out_dir: Path, sample_rate: float = 0.01,
-                 window_s: float = 3600.0, warmup_s: float = 1800.0, salt: int = 0,
-                 max_hours: float | None = None, start: float | None = None,
-                 attack_cap: int | None = 100_000) -> list[dict]:
-    ds = pads.dataset(path, format="parquet")
-    md = pq.ParquetFile(path).metadata
-    ci = md.schema.to_arrow_schema().names.index("ts_end")
-    st = [md.row_group(i).column(ci).statistics for i in range(md.num_row_groups)]
+def convert_week(path: Path, out_dir: Path, **kw) -> list[dict]:
+    """One week file (see ``convert``)."""
+    return convert([path], out_dir, **kw)
+
+
+def convert(paths: list[Path], out_dir: Path, sample_rate: float = 0.01,
+            window_s: float = 3600.0, salt: int = 0, max_hours: float | None = None,
+            start: float | None = None, attack_cap: int | None = 100_000,
+            horizon_s: float | None = None) -> list[dict]:
+    """Convert week files as one stream, hour by hour in time order, with the counter
+    state carried from hour to hour (``proteus.evidence.stream``): every time scale,
+    up to six hours, is exact up to the pruning bound."""
+    if start is not None:
+        raise ValueError("the counter state cannot be resumed: convert from the start")
+    ds = pads.dataset([str(p) for p in paths], format="parquet")
+    st = []
+    for p in paths:
+        md = pq.ParquetFile(p).metadata
+        ci = md.schema.to_arrow_schema().names.index("ts_end")
+        st += [md.row_group(i).column(ci).statistics for i in range(md.num_row_groups)]
     t_min, t_max = min(x.min for x in st), max(x.max for x in st)
-    if start is not None:  # resume: windows start here, the warm-up still reads before it
-        t_min = max(t_min, start)
     if max_hours is not None:
         t_max = min(t_max, t_min + max_hours * 3600)
     ev_dir = out_dir / "evidence"
     ev_dir.mkdir(parents=True, exist_ok=True)
+    stream = StreamingEvidence(horizon_s=horizon_s)
     buffers: dict[str, list] = {}
     stats = []
     t = np.floor(t_min / window_s) * window_s
     specs = None
     while t <= t_max:
         lo, hi = t, t + window_s
-        f = (pads.field("ts_end") >= lo - warmup_s) & (pads.field("ts_end") < hi)
+        f = (pads.field("ts_end") >= lo) & (pads.field("ts_end") < hi)
         tbl = ds.to_table(columns=COLS, filter=f)
         df = _frame(tbl)
         del tbl
         if len(df):
-            feats, specs = build(df, DEFAULT_TAUS)
-            own = (df["t_end"] >= pd.Timestamp(lo, unit="s")).to_numpy()
-            keep = _cap_attacks(df, own & _keep(df, sample_rate, salt), attack_cap, salt)
+            feats, sp = stream.build(df)
+            specs = sp or specs
+            keep = _cap_attacks(df, _keep(df, sample_rate, salt), attack_cap, salt)
             part = pd.concat([df.loc[keep].reset_index(drop=True),
                               feats.loc[keep].reset_index(drop=True).astype(np.float32)], axis=1)
             for day, g in part.groupby("day"):
                 buffers.setdefault(day, []).append(g)
-            stats.append({"window": pd.Timestamp(lo, unit="s").isoformat(), "flows": int(own.sum()),
-                          "stored": int(keep.sum()), "attacks": int(df.loc[own, "is_attack"].sum())})
+            stats.append({"window": pd.Timestamp(lo, unit="s").isoformat(), "flows": len(df),
+                          "stored": int(keep.sum()), "attacks": int(df["is_attack"].sum()),
+                          "state": stream.size()})
             print(f"  {stats[-1]}", flush=True)
             del df, feats, part
         t = hi

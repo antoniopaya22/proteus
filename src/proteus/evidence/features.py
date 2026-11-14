@@ -82,20 +82,22 @@ def taus_for(version: str | None = None) -> tuple[float, ...]:
     return DEFAULT_TAUS + LONG_TAUS if version == "v3" else DEFAULT_TAUS
 
 
-def build(df: pd.DataFrame, taus=None, version: str | None = None
-          ) -> tuple[pd.DataFrame, list[FeatureSpec]]:
-    """Compute evidence features for every flow of one capture (one day)."""
-    version = version or EVIDENCE_VERSION
-    taus = tuple(taus) if taus is not None else taus_for(version)
-    t = (df["t_end"] - df["t_end"].min()).dt.total_seconds().to_numpy(np.float64)
+def plan(df: pd.DataFrame, version: str, keys=None, probe=None) -> dict:
+    """Entities, items and weights of the evidence counters of ``df``.
+
+    ``keys(*cols)`` gives entity and item identifiers (per-capture codes by default;
+    the streaming builder uses hashes that are stable across windows) and ``probe(n)``
+    identifiers that no real event uses."""
+    keys = keys or _codes
+    probe = probe or (lambda n: -1 - np.arange(n, dtype=np.int64))
     ent = {
-        "dsvc": _codes(df["dst_ip"], df["dst_port"], df["proto"]),
-        "dhost": _codes(df["dst_ip"]),
-        "shost": _codes(df["src_ip"]),
+        "dsvc": keys(df["dst_ip"], df["dst_port"], df["proto"]),
+        "dhost": keys(df["dst_ip"]),
+        "shost": keys(df["src_ip"]),
     }
     item = {
-        "src": _codes(df["src_ip"]),
-        "dport": _codes(df["dst_port"]),
+        "src": keys(df["src_ip"]),
+        "dport": keys(df["dst_port"]),
         "dhost": ent["dhost"],
         "dsvc": ent["dsvc"],
     }
@@ -123,34 +125,53 @@ def build(df: pd.DataFrame, taus=None, version: str | None = None
         noreply = df["bwd_pkts"].to_numpy() == 0
         weights["noreply"] = (noreply.astype(np.float64), "conserved")
         # Answered flows only read the state: zero weight and an item no event uses.
-        item["dhost_nr"] = np.where(noreply, ent["dhost"], -1 - np.arange(n, dtype=np.int64))
+        item["dhost_nr"] = np.where(noreply, ent["dhost"], probe(n))
         item_w["dhost_nr"] = noreply.astype(np.float64)
         distinct["shost"] = distinct["shost"] + ["dhost_nr"]
     elif version != "v1":
         raise ValueError(f"unknown evidence version {version!r}")
     if version == "v3":
-        ent["spair"] = _codes(df["src_ip"], df["dst_ip"], df["dst_port"], df["proto"])
+        ent["spair"] = keys(df["src_ip"], df["dst_ip"], df["dst_port"], df["proto"])
         distinct["spair"] = []
+    return {"ent": ent, "item": item, "weights": weights, "distinct": distinct,
+            "item_w": item_w}
 
-    cols: dict[str, np.ndarray] = {}
-    specs: list[FeatureSpec] = []
 
-    def add(prefix: str, values: np.ndarray, conservation: str) -> None:
-        short = prefix.split("__")[1] in SHORT_ONLY
-        for j, tau in enumerate(taus):
-            if short and tau > max(DEFAULT_TAUS):
-                continue
-            name = f"{prefix}__t{int(tau)}"
-            cols[name] = np.log1p(values[:, j]).astype(np.float32)
-            specs.append(FeatureSpec(name, conservation))
-
-    for e, codes in ent.items():
-        for w_name, (w, cons) in weights.items():
+def counters(p: dict):
+    """(name, entity, weight or item, conservation, kind) of every counter of a plan."""
+    for e, codes in p["ent"].items():
+        for w_name, (w, cons) in p["weights"].items():
             if e == "spair" and w_name not in PAIR_WEIGHTS:
                 continue
-            add(f"{e}__{w_name}", decayed_sum(t, codes, w, taus), cons)
-        for it in distinct[e]:
-            add(f"{e}__n_{it}", decayed_distinct(t, codes, item[it], taus, item_w.get(it)),
-                "conserved")
+            yield f"{e}__{w_name}", codes, w, cons, "sum"
+        for it in p["distinct"][e]:
+            yield f"{e}__n_{it}", codes, it, "conserved", "distinct"
 
+
+def add_columns(cols: dict, specs: list, prefix: str, values: np.ndarray, conservation: str,
+                taus) -> None:
+    short = prefix.split("__")[1] in SHORT_ONLY
+    for j, tau in enumerate(taus):
+        if short and tau > max(DEFAULT_TAUS):
+            continue
+        name = f"{prefix}__t{int(tau)}"
+        cols[name] = np.log1p(values[:, j]).astype(np.float32)
+        specs.append(FeatureSpec(name, conservation))
+
+
+def build(df: pd.DataFrame, taus=None, version: str | None = None
+          ) -> tuple[pd.DataFrame, list[FeatureSpec]]:
+    """Compute evidence features for every flow of one capture (one day)."""
+    version = version or EVIDENCE_VERSION
+    taus = tuple(taus) if taus is not None else taus_for(version)
+    t = (df["t_end"] - df["t_end"].min()).dt.total_seconds().to_numpy(np.float64)
+    p = plan(df, version)
+    cols: dict[str, np.ndarray] = {}
+    specs: list[FeatureSpec] = []
+    for name, codes, w, cons, kind in counters(p):
+        if kind == "sum":
+            v = decayed_sum(t, codes, w, taus)
+        else:
+            v = decayed_distinct(t, codes, p["item"][w], taus, p["item_w"].get(w))
+        add_columns(cols, specs, name, v, cons, taus)
     return pd.DataFrame(cols, index=df.index), specs
