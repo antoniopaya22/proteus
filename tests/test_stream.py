@@ -51,3 +51,15 @@ def test_windows_must_come_in_order():
     se.build(w[1])
     with pytest.raises(ValueError):
         se.build(w[0])
+
+
+def test_dropping_light_entities_never_raises_a_counter():
+    df = flows(n=6000, horizon_s=8 * 3600)
+    exact, _ = build(df, version="v3")
+    se = StreamingEvidence(version="v3", horizon_s=np.inf, recent_s=600, min_value=1.5)
+    got = pd.concat([se.build(g)[0] for g in _windows(df, 900)]).loc[exact.index]
+    for c in exact.columns:
+        e = np.expm1(exact[c].to_numpy().astype(np.float64))
+        a = np.expm1(got[c].to_numpy().astype(np.float64))
+        assert np.all(a <= e + 1e-5 * (1 + e)), c
+    assert se.size() > 0

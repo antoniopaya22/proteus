@@ -15,7 +15,12 @@ stream, up to pruning:
   comes back its old, decayed contribution (≤ exp(-horizon/τ)) is not subtracted: a
   distinct count can exceed the exact one by that much per return. A forgotten item
   returns at most once per horizon, so with horizon ≥ 3·τ the excess per item stays
-  below e⁻³/(1 - e⁻³) ≈ 0.05 of one item.
+  below e⁻³/(1 - e⁻³) ≈ 0.05 of one item;
+* light entities are dropped sooner: an entity idle for more than ``recent_s`` whose
+  counter at the longest scale is below ``min_value`` (most pairs of an ISP, seen once)
+  is dropped together with its items. Its counters restart from zero if it comes back,
+  so they can only be lower than the exact ones, by less than ``min_value`` per drop. Without
+  this a day of UGR'16 needs hundreds of millions of entries.
 
 Identifiers are 64-bit hashes of the entity columns, stable across windows.
 """
@@ -77,6 +82,7 @@ class _Table:
         self.keys = np.empty(0, dtype=np.uint64)
         self.t = np.empty(0, dtype=np.float64)
         self.v = np.empty((0, k), dtype=np.float32)  # state kept in float32
+        self.e = np.empty(0, dtype=np.uint64)  # item tables: entity of each pair
 
     def lookup(self, q: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """Index into the table and found mask for each query key."""
@@ -86,7 +92,8 @@ class _Table:
         i = np.minimum(i, len(self.keys) - 1)
         return i, self.keys[i] == q
 
-    def update(self, keys: np.ndarray, t: np.ndarray, v: np.ndarray | None = None) -> None:
+    def update(self, keys: np.ndarray, t: np.ndarray, v: np.ndarray | None = None,
+               e: np.ndarray | None = None) -> None:
         """Insert or overwrite (keys must be unique)."""
         keep = ~np.isin(self.keys, keys, assume_unique=True)
         K = np.concatenate([self.keys[keep], keys])
@@ -95,12 +102,15 @@ class _Table:
         self.keys, self.t = K[o], T[o]
         if v is not None:
             self.v = np.concatenate([self.v[keep], v.astype(np.float32)])[o]
+        if e is not None:
+            self.e = np.concatenate([self.e[keep], e])[o]
 
-    def prune(self, before: float) -> None:
-        m = self.t >= before
+    def select(self, m: np.ndarray) -> None:
         self.keys, self.t = self.keys[m], self.t[m]
         if self.v.shape[0]:
             self.v = self.v[m]
+        if self.e.shape[0]:
+            self.e = self.e[m]
 
     def __len__(self) -> int:
         return len(self.keys)
@@ -115,11 +125,16 @@ def _last_per_key(sorted_keys: np.ndarray) -> np.ndarray:
 
 class StreamingEvidence:
     def __init__(self, taus=None, version: str | None = None,
-                 horizon_s: float | None = None):
+                 horizon_s: float | None = None, recent_s: float | None = None,
+                 min_value: float = 1.5):
         self.version = version or EVIDENCE_VERSION
         self.taus = np.asarray(tuple(taus) if taus is not None else taus_for(self.version),
                                dtype=np.float64)
         self.horizon_s = 3 * float(self.taus.max()) if horizon_s is None else horizon_s
+        if recent_s is None:
+            recent_s = self.horizon_s if np.isinf(self.horizon_s) else min(
+                self.horizon_s, 6 * float(min(self.taus.max(), 600.0)))
+        self.recent_s, self.min_value = recent_s, min_value
         self.ent: dict[str, _Table] = {}
         self.items: dict[str, _Table] = {}
         self.t_last = -np.inf
@@ -169,7 +184,8 @@ class StreamingEvidence:
             pk, pt = pair[po], t2[po]
             oo = np.lexsort((pt, pk))
             last = _last_per_key(pk[oo])
-            table.update(pk[oo][last], pt[oo][last])
+            ek = e2[po][oo][last]
+            table.update(pk[oo][last], pt[oo][last], e=ek)
         prev = np.empty(n)
         prev[o2] = prev_sorted
         return prev
@@ -196,10 +212,20 @@ class StreamingEvidence:
                     v = self._carry(name, t, codes, iw, prev)
                 add_columns(cols, specs, name, v, cons, tuple(self.taus))
         self.t_last = float(t[-1])
-        before = self.t_last - self.horizon_s
-        for table in (*self.ent.values(), *self.items.values()):
-            table.prune(before)
+        self._prune()
         return pd.DataFrame(cols, index=df.index), specs
+
+    def _prune(self) -> None:
+        now, tmax = self.t_last, float(self.taus.max())
+        for name, table in self.ent.items():
+            age = now - table.t
+            heavy = table.v[:, -1] * np.exp(-age / tmax) >= self.min_value
+            table.select((age <= self.horizon_s) & ((age <= self.recent_s) | heavy))
+            items = self.items.get(name)
+            if items is not None and len(items):
+                age_i = now - items.t
+                kept = np.isin(items.e, table.keys)
+                items.select((age_i <= self.horizon_s) & ((age_i <= self.recent_s) | kept))
 
     def size(self) -> int:
         """Entries held (entities and pairs), for memory monitoring."""
