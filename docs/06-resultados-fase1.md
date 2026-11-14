@@ -1143,3 +1143,38 @@ FPR 10⁻³, umbrales locales. `cap` = por defecto (tope por tipo y día, `class
 - Se mantiene `cap`, fijado antes de estas pruebas. La sensibilidad va al apéndice del paper.
 - Las certificadas de `proteus_cert` se mueven poco (8/11 en todos los modos de 18 → 17; 6–7/13 en
   17 → 18), con 1,5–6,8 y 7,8–24,4 alarmas/h.
+
+## 6.38 Línea base del par relativa a su servicio, realimentación en 17 → 18 y coste en un núcleo (2026-11-14, 03:30)
+
+**pairbase** (`PROTEUS_PAIRBASE=1`, núcleos reentrenados), FPR 10⁻³:
+
+| | 18 → 17 v3 | 18 → 17 pairbase | 17 → 18 v3 | 17 → 18 pairbase |
+|---|---|---|---|---|
+| `proteus` | 13/21, 2,7/h | 13/21, 2,4/h | 14/25, 16,0/h | 15/25, 16,5/h |
+| `proteus_cert@cert` | 9/21 (vol. 8/11), 1,5/h | 4/21 (4/11), 0,4/h | 7/25, 17,0/h | 8/25, 17,1/h |
+| `core_pair` | 5/21, 0,3/h | 5/21, 0,6/h | 6/25 (SSH no), 16,2/h | 15/25 (vol. 13/13 + SSH), 36,4/h |
+
+La fuerza bruta de 18 → 17 sigue sin detectarse (0/3 en las certificadas). No es el remedio para la
+fuerza bruta lenta; en 18 → 17 cuesta cobertura certificada. No se midieron fronteras con ella.
+
+**Realimentación en 17 → 18** (bloqueo de la cáscara al FPR local). Alarmas de origen/h según K y τ:
+- **FPR 10⁻³:** 60.903 falsos positivos de 18.296 orígenes en 166,8 h. Con K=100 y τ=600 s salen
+  5,4/h, y ni con K=500 bajan de 5,2: unos pocos orígenes con mucho tráfico acumulan bloqueos.
+- **FPR 10⁻⁴:** 17.866 falsos positivos de 8.491 orígenes. Desde K=10 salen 0,5/h.
+- **18 → 17 a 10⁻⁴:** 507 falsos positivos de 13 orígenes. Con τ=600 s salen 0 desde K=5.
+- Con K=10 y τ=600 s, las 805 sondas bloqueadas que necesita una evasión exigen más de 13 h.
+
+**Coste: error propio.** `cost.py` no limitaba los hilos, y el boosting de scikit-learn predice con
+OpenMP en todos los núcleos. Las cifras "en un núcleo" de 6.19 (103.000 / 79.000 / 60.000 flujos/s)
+eran multihilo y con la VM cargada. Medido con `OMP_NUM_THREADS=1 taskset -c 15`
+(`cost_v3_1core.log`):
+
+| Etapa | Flujos/s (1 núcleo) |
+|---|---|
+| Evidencia (152 contadores) | 172.000 |
+| Puntuar `proteus` (218 características) | 25.400 |
+| Puntuar `proteus_cert` (126) | 26.900 |
+| Certificar todos los flujos (`proteus`) | 30.600 |
+| Puntuar el núcleo de un solo modelo (122) | 84.500 |
+
+Paper corregido (discusión, "Deployment and cost").
