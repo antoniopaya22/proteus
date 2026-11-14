@@ -1212,3 +1212,8 @@ guardaba en memoria todas las ventanas del calentamiento (30 min de esa hora), y
 con filtro por tiempo, y las ventanas de más de 3 M flujos se calculan en tramos de unos 3 M flujos
 (al menos 2 min), cada uno con un calentamiento tan largo como el tramo (commit 28170af; test nuevo
 del camino denso en `process`). Relanzado (`fix13.sh`). CTU-SME-11 convertido sin errores.
+
+**OOM n.º 9 (08:34):** la hora 2018-12-01 13:00 de CIC-DDoS-2019 tiene 23,5 M flujos. Los ataques
+llegan en ráfagas, así que los tramos de igual duración tenían mucho más de 3 M flujos. Ahora los
+tramos se cortan por número de filas (cuantiles de `t_end` de la ventana; como mucho 2 M flujos por
+tramo, commit 69f69e0). Relanzado (`fix14.sh`). 2018-11-03 ya está escrito.
