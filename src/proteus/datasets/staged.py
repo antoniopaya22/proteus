@@ -80,15 +80,16 @@ def _rows(files: list[Path]) -> int:
 
 def process(stage_dir: Path, out_dir: Path, dataset: str, attack_rate: float = 0.02,
             warmup_s: float = 1800.0, salt: int = 0, label=None,
-            key: list[str] | None = None, dense_rows: int = 3_000_000) -> list[dict]:
+            key: list[str] | None = None, dense_rows: int = 2_000_000) -> list[dict]:
     """``label(df) -> (attack, family)`` relabels raw flows; ``None`` keeps the staged
     ``attack``/``family``/``is_attack`` columns.
 
     Each window is read from disk together with its warm-up (from the preceding window
     only), so no window is held in memory for the next one. A window with more than
-    ``dense_rows`` flows is computed in slices of about ``dense_rows`` flows (at least
-    two minutes), each with a warm-up as long as the slice: CIC-DDoS-2019 has hours of
-    14.5 M and more flows. Shorter warm-ups can only lower counters."""
+    ``dense_rows`` flows is computed in slices of about ``dense_rows`` flows each (cut by
+    row count, since attacks come in bursts), each with a warm-up as long as the slice:
+    CIC-DDoS-2019 has hours of up to 23.5 M flows. Shorter warm-ups can only lower
+    counters."""
     import pyarrow as pa
     import pyarrow.dataset as pads
 
@@ -111,24 +112,27 @@ def process(stage_dir: Path, out_dir: Path, dataset: str, attack_rate: float = 0
         win = pd.Timedelta(hours=1) if len(wdir.name) == 2 else base
         own_files = sorted(wdir.glob("*.parquet"))
         n = _rows(own_files)
-        step = win if n <= dense_rows else max(pd.Timedelta(minutes=2),
-                                              win * (dense_rows / n))
-        warm = pd.Timedelta(seconds=warmup_s) if n <= dense_rows else min(
-            pd.Timedelta(seconds=warmup_s), step)
+        full_warm = pd.Timedelta(seconds=warmup_s)
+        if n <= dense_rows:
+            bounds = [start, start + win]
+        else:  # slices of at most ~dense_rows flows: attacks come in bursts
+            tt = np.sort(pads.dataset([str(f) for f in own_files], format="parquet")
+                         .to_table(columns=["t_end"]).column(0).to_numpy())
+            bounds = sorted({start, start + win,
+                             *(pd.Timestamp(x) for x in tt[dense_rows::dense_rows])})
+            del tt
         files, j = list(own_files), i - 1
-        while j >= 0 and starts[j] + pd.Timedelta(hours=1) > start - warm:  # warm-up windows
+        while j >= 0 and starts[j] + pd.Timedelta(hours=1) > start - full_warm:
             files = sorted(windows[j][1].glob("*.parquet")) + files
             j -= 1
         ds = pads.dataset([str(f) for f in files], format="parquet")
         ttype = ds.schema.field("t_end").type
         tot = {"flows": 0, "attacks": 0, "stored": 0}
-        s0 = start
-        while s0 < start + win:
-            e0 = min(s0 + step, start + win)
-            f = ((pads.field("t_end") >= pa.scalar((s0 - warm).to_datetime64(), type=ttype))
+        for s_lo, e0 in pairwise(bounds):
+            warm = full_warm if n <= dense_rows else min(full_warm, e0 - s_lo)
+            f = ((pads.field("t_end") >= pa.scalar((s_lo - warm).to_datetime64(), type=ttype))
                  & (pads.field("t_end") < pa.scalar(e0.to_datetime64(), type=ttype)))
             df = ds.to_table(filter=f).to_pandas()
-            s0, s_lo = e0, s0
             if df.empty:
                 continue
             df = df.drop_duplicates(subset=key).sort_values("t_end", kind="stable")
