@@ -1194,3 +1194,14 @@ al tope, así que no cambia. Se reanuda desde 2016-08-07 bajo el cerrojo (`fix10
 Además (06:15): `july_week5` corría con el código antiguo y llegó al 2016-07-31 con 612.148 flujos de
 ataque por hora (06:00). Se paró antes de que acumulara el día y se reanuda desde el 31 con el tope
 (`fix11.sh`). Escritos: 07-27 a 07-30.
+
+## 6.40 UGR'16 convertido y OOM n.º 7 en CIC-DDoS-2019 (2026-11-14, 07:30)
+
+- **UGR'16 convertido:** 2016-07-27 a 2016-08-08 (13 días; 07-31 y 08-07 con el tope de ataques).
+- **OOM n.º 7 (06:38, 28,6 GB):** el procesado de CIC-DDoS-2019 calculaba la evidencia de cada hora
+  de una vez, y la ventana 10 del 2018-11-03 tiene 14,5 M flujos (casi todos de ataque).
+- **Arreglo** (commit bb1732f): las ventanas de más de 3 M flujos se cortan en subventanas de 10 min
+  con 10 min de calentamiento, y solo se calculan donde hay flujos que guardar. Los contadores solo
+  pueden quedar por debajo de los del calentamiento de 30 min. Tests: coincide con el cálculo exacto
+  cuando una subventana lo cubre todo, y nunca lo supera.
+- **Relanzado** bajo el cerrojo (`fix12.sh`, reutiliza `_stage`) tras CTU-SME-11, que está corriendo.
