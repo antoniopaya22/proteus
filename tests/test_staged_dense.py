@@ -2,7 +2,6 @@ import numpy as np
 
 from proteus.datasets.staged import features_kept
 from proteus.evidence.features import build
-
 from test_chunked import flows
 
 
