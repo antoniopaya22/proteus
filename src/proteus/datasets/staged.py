@@ -41,6 +41,37 @@ def _window_start(day: str, name: str) -> pd.Timestamp:
     return pd.Timestamp(f"{day} {hh}:{mm}:00")
 
 
+def features_kept(df: pd.DataFrame, keep: np.ndarray, warmup_s: float,
+                  dense_rows: int = 3_000_000, sub_s: float = 600.0
+                  ) -> tuple[pd.DataFrame, list | None]:
+    """Features of the rows of ``df`` (sorted by ``t_end``) where ``keep`` is true.
+
+    A window with more than ``dense_rows`` flows (CIC-DDoS-2019 has an hour of 14.5 M)
+    does not fit in memory at once: it is cut in ``sub_s`` sub-windows, each with a
+    warm-up of at most ``sub_s``, and only sub-windows with kept flows are computed.
+    Dropping older events can only lower counters (see ``proteus.evidence.chunked``).
+    """
+    if len(df) <= dense_rows:
+        feats, specs = build(df, DEFAULT_TAUS)
+        return feats.loc[keep].reset_index(drop=True), specs
+    t = df["t_end"]
+    step = pd.Timedelta(seconds=sub_s)
+    warm = pd.Timedelta(seconds=min(warmup_s, sub_s))
+    start, end = t.min().floor("s"), t.max()
+    parts, specs = [], None
+    while start <= end:
+        hi = start + step
+        lo_i, a_i, hi_i = (int(t.searchsorted(x, side="left")) for x in (start - warm, start, hi))
+        k = keep[a_i:hi_i]
+        if k.any():
+            f, specs = build(df.iloc[lo_i:hi_i], DEFAULT_TAUS)
+            parts.append(f.iloc[a_i - lo_i:].reset_index(drop=True)[k])
+        start = hi
+    feats = (pd.concat(parts, ignore_index=True) if parts
+             else pd.DataFrame(index=pd.RangeIndex(0)))
+    return feats, specs
+
+
 def process(stage_dir: Path, out_dir: Path, dataset: str, attack_rate: float = 0.02,
             warmup_s: float = 1800.0, salt: int = 0, label=None,
             key: list[str] | None = None) -> list[dict]:
@@ -75,13 +106,14 @@ def process(stage_dir: Path, out_dir: Path, dataset: str, attack_rate: float = 0
             df["is_attack"] = family != "benign"
             df["attempted"] = False
         df["dataset"], df["day"] = dataset, day
-        feats, specs = build(df, DEFAULT_TAUS)
         own = (df["t_end"] >= start).to_numpy()
         h = pd.util.hash_pandas_object(df[key], index=False).to_numpy()
         u = ((h ^ np.uint64(salt)) % np.uint64(1_000_000)).astype(np.float64) / 1e6
         keep = own & (~df["is_attack"].to_numpy() | (u < attack_rate))
+        feats, sp = features_kept(df, keep, warmup_s)
+        specs = sp or specs
         parts.append(pd.concat([df.loc[keep].reset_index(drop=True),
-                                feats.loc[keep].reset_index(drop=True)], axis=1))
+                                feats.astype(np.float32)], axis=1))
         stats.append({"day": day, "window": wdir.name, "flows": int(own.sum()),
                       "attacks": int(df.loc[own, "is_attack"].sum()),
                       "stored": int(keep.sum())})
