@@ -16,7 +16,7 @@ def _windows(df, window_s):
 def test_stream_matches_whole_capture(version):
     df = flows(n=5000, horizon_s=6 * 3600)
     df["bwd_pkts"] = np.where(np.arange(len(df)) % 3 == 0, 0, df["bwd_pkts"])  # unanswered
-    exact, specs = build(df, version=version)
+    exact, _ = build(df, version=version)
     se = StreamingEvidence(version=version, horizon_s=np.inf)
     parts = []
     for g in _windows(df, 1800):
