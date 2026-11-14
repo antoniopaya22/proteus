@@ -1217,3 +1217,26 @@ del camino denso en `process`). Relanzado (`fix13.sh`). CTU-SME-11 convertido si
 llegan en ráfagas, así que los tramos de igual duración tenían mucho más de 3 M flujos. Ahora los
 tramos se cortan por número de filas (cuantiles de `t_end` de la ventana; como mucho 2 M flujos por
 tramo, commit 69f69e0). Relanzado (`fix14.sh`). 2018-11-03 ya está escrito.
+
+## 6.41 Evidencia con estado para UGR'16, CIC-DDoS-2019 y CTU-SME-11 (2026-11-14)
+
+La conversión por ventanas con calentamiento de 30 min no llega a las escalas de 1 h y 6 h de la
+v3. Las capturas convertidas solo tenían escalas de hasta 10 min, y ningún modelo v3 (ni siquiera
+`proteus_cert`, que usa 44 rasgos de escala larga) podía evaluarse en ellas. Decisión (Antonio):
+arrastrar el estado y reconvertir.
+
+- `proteus.evidence.stream.StreamingEvidence` (commit 439edb1) guarda, por contador, el estado de
+  cada entidad (valores con decaimiento y última vez) y, en los conteos distintos, la última vez de
+  cada par (entidad, elemento). Usa identificadores por hash, estables entre ventanas. Procesar
+  por ventanas reproduce `build` sobre la captura entera: test exacto en v1 y v3.
+- Poda:
+  - entidades inactivas más de 3·τ_max (18 h): bajan como mucho e⁻³;
+  - pares olvidados: exceso ≤ e⁻³ por vuelta;
+  - entidades ligeras (inactivas más de 1 h y con < 3 de evidencia a 6 h) se descartan con sus
+    elementos, así que solo pueden bajar. Sin esto, 4 h de UGR'16 eran 153 M entradas y 16 GB.
+- Prueba en la VM (3 h de UGR'16): ~80 s por hora de captura, 10 GB, 166 columnas con `t21600`.
+- `reconv.sh`: reconvierte UGR'16 (las dos semanas como un solo flujo), CIC-DDoS-2019 y
+  CTU-SME-11, y después lanza `real2.sh` (pliegues de UGR'16, CIC-IDS-2017 → UGR'16 y
+  CIC → CIC-DDoS-2019). `h1` acepta la evidencia convertida si tiene las escalas largas.
+- CTU-13 en el paper: alarmas ponderadas por horas; s11 aparte como captura fuera de distribución
+  (decisión de Antonio).
