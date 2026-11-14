@@ -1126,3 +1126,20 @@ El bot más lento sigue a la mitad de la frontera. El certificado no acota ningu
 OOM n.º 5 (22:15): el balanceo `type_entity` de 17 → 18 murió puntuando (16,5 GB). A la misma hora
 corría mi `alarms.py` de CTU fuera del cerrojo; desde ahora todo va bajo el cerrojo. Relanzado con
 `--reuse` (`fix9.sh`).
+
+## 6.37 Balanceo de clases (2026-11-14, 02:30)
+
+FPR 10⁻³, umbrales locales. `cap` = por defecto (tope por tipo y día, `class_weight="balanced"`).
+
+| Modo | 18 → 17 Proteus | 17 → 18 Proteus | 18 → 17 `core_mono_dst_x` | 17 → 18 `core_mono_dst_x` |
+|---|---|---|---|---|
+| `cap` (v3) | 13/21, vol. 11/11, 2,7/h | 14/25, vol. 13/13, 16,0/h | 9/21, 4,1/h | 17/25, 41,5/h |
+| `type` | 15/21, 11/11, 5,2/h | 11/25, 9/13, 28,8/h | 15/21, 16,9/h | 18/25, 43,6/h |
+| `type_entity` | 15/21, 11/11, 10,8/h | 9/25, 7/13, 31,1/h | 14/21, 17,5/h | 20/25, 43,5/h |
+| `none` | 12/21, 10/11, 1,7/h | 14/25, 13/13, 14,8/h | 9/21, 3,3/h | 17/25, 41,2/h |
+
+- Ningún modo domina. `type` gana dos campañas en 18 → 17 con el doble de alarmas, pero pierde 4
+  volumétricos y escaneos en 17 → 18. `none` queda a una campaña de `cap`.
+- Se mantiene `cap`, fijado antes de estas pruebas. La sensibilidad va al apéndice del paper.
+- Las certificadas de `proteus_cert` se mueven poco (8/11 en todos los modos de 18 → 17; 6–7/13 en
+  17 → 18), con 1,5–6,8 y 7,8–24,4 alarmas/h.
