@@ -1,0 +1,9 @@
+side,entity,alarms,flows,days,peers,srcs,ports,family,why
+dst,85.17.234.14,94,9432,1,1,1,"13799,35366,37097",background,[destination] dhost noreply t3600 x: 855x normal; dhost noreply t600 x: 261x normal; dhost noreply t21600 x: 1656x normal
+dst,147.32.84.229,7,358,1,1,357,13363,background,[raw destination] dhost fpkts t600: p99.94; dhost fpkts t60: p99.93; dhost fbytes t60: p99.86
+pair,178.77.71.27->147.32.87.51,6,710,1,1,1,3389,background,[pair] spair rst t3600: p99.98; spair rst t21600: p99.98; spair rst t600: p99.98
+dst,147.32.96.69,5,22,1,1,3,"13067,32798,55571",benign,[destination] dhost noreply t600: p100.00; dhost flows t60 x: 8548x normal; dhost flows t600 x: 59543x normal
+pair,178.77.71.27->147.32.86.33,5,367,1,1,1,3389,background,[pair] spair rst t3600: p99.94; spair rst t600: p99.94; spair rst t21600: p99.92
+pair,178.77.71.27->147.32.85.118,4,836,1,1,1,3389,background,[pair] spair rst t60: p99.99; spair rst t600: p99.99; spair rst t10: p99.98
+src,147.32.86.116,4,668,1,611,1,"80,53,33033",background,[source] shost n_dhost t600 x: 1750x normal; shost n_dhost_nr t600 x: 499x normal; shost n_dhost_nr t3600 x: 694x normal
+dst,147.32.85.218,2,182,1,1,182,16655,background,[destination] dhost noreply t3600 x: 1231x normal; dhost noreply t600 x: 664x normal; dsvc noreply t600 x: 635x normal

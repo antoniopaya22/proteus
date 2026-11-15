@@ -1,0 +1,9 @@
+model,target_fpr,threshold,benign_fpr,alarms_per_hour,entity_alarms_per_hour,suspect_sources,suspect_detected
+core_mono_dst_x,0.0001,local,0.00015457246902272247,0.2418601280464522,0.15187035149252393,0,0
+core_mono_dst_x,0.001,local,0.00409015286553398,1.8833197285031424,1.0813739589248716,0,0
+core_mono_dst_x@cert,0.0001,local,0.0,0.0,0.0,0,0
+core_mono_dst_x@cert,0.001,local,0.0,0.0,0.0,0,0
+core_mono_dst_x|core_mono_dst,0.0001,local,0.0003523423944692253,0.36537044294917853,0.2137509264311196,0,0
+core_mono_dst_x|core_mono_dst,0.001,local,0.004258343627996685,1.6535061200293921,0.9377018437971258,0,0
+core_mono_dst_x|core_mono_dst@cert,0.0001,local,0.0,0.0,0.0,0,0
+core_mono_dst_x|core_mono_dst@cert,0.001,local,0.0,0.0,0.0,0,0

@@ -1,0 +1,13 @@
+side,entity,alarms,flows,days,peers,srcs,ports,family,why
+src,192.168.10.25,7,411,1,156,1,"443,53,80",benign,[source] shost n_dhost_nr t3600 x: 3x normal; shost fbytes t21600: p99.89; shost n_dhost_nr t3600: p99.87
+dst,192.168.10.51,5,5,1,1,2,"0,137,65429",benign,[destination] dhost flows t21600 x: 5083x normal; dhost rst t21600 x: 5038x normal; dhost n_dport t3600 x: 789x normal
+dst,185.170.48.239,4,168,4,1,1,"21,5220,63612",benign,[destination] dhost n_dport t10: p100.00; dhost n_dport t10 x: 17x normal; dhost n_dport t60 x: 37x normal
+dst,192.168.10.50,4,8,2,1,5,"80,21,22",benign,[raw destination] dsvc flows t600: p100.00; dsvc flows t3600: p100.00; dsvc flows t21600: p100.00
+dst,192.168.10.25,2,2,1,1,1,"49382,137",benign,[destination] dhost noreply t3600: p100.00; dhost rst t3600 x: 2528x normal; dhost noreply t600: p100.00
+dst,172.16.0.1,2,2,1,1,1,443,benign,[destination] dsvc fbytes t3600 x: 1972599x normal; dhost fbytes t3600 x: 1991017x normal; dhost fbytes t21600 x: 5076594x normal
+dst,162.208.20.178,2,273,1,1,1,443,benign,[destination] dsvc flows t3600 x: 2845x normal; dsvc flows t21600 x: 3171x normal; dhost flows t3600 x: 3046x normal
+dst,192.168.10.19,2,4,1,1,1,139,benign,[destination] dhost rst t3600 x: 3594x normal; dhost n_dport t600 x: 351x normal; dhost n_dport t3600 x: 475x normal
+dst,192.168.10.17,1,1,1,1,1,0,benign,[destination] dhost rst t21600 x: 4236x normal; dhost n_dport t3600 x: 312x normal; dhost n_dport t21600 x: 247x normal
+dst,192.168.10.3,1,258,1,1,8,"53,88,389",benign,[raw destination] dhost n_dport t60: p99.97; dhost n_dport t10: p99.97; dsvc rst t60: p99.91
+dst,192.168.10.9,1,1,1,1,1,0,benign,
+pair,192.168.10.8->192.168.10.3,1,501,1,1,1,53,benign,

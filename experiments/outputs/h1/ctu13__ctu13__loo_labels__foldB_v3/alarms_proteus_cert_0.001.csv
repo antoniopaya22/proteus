@@ -1,0 +1,7 @@
+side,entity,alarms,flows,days,peers,srcs,ports,family,why
+dst,147.32.84.229,15,67540,2,1,63503,13363,background,[raw destination] dsvc flows t3600: p99.69; dsvc flows t21600: p99.69; dsvc n_src t3600: p99.69
+pair,178.77.71.27->147.32.87.51,6,710,1,1,1,3389,background,[pair] spair rst t3600: p99.98; spair rst t21600: p99.98; spair rst t600: p99.98
+pair,178.77.71.27->147.32.86.33,5,367,1,1,1,3389,background,[pair] spair rst t3600: p99.94; spair rst t600: p99.93; spair rst t21600: p99.91
+pair,178.77.71.27->147.32.85.118,4,836,1,1,1,3389,background,[pair] spair rst t600: p99.99; spair rst t3600: p99.97; spair rst t21600: p99.96
+src,147.32.86.116,3,248,1,248,1,"80,33033,30977",background,[source] shost n_dhost t600 x: 1750x normal; shost n_dhost_nr t600 x: 499x normal; shost n_dhost_nr t3600 x: 694x normal
+dst,147.32.85.218,2,62,1,1,62,16655,background,[destination] dhost noreply t3600 x: 1231x normal; dhost noreply t600 x: 664x normal; dsvc noreply t600 x: 635x normal

@@ -1,0 +1,12 @@
+{
+  "core_cert": {
+    "checks": 162000,
+    "violations": 0,
+    "worst_drop": 0.0
+  },
+  "core_cert_r": {
+    "checks": 66000,
+    "violations": 0,
+    "worst_drop": 0.0
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "core_mono_dst_x": {
+    "checks": 546000,
+    "violations": 0,
+    "worst_drop": 0.0
+  },
+  "core_src_x": {
+    "checks": 330000,
+    "violations": 0,
+    "worst_drop": 0.0
+  },
+  "core_both_x": {
+    "checks": 870000,
+    "violations": 0,
+    "worst_drop": 0.0
+  },
+  "core_both_cert": {
+    "checks": 294000,
+    "violations": 0,
+    "worst_drop": 0.0
+  }
+}

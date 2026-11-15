@@ -1,0 +1,17 @@
+{
+  "core_mono_dst_x": {
+    "checks": 738000,
+    "violations": 0,
+    "worst_drop": 0.0
+  },
+  "proteus": {
+    "checks": 1314000,
+    "violations": 0,
+    "worst_drop": 0.0
+  },
+  "proteus_cert": {
+    "checks": 762000,
+    "violations": 0,
+    "worst_drop": 0.0
+  }
+}

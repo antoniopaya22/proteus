@@ -1,0 +1,3 @@
+model,target_fpr,threshold,benign_fpr,alarms_per_hour,entity_alarms_per_hour,suspect_sources,suspect_detected
+proteus_free,0.0001,local,1.5881199841998085e-05,0.21218787290557817,0.1517523430136769,0,0
+proteus_free,0.001,local,0.0008312643672141638,5.731677802518016,4.533891344161117,0,0

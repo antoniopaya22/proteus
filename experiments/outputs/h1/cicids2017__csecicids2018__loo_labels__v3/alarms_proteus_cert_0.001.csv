@@ -1,0 +1,6 @@
+side,entity,alarms,flows,days,peers,srcs,ports,family,why
+dst,172.31.0.2,90,3994407,2,1,450,53,benign,[raw destination] dhost noreply t600: p92.53; dhost noreply t3600: p90.31; dsvc noreply t3600: p87.00
+dst,172.31.69.25,4,13,2,1,9,"80,8080,40000",benign,[raw destination] dsvc fbytes t3600: p100.00; dhost fbytes t3600: p100.00; dsvc fpkts t600: p100.00
+pair,5.39.216.195->172.31.65.38,2,421,1,1,1,3389,benign,[pair] spair fbytes t600: p99.98; spair fbytes t3600: p99.96; spair rst t3600: p99.96
+pair,46.17.97.4->172.31.65.51,1,91,1,1,1,3389,benign,[pair] spair rst t600: p99.92; spair rst t3600: p99.81; spair fbytes t600: p99.76
+src,202.69.173.19,1,1258,1,162,1,445,benign,[source] shost rst t600 x: 1540x normal; shost rst t3600 x: 1560x normal; shost flows t600 x: 1695x normal
