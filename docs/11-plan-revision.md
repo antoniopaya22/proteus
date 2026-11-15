@@ -42,8 +42,8 @@ La ronda 1 son las fases A–E de abajo.
 - [x] `proteus_cert_r`: subnúcleos solo con evidencia que la reutilización no baja (bytes de carga y
       conteos distintos), τ ≥ 10 min. Se entrena en `rev2.sh`.
 - [ ] Informar su cobertura certificada frente a reutilización y fusión por puerto.
-- [ ] Corregir la tabla del modelo de amenaza: fijar el puerto origen y puentear el tiempo de
-      inactividad fusionan registros (violan A3).
+- [x] Tabla del modelo de amenaza: mantener una quíntupla viva fusiona registros (A3), cubierto
+      por el certificado de reutilización.
 - [ ] Atacante adaptativo con búsqueda: reutilización, reparto entre orígenes, replanificación
       temporal (ráfagas y suavizado).
 
@@ -71,8 +71,10 @@ La ronda 1 son las fases A–E de abajo.
       Whisper como defensa.
 - [ ] Resumen, introducción, título y conclusión ajustados a lo demostrado (reutilización, reglas,
       empates). Integrar el reencuadre pendiente (marco + instancia).
-- [ ] Las 18 discrepancias texto-tablas de la revisión; f(x−s) como cota; agotamiento de estado y
-      el tope n = 200 del suavizado en limitaciones; formato Elsevier de envío.
+- [x] f(x−s) como cota; agotamiento de estado; tope n = 200 del suavizado (1,83 comprobado).
+- [ ] Las 18 discrepancias texto-tablas de la revisión (con las cifras r2); formato Elsevier.
+- [ ] Métrica principal de falsas alarmas: por entidad alertada, dando también (destino, minuto) y
+      el desglose por día; explicar el lunes de CIC-IDS-2017 (§6.49 de docs/06).
 
 ## E. Artefacto
 
