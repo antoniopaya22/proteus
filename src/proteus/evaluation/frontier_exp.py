@@ -75,17 +75,31 @@ def local_threshold(ds: str, day: Path, model, cols: list[str], fpr: float,
     return float(np.quantile(np.concatenate(ref), 1 - fpr, method="higher"))
 
 
-def scenarios(flows: pd.DataFrame,
-              attacks: list[str]) -> list[tuple[str, Scenario, pd.DataFrame]]:
+def scenarios(flows: pd.DataFrame, attacks: list[str],
+              busy: bool = False) -> list[tuple[str, Scenario, pd.DataFrame]]:
     """One scenario per attack type of a day: the real victim, its benign traffic in a
-    window around the middle of the day, and the real campaign's flow shapes."""
+    window around the middle of the day, and the real campaign's flow shapes.
+
+    ``busy``: the same campaign aimed instead at the destination that receives the most
+    benign flows on the attacked port that day and is not involved in any attack (the
+    victims of the benchmarks are almost idle). Scans are skipped."""
     out = []
+    attacked = set(flows.loc[flows["is_attack"], "dst_ip"]) | set(
+        flows.loc[flows["is_attack"], "src_ip"])
     for attack in attacks:
         A = flows[flows["is_attack"] & (flows["attack"] == attack)]
         target = A["dst_ip"].mode().iloc[0]
         A = A[A["dst_ip"] == target]
         port = int(A["dst_port"].mode().iloc[0])
         proto = int(A["proto"].mode().iloc[0])
+        if busy:
+            if attack == "portscan":
+                continue
+            cand = flows[(flows["family"] == "benign") & (flows["dst_port"] == port)
+                         & (flows["proto"] == proto) & ~flows["dst_ip"].isin(attacked)]
+            if cand.empty:
+                continue
+            target = cand["dst_ip"].value_counts().index[0]
         bg = flows[(flows["dst_ip"] == target) & (flows["family"] == "benign")]
         start = bg["t_start"].min() + (bg["t_end"].max() - bg["t_start"].min()) / 2
         lo = start - pd.Timedelta(hours=1)
@@ -109,6 +123,8 @@ def main() -> None:
     ap.add_argument("--delta", type=float, default=h1.EXPORT_TIMEOUT_S)
     ap.add_argument("--rmax", type=float, default=100.0, help="highest rate tried (flows/s)")
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--busy", action="store_true",
+                    help="aim each campaign at the busiest benign service of its port")
     args = ap.parse_args()
     rng = np.random.default_rng(args.seed)
     cols, model = h1.load_models(args.run)[args.model]
@@ -127,7 +143,7 @@ def main() -> None:
 
             model.fit(local_benign(args.test, day, cols, rng))
         thr = local_threshold(args.test, day, model, cols, args.fpr, rng)
-        for attack, sc, A in scenarios(flows, present):
+        for attack, sc, A in scenarios(flows, present, args.busy):
             template = sc.template
             target, port, bg = sc.target_ip, sc.target_port, sc.background
             span = max((A["t_end"].max() - A["t_start"].min()).total_seconds(), 1.0)
@@ -139,6 +155,7 @@ def main() -> None:
             pk = float(template["fwd_pkts"].mean())
             row = {"day": day.stem, "attack": attack, "target": f"{target}:{port}",
                    "threshold": thr, "background_flows": len(bg),
+                   "background_flows_per_h": len(bg) / (WINDOW_S + 7200) * 3600,
                    "real_flows_per_h": len(A) / span * 3600,
                    "fwd_pkts_per_flow": pk}
             for kind, r in res.items():
@@ -147,7 +164,7 @@ def main() -> None:
             rows.append(row)
             print(row, flush=True)
     out = pd.DataFrame(rows)
-    path = args.run / f"frontier_{args.model}_{args.fpr:g}_attr.csv"
+    path = args.run / f"frontier_{args.model}_{args.fpr:g}_attr{'_busy' if args.busy else ''}.csv"
     out.to_csv(path, index=False)
     print(out.to_string())
 
