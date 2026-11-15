@@ -1304,3 +1304,7 @@ Quedan:
 - `\todo` de fronteras sobre víctimas con tráfico (UGR'16, CTU-13);
 - cifras finales (conclusión, Y/Z del resumen);
 - confirmar la declaración de IA.
+
+Reglas de tasa locales en UGR'16 (las de la ejecución 2017 → UGR'16, ya corregidas): a 10⁻³,
+17,2 alarmas/h, ningún DoS ni escaneo (spam 3/46, botnet 1/11). Proteus: 25,1/h, DoS 32/46,
+escaneos 31/42. Añadido al paper.
