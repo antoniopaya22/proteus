@@ -1406,3 +1406,41 @@ FPR 10⁻³ (vol./escaneo, todas, alarmas/h), base → suelo por destino (+ent):
 - Paper: una frase sobre los atacantes RDP sin etiquetar de 2018 y las dos variantes (evaluación,
   tras el párrafo de presupuestos).
 - Con esto no quedan experimentos en cola ni `\todo` en el paper.
+
+## 6.49 Revisión 2 (`r2`), 2018 → 2017: el lunes cambia las falsas alarmas (2026-11-15, 20:00)
+
+`r2` = líneas base corregidas (minutos enmascarados descontados), los cinco días de prueba en las
+alarmas (antes el lunes, sin ataques, no contaba), alertas atribuidas al subnúcleo que dispara.
+FPR 10⁻³, umbral local; alarmas/h por (destino, minuto) y por entidad alertada y ventana de 10 min:
+
+| Detector | Campañas (vol./escaneo) | Alarmas/h r2 | v3 | Por entidad r2 | v3 |
+|---|---|---|---|---|---|
+| `proteus` | 13/21 (11/11) | **63,1** | 2,7 | 1,75 | 1,15 |
+| `proteus_cert` | 10/21 (9/11) | **191,2** | 4,4 | 1,87 | 1,51 |
+| `proteus_cert@cert` | 9/21 (8/11) | **167,6** | 1,5 | 0,86 | 0,43 |
+| `proteus_cert_r` (nuevo) | 13/21 (9/11) | 14,5 | — | 3,05 | — |
+| `proteus_cert_r@certr` | 11/21 (8/11) | 5,2 | — | 1,73 | — |
+| `proteus_cert@certr` | 1/21 | 0,0 | 0,0 | 0,0 | 0,0 |
+| `proteus_free` | 15/21 (8/11) | 9,5 | 5,7 | 4,43 | 4,53 |
+| `core_mono_dst_x` | 9/21 (9/11) | 3,4 | 4,1 | 1,08 | 1,26 |
+| reglas de tasa | 14/21 (9/11) | 33,6 | 36,1 | 8,95 | 9,36 |
+| `flow_clf` | 14/21 (11/11) | 33,3 | 31,1 | 23,1 | — |
+
+- **La detección no cambia** (mismas campañas): el efecto del error de las líneas base es pequeño.
+- **Las alarmas por (destino, minuto) de Proteus pasan de 2,7 a 63,1/h**, y todo viene del lunes:
+  303 alarmas/h (FPR 1,6 %); martes a viernes, 0,4–9,3. Proteus-cert: 937/h el lunes.
+- Causa (`alarms.py`): un único host interno, 192.168.10.25, alertado por el subnúcleo de **origen**
+  (134 destinos sin respuesta en 443/53/80, 3× su nivel normal a 1 h). Es una entidad, pero cuenta
+  una alarma por cada destino y minuto. Por entidad alertada el lunes son 3,3 alarmas/h.
+- Con la calibración dejando el día fuera, el lunes es además el día menos parecido a los demás.
+- **Consecuencia para el paper:** el titular "2,7 falsas alarmas/h, trece veces menos que las reglas"
+  no se sostiene con los cinco días. En la métrica por (destino, minuto) Proteus queda peor que las
+  reglas (63 frente a 34). Por entidad alertada sigue mejor: 1,75 frente a 8,95 (5×), y frente al
+  clasificador por flujo, 13×. La métrica principal debe ser la de entidad alertada (una alerta
+  sobre un origen que sondea 134 destinos es una alarma para el analista), dando las dos y el
+  desglose por día.
+- **Resistente a reutilización (`proteus_cert_r`):** funciona. Sus alertas certificadas, también
+  frente a reutilización, cubren 11/21 campañas (8/11 volumétricos y escaneos) a 5,2 alarmas/h
+  (1,7 por entidad), frente a 1/21 del detector anterior. A 10⁻⁴ caen a 4/21 (2/11).
+- Criterio estricto: apenas cambia (Proteus 12/21 en vez de 13; el clasificador por flujo baja de
+  14 a 11).
