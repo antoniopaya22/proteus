@@ -32,8 +32,9 @@ La ronda 1 son las fases A–E de abajo.
 - [x] Alertas de los detectores locales atribuidas al subnúcleo que dispara.
 - [x] `h1` falla con modelos desconocidos, variantes sin presupuestos y resultados incompletos;
       escribe `run.json`.
-- [ ] `rev2.sh`: regenerar líneas base (2017, 2018), reentrenar y evaluar ambos sentidos con
-      presupuestos; KitNET con `--reuse`. Después: CTU-13, UGR'16, CIC-DDoS-2019, fronteras
+- [x] `rev2.sh`: líneas base regeneradas, ambos sentidos reentrenados y evaluados, KitNET
+      (§6.49–6.51 de docs/06). `r2b`: presupuestos por entidad alertada (18 → 17 hecho; 17 → 18 en cola).
+- [ ] `rev2c.sh` (en cola): Después: CTU-13, UGR'16, CIC-DDoS-2019, fronteras
       (inactiva y con carga), adaptativo, envenenamiento, ablación, paquetes, realimentación.
 - [ ] Medir cuánto cambian las cifras respecto a `v3` y apuntarlo en docs/06.
 
@@ -44,8 +45,9 @@ La ronda 1 son las fases A–E de abajo.
 - [ ] Informar su cobertura certificada frente a reutilización y fusión por puerto.
 - [x] Tabla del modelo de amenaza: mantener una quíntupla viva fusiona registros (A3), cubierto
       por el certificado de reutilización.
-- [ ] Atacante adaptativo con búsqueda: reutilización, reparto entre orígenes, replanificación
-      temporal (ráfagas y suavizado).
+- [x] Atacante adaptativo con planes estructurados (commit del código): reutilización (20
+      peticiones por conexión), ráfagas, ambas, y reparto entre 100 orígenes (aparte, por ser
+      costoso). En cola en los dos sentidos (`adapt2.sh`). Falta: llevar el resultado al paper.
 
 ## C. Método
 
