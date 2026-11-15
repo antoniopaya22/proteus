@@ -51,8 +51,9 @@ La ronda 1 son las fases A–E de abajo.
 
 - [x] `detected_strict` (≥ 5 flujos alertados y ≥ 1 % de la campaña) junto a `detected`.
 - [ ] Estado limpio entre campañas o detección atribuible; retardo de exportación en el TTD.
-- [ ] Una configuración desplegada única (Proteus ∪ Proteus-cert ± cáscara): detección, alarmas y
-      frontera de esa misma configuración.
+- [x] Una configuración desplegada única en `h1` (`proteus_sys` = Proteus ∪ Proteus-cert;
+      `proteus_sys_r` añade el resistente a reutilización): detección y alarmas. Falta: reevaluar
+      18 → 17 con `--reuse` (el run r2 empezó antes) y la frontera de esa configuración.
 - [ ] 5–10 semillas con dispersión para los detectores principales.
 - [ ] Curvas campañas detectadas frente a alarmas/h (figura principal), ambos sentidos.
 - [ ] Líneas base: reglas con selección de rasgos; TRW para escaneos; CUSUM de SYN.
