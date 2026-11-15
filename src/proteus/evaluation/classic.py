@@ -28,10 +28,12 @@ def day_scores(ds: str, day: Path) -> tuple[pd.DataFrame, dict[str, np.ndarray]]
     names = pq.read_schema(h1._bdir(ds) / day.name).names
     cols = [*h1.META, "clean"] + (["suspect"] if "suspect" in names else [])
     ev, _ = h1.evidence_b(ds, day, columns=cols)
-    raw = pd.read_parquet(day, columns=["bwd_pkts"])
+    raw = pd.read_parquet(day, columns=["bwd_pkts", "f_bwd_rst_flags"])
     if len(raw) != len(ev):
         raise SystemExit(f"{ds}/{day.stem}: flows and evidence have different rows")
-    failed = raw["bwd_pkts"].to_numpy() == 0
+    # A failed connection: no answer, or refused (reset by the responder).
+    failed = ((raw["bwd_pkts"].to_numpy() == 0)
+              | (raw["f_bwd_rst_flags"].fillna(0).to_numpy() > 0))
     t = ev["t_end"].to_numpy()
     src, dst = ev["src_ip"].astype(str).to_numpy(), ev["dst_ip"].astype(str).to_numpy()
     svc = pd.util.hash_pandas_object(ev[["dst_ip", "dst_port", "proto"]].astype(str),
