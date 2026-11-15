@@ -1342,3 +1342,29 @@ Antonio delega las decisiones pendientes. Tomadas:
   flujos/h de carga. La de Proteus-cert (subnúcleos brutos y de pares) casi no se mueve.
 - En el paper: cierra el último `\todo` experimental. 17 → 18 sigue corriendo.
 - OOM n.º 10 (11:06): `alarms.py` sobre los 10 días de 2018 (28 GB). Relanzado con dos días.
+
+## 6.46 Diagnóstico de alarmas en 2018 y variantes de alerta en 2018 → 2017 (2026-11-15, 14:30)
+
+**Diagnóstico** (`alarms.py`, miércoles 14 y jueves 15 de feb. de 2018; calibración en muestra y solo
+dos días, así que es orientativo):
+- Las alarmas "benignas" de `proteus` son, sobre todo, **orígenes externos contra RDP (3389)**:
+  185.222.211.106 y 194.28.112.179 con RST a 788–1.600 veces su nivel normal, y pares
+  origen→host:3389 con miles de flujos. Son atacantes reales de Internet contra la red en AWS,
+  etiquetados como benignos (igual que en CTU-13).
+- El resto: subidas grandes a S3 (52.219.x:443), una alarma por destino.
+- `proteus_cert`: casi todo es el servidor DNS interno 172.31.0.2 (90 alarmas, subnúcleo de
+  destino bruto, flujos sin respuesta).
+
+**Variantes en 2018 → 2017** (`__v3_variants`, FPR 10⁻³; vol./escaneo, todas, alarmas/h):
+
+| | base | +ent (suelo por destino) | +k2n5 (persistencia) | ambas |
+|---|---|---|---|---|
+| `proteus` | 11/11, 13/21, 2,72 | 9/11, 9/21, 2,32 | 9/11, 11/21, 1,88 | 7/11, 7/21, 1,69 |
+| `proteus_cert` | 9/11, 10/21, 4,35 | 9/11, 10/21, 1,99 | 7/11, 7/21, 3,39 | 7/11, 7/21, 1,13 |
+| `proteus_cert@cert` | 8/11, 9/21, 1,48 | 7/11, 8/21, 0,46 | 7/11, 7/21, 1,33 | 6/11, 6/21, 0,30 |
+| reglas | 9/11, 14/21, 36,3 | 9/11, 13/21, 27,7 | 7/11, 12/21, 30,2 | 7/11, 11/21, 22,7 |
+
+- La persistencia no compensa: pierde escaneos y campañas cortas y sube el TTD a ~51 s.
+- El suelo por destino ayuda a `proteus_cert` (4,35 → 1,99 alarmas/h sin perder campañas;
+  certificadas 1,48 → 0,46 perdiendo una). A `proteus` le quita dos escaneos y cuatro campañas.
+- Pendiente 17 → 18, que es donde importa.
