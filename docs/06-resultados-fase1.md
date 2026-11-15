@@ -1270,3 +1270,37 @@ etiqueta varias por día):
   ninguno (comprobado), así que sus resultados no cambian. Se repiten las reglas en los dos
   pliegues y en 2017 → UGR'16 (`fix15.sh`).
 - Pendiente: 2017 → UGR'16 y CIC → CIC-DDoS-2019, y escribir la sección del paper.
+
+## 6.43 UGR'16, CIC-DDoS-2019 y CTU-13 v3 en el paper (2026-11-15, 08:40)
+
+**UGR'16** (reglas ya corregidas), FPR 10⁻³:
+
+| | `proteus` | reglas de tasa |
+|---|---|---|
+| jul → ago | 19,2/h: DoS 22/26, botnet 7/7, escaneos 5/26 | 23,9/h: DoS 3/26, escaneos 1/26 |
+| ago → jul | 20,3/h: DoS 19/20, botnet 4/4, escaneos 16/16 (recall 0,75–0,87); a 10⁻⁴: 2,0/h, igual | 40,2/h: DoS 19/20, botnet 4/4, escaneos 12/16 (recall ~0,2); a 10⁻⁴: 28,0/h, 8/16 |
+| 2017 → UGR'16 (12 días) | 25,1/h: DoS 32/46, escaneos 31/42 (recall ~0), botnet 4/11 | (repetición pendiente) |
+
+- Certificadas de `proteus_cert`: julio, DoS 14/20 y botnet 4/4 a 7,0/h; agosto, DoS 3/26.
+- Spam, SSH y UDP: casi nada.
+
+**CIC-DDoS-2019:**
+- 2017 → todo salvo 10 de las 12 SYN; 2018 → todo.
+- FPR fuera de objetivo en todos: 1,2 % (2017), 4,9 % (2018), 19 % (reglas). Solo hay ~50.000 benignos
+  al día. Solo sirve como comprobación de detección.
+
+**CTU-13** (decisión: ponderar por horas, s11 aparte):
+- Fold B: 9,3 alarmas/h, 2,0 por entidad.
+- Fold A sin s11: 9,4 y 1,9; con s11, 56,6.
+
+Paper:
+- Datos de UGR'16 y CIC-DDoS-2019 en "Data".
+- Párrafo de CTU-13 reescrito con v3.
+- Párrafos nuevos de UGR'16 y CIC-DDoS-2019.
+- Introducción: en UGR'16, a igual FPR, las reglas dan 28 alarmas/h y detectan la mitad de los escaneos.
+- Discusión: unas dos alarmas por entidad y hora en CTU-13, salvo la captura de otra semana.
+
+Quedan:
+- `\todo` de fronteras sobre víctimas con tráfico (UGR'16, CTU-13);
+- cifras finales (conclusión, Y/Z del resumen);
+- confirmar la declaración de IA.
