@@ -56,7 +56,9 @@ La ronda 1 son las fases A–E de abajo.
       18 → 17 con `--reuse` (el run r2 empezó antes) y la frontera de esa configuración.
 - [ ] 5–10 semillas con dispersión para los detectores principales.
 - [ ] Curvas campañas detectadas frente a alarmas/h (figura principal), ambos sentidos.
-- [ ] Líneas base: reglas con selección de rasgos; TRW para escaneos; CUSUM de SYN.
+- [x] Líneas base clásicas: TRW (por host y por servicio) y CUSUM de flujos fallidos
+      (`proteus classic`, commit 0541084). 2017 hecho (`classic__cicids2017__r2`); 2018 en cola.
+- [ ] Línea base: reglas de tasa con selección de rasgos.
 - [ ] `proteus_free` (homólogo justo sin restricciones) en las tablas de detección, daño y banco.
 - [ ] Calibración sin etiquetas y causal (`--baseline prior --mask none`) como comprobación.
 - [ ] UGR'16: alarmas/h corregidas por el muestreo del 1 % o cota declarada.

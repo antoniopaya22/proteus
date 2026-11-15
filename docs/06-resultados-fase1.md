@@ -1444,3 +1444,21 @@ FPR 10⁻³, umbral local; alarmas/h por (destino, minuto) y por entidad alertad
   (1,7 por entidad), frente a 1/21 del detector anterior. A 10⁻⁴ caen a 4/21 (2/11).
 - Criterio estricto: apenas cambia (Proteus 12/21 en vez de 13; el clasificador por flujo baja de
   14 a 11).
+
+## 6.50 Líneas base clásicas en CIC-IDS-2017 (2026-11-15, 22:30)
+
+`proteus classic` (sin red de entrenamiento; umbral = cuantil del benigno limpio de los otros días).
+Conexión fallida = sin respuesta o rechazada (RST). FPR 10⁻³:
+
+| Detector | Vol./escaneo | Escaneos | Alarmas/h (destino-minuto) | Por entidad |
+|---|---|---|---|---|
+| TRW por host (Jung et al.) | 1/11 | 1/6 | 7,0 | 0,59 |
+| TRW por servicio | 3/11 | 3/6 (recall 0,42) | 26,4 | 0,44 |
+| CUSUM de flujos fallidos (Wang et al., adaptado) | 5/11 | 4/6 (recall 0,67) | 12,9 | 2,92 |
+| `proteus` (r2) | 11/11 | 6/6 (recall 0,82) | 63,1 | 1,75 |
+
+- El TRW original (por host) no ve los escaneos de CIC-IDS-2017, que son verticales (un host, muchos
+  puertos); la variante por servicio ve la mitad.
+- El CUSUM no ve los DoS de aplicación (Hulk, GoldenEye), que completan sus conexiones.
+- Ninguno alcanza a Proteus en detección. En alarmas por entidad el TRW es más bajo (0,4–0,6 frente
+  a 1,75).
