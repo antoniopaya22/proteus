@@ -7,6 +7,24 @@ completo. Este documento es la lista de trabajo; se actualiza al cerrar cada pun
 Las salidas nuevas llevan la etiqueta `r2` (`experiments/outputs/h1/*__r2*`); las anteriores (`v3*`)
 se conservan para comparar y no se citan en la versión final.
 
+## Bucle de mejora y revisión
+
+Antonio pide iterar hasta la máxima nota posible. Protocolo:
+
+1. Cada ronda es una lista de casillas. Al completarla (y con el paper compilado sin overfull) se
+   lanza **un** revisor independiente, con el mismo encargo que el primero y sin darle la revisión
+   anterior ni nuestras conclusiones.
+2. Su nota y sus objeciones se apuntan abajo; cada objeción válida pasa a ser casilla de la ronda
+   siguiente.
+3. Se para con nota ≥ 9, o cuando dos rondas seguidas no suban la nota y lo que quede sean límites
+   del método ya declarados.
+
+| Ronda | Fecha | Nota | Veredicto | Objeciones principales |
+|---|---|---|---|---|
+| 0 | 2026-11-15 | 5/10 | revisión mayor | reutilización de conexiones fuera del certificado; valor frente a reglas de tasa no establecido; criterio de detección vacío; sistema no evaluado como conjunto; atacante adaptativo débil; calibración optimista y una semilla; comparaciones indirectas; trabajo relacionado; presentación de cuaderno |
+
+La ronda 1 son las fases A–E de abajo.
+
 ## A. Corrección (hecho en código, commit 5c08e7b; cómputo en marcha)
 
 - [x] `baseline.day_table`: los minutos enmascarados no se descontaban (ns frente a µs).
