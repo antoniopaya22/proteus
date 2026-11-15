@@ -20,7 +20,6 @@ import pandas as pd
 from proteus.baselines.classic import syn_cusum_scores, trw_scores
 from proteus.evaluation import h1
 
-
 SOURCE_SIDE = ("trw", "trw_svc")  # detectors whose alerts are about the source host
 
 
