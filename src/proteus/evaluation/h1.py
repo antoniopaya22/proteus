@@ -588,8 +588,33 @@ def alert_side(model, cols: list[str], X: np.ndarray) -> np.ndarray:
 ENTITY_BUCKET = "10min"
 
 
+def persistent(alert: np.ndarray, test: pd.DataFrame, k: int = 2, n: int = 5) -> np.ndarray:
+    """Keep an alert only if its destination host has alerts in at least ``k`` distinct
+    minutes of the last ``n`` (the current one included)."""
+    idx = np.flatnonzero(alert)
+    if len(idx) == 0:
+        return alert
+    key = pd.util.hash_array(test["dst_ip"].iloc[idx].astype(str).to_numpy())
+    minute = (test["t_start"].iloc[idx].astype("int64") // 60_000_000).to_numpy()
+    g = pd.DataFrame({"k": key, "m": minute}).drop_duplicates().sort_values(["k", "m"])
+    kk, mm = g["k"].to_numpy(), g["m"].to_numpy()
+    ok = np.zeros(len(g), dtype=bool)
+    for j in range(k - 1, len(g)):  # alerted minutes are few
+        ok[j] = kk[j - k + 1] == kk[j] and mm[j] - mm[j - k + 1] < n
+    good = set(zip(kk[ok].tolist(), mm[ok].tolist()))
+    keep = np.fromiter(((a, b) in good for a, b in zip(key.tolist(), minute.tolist())),
+                       dtype=bool, count=len(idx))
+    out = np.zeros(len(alert), dtype=bool)
+    out[idx[keep]] = True
+    return out
+
+
 def evaluate(test: pd.DataFrame, scores: dict[str, np.ndarray], thresholds: dict,
-             sides: dict[str, np.ndarray] | None = None) -> pd.DataFrame:
+             sides: dict[str, np.ndarray] | None = None,
+             floors: dict[str, np.ndarray] | None = None) -> pd.DataFrame:
+    """Threshold kinds may carry suffixes: ``+ent`` also requires the score to exceed
+    the per-row floor of the model in ``floors`` (the benign maximum of the flow's
+    destination on the other days); ``+k2n5`` requires persistence (``persistent``)."""
     camp = campaigns(test)
     hours = sum(
         (g["t_end"].max() - g["t_start"].min()).total_seconds() / 3600
@@ -603,6 +628,10 @@ def evaluate(test: pd.DataFrame, scores: dict[str, np.ndarray], thresholds: dict
     for (model, fpr, kind), thr in thresholds.items():
         s = scores[model]
         alert = s >= thr
+        if "+ent" in kind:
+            alert &= s > floors[model.removesuffix("@certr").removesuffix("@cert")]
+        if "+k2n5" in kind:
+            alert = persistent(alert, test)
         fa = test.loc[clean & alert]
         alarm_groups = fa.groupby(["day", "dst_ip", fa["t_start"].dt.floor("min")],
                                   observed=True).ngroups
@@ -672,6 +701,9 @@ def main() -> None:
                     help="restrict testing to these capture days (file stems)")
     ap.add_argument("--balance", choices=["cap", "type", "type_entity", "none"], default="cap",
                     help="class balance of the training set (see BALANCE)")
+    ap.add_argument("--alert-variants", action="store_true",
+                    help="local detectors (needs --entity-budgets): also evaluate a "
+                         "per-destination floor (+ent) and persistence (+k2n5)")
     ap.add_argument("--exclude-saturated", type=float, default=None,
                     help="calibrated maxima drop sub-cores that cannot reach this FPR on "
                          "local benign traffic (saturated); default keeps all")
@@ -761,6 +793,7 @@ def main() -> None:
     day_sides: dict = {}  # day -> model -> alert about the source host
     hours_of: dict = {}
     local_scores: dict = {}  # day -> spilled scores of the local detectors (pass 3)
+    local_thr: dict = {}  # (day, model, fpr) -> local threshold, for the alert variants
     budget_cand: dict = {}  # day -> spilled candidate flows for their budgets (pass 3)
     for day in test_days:
         # Only metadata in full; every model is scored on its own columns, in batches
@@ -906,6 +939,7 @@ def main() -> None:
                 ref = np.concatenate([benign_sample[d][n] for d in others])
             for fpr in FPRS:
                 th[(n, fpr, "local")] = np.quantile(ref, 1 - fpr, method="higher")
+                local_thr[(day, n, fpr)] = th[(n, fpr, "local")]
         for n in [k for k in top_of.get(day, {}) if k not in local]:  # local: pass 3
             for budget in args.entity_budgets:
                 th[(n, budget, "entity")] = entity_threshold(
@@ -929,20 +963,33 @@ def main() -> None:
         ev, _ = evidence_b(args.test, day, columns=meta_cols)
         with np.load(local_scores.pop(day)) as z:
             scores = {k.replace("__AT__", "@"): z[k] for k in z.files}
-        th = {}
+        th, floors = {}, {}
         hours = sum(hours_of[d] for d in others)
+        dkey = pd.util.hash_array(ev["dst_ip"].astype(str).to_numpy()).astype(np.uint64)
         for n, c in local.items():
             m = copy.deepcopy(models[n][1]).fit(
                 np.concatenate([benign_feats[d][c].to_numpy() for d in others]))
             tops = [(np.asarray(m.score(cands[d][c].to_numpy())),
                      cands[d]["__key"].to_numpy(), cands[d]["__minute"].to_numpy())
                     for d in others]
+            if args.alert_variants:
+                # Benign maximum of each destination on the other days (among their top
+                # clean flows; a destination absent from them stays below any threshold).
+                mx = pd.concat([pd.Series(sc, index=k_) for sc, k_, _ in tops]
+                               ).groupby(level=0).max()
+                floors[n] = mx.reindex(dkey).fillna(-np.inf).to_numpy()
+                for fpr in FPRS:
+                    v = local_thr[(day, n, fpr)]
+                    for m_ in (n, f"{n}@cert", f"{n}@certr"):
+                        if m_ in scores:
+                            for kind in ("local+ent", "local+k2n5", "local+ent+k2n5"):
+                                th[(m_, fpr, kind)] = v
             for budget in args.entity_budgets:
                 v = entity_threshold(tops, hours, budget)
                 for m_ in (n, f"{n}@cert", f"{n}@certr"):
                     if m_ in scores:
                         th[(m_, budget, "entity")] = v
-        results.append(evaluate(ev, scores, th))
+        results.append(evaluate(ev, scores, th, floors=floors))
         print(f"  budgets {args.test}/{day.stem} at {time.time() - t0:.0f}s", flush=True)
         for n in local:
             print(f"    {n}: max {np.nanmax(scores[n]):.6g}, "

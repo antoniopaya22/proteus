@@ -55,3 +55,19 @@ def test_budget_pools_the_hours_of_every_day():
     day = (np.array([0.9]), np.array([1], dtype=np.uint64), np.array([0], dtype=np.uint64))
     assert entity_threshold([day, day], hours=2.0, budget=1.0) <= 0.9
     assert entity_threshold([day, day], hours=2.0, budget=0.5) > 0.9
+
+
+def test_persistent_needs_two_alerted_minutes_in_five():
+    import pandas as pd
+
+    from proteus.evaluation.h1 import persistent
+
+    t0 = pd.Timestamp("2020-01-01")
+    mins = [0, 0, 3, 20, 40, 41]
+    test = pd.DataFrame({"dst_ip": ["a", "a", "a", "a", "b", "b"],
+                         "t_start": [t0 + pd.Timedelta(minutes=m) for m in mins]})
+    alert = np.array([True, True, True, True, True, True])
+    out = persistent(alert, test, k=2, n=5)
+    # a: minute 0 alone is not enough; minute 3 has minute 0 behind it; minute 20 alone
+    assert out.tolist() == [False, False, True, False, False, True]
+    assert not persistent(np.zeros(6, dtype=bool), test).any()
