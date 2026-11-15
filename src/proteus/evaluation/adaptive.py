@@ -14,7 +14,11 @@ alerted, maximised over
 * random combinations of free operations (``free_ops.variant``), and
 * mimicry: padding and inserted packets until each attack flow reaches the median
   forward packets and bytes per packet of the victim's benign traffic (only adding,
-  never removing).
+  never removing),
+* structured plans (``STRUCTURED``): connection reuse (20 requests per connection),
+  bursts (the same mean rate sent in the first tenth of every minute) and both, and
+* the same plans spread over 100 sources, a costly operation reported apart
+  (``spread_flows_per_h``).
 
 Only alerts in minutes where the victim's background alone raises none count against
 the attacker (benign false positives are not the attack's doing). Rates are scanned on
@@ -35,6 +39,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from proteus.attacks import operators as op
 from proteus.core.certify import slack, worst_case_features
 from proteus.core.frontier import _features, nested_attack
 from proteus.evaluation import h1
@@ -43,6 +48,24 @@ from proteus.evaluation.frontier_exp import ATTACKS, FLOW_COLS, Baselines, scena
 from proteus.evaluation.poisoning import combined, local_benign
 
 STOP_AFTER = 2  # stop scanning once every detector alerts on every variant this many rates
+REUSE_K, SOURCES, PULSE = 20, 100, (60.0, 0.1)
+# name -> (requests per connection, sources, bursts); sources > 1 is a costly operation
+STRUCTURED = {"reuse": (REUSE_K, 1, False), "pulse": (1, 1, True),
+              "reuse+pulse": (REUSE_K, 1, True), "spread": (1, SOURCES, False),
+              "spread+reuse": (REUSE_K, SOURCES, False), "spread+pulse": (1, SOURCES, True)}
+
+
+def structured(df: pd.DataFrame, plan: str, rng: np.random.Generator) -> pd.DataFrame:
+    """One structured plan applied to the attack flows of ``df`` (column ``_atk``)."""
+    k, n, bursts = STRUCTURED[plan]
+    out = df
+    if bursts:
+        out = op.pulse(out, out["_atk"].to_numpy(), *PULSE)
+    if n > 1:
+        out = op.spread_sources(out, out["_atk"].to_numpy(), n, rng)
+    if k > 1:
+        out = op.reuse_connections(out, out["_atk"].to_numpy(), k, h1.EXPORT_TIMEOUT_S)
+    return out.sort_values("t_end", kind="stable").reset_index(drop=True)
 
 
 class Scored:
@@ -92,6 +115,8 @@ def main() -> None:
     ap.add_argument("--rmin", type=float, default=1e-3)
     ap.add_argument("--rmax", type=float, default=200.0)
     ap.add_argument("--attacks", nargs="*", default=None)
+    ap.add_argument("--no-structured", action="store_true",
+                    help="skip the structured plans (reuse, bursts, spreading)")
     ap.add_argument("--seed", type=int, default=0)
     args = ap.parse_args()
     rng = np.random.default_rng(args.seed)
@@ -128,7 +153,8 @@ def main() -> None:
             span = max((A["t_end"].max() - A["t_start"].min()).total_seconds(), 1.0)
             full = nested_attack(sc, args.rmax, np.random.default_rng(args.seed))
             plans = [("plain", None), ("mimic", None)] + [
-                (f"random{k}", k) for k in range(args.variants)]
+                (f"random{k}", k) for k in range(args.variants)] + [
+                (name, None) for name in STRUCTURED if not args.no_structured]
             # Minutes where the victim's background alone alerts: not the attack's doing.
             bg_feats = _features(sc.background, all_cols, base)
             bg_min = sc.background["t_end"].astype("int64").to_numpy() // 60_000_000
@@ -141,6 +167,7 @@ def main() -> None:
                                             slack(cols, specs, delta))
                     noisy_cert[n] = np.unique(bg_min[m.predict_proba(W)[:, 1] >= thr[n]])
             best = {n: {"rate": 0.0, "plan": None} for n in models}
+            spread = {n: {"rate": 0.0, "plan": None} for n in models}
             plain = {n: 0.0 for n in models}
             cert = {n: 0.0 for n in args.certify if n in models}
             streak = {n: 0 for n in models}  # consecutive rates where every variant alerts
@@ -159,6 +186,8 @@ def main() -> None:
                         v = df
                     elif plan == "mimic":
                         v = mimic(df, sc.background)
+                    elif plan in STRUCTURED:
+                        v = structured(df, plan, np.random.default_rng(2000))
                     else:
                         v, _ = variant(df, np.random.default_rng(1000 + k), sc.target_ip,
                                        sc.target_port, retime=bool(k % 2))
@@ -172,7 +201,10 @@ def main() -> None:
                         ladder.append({"day": day.stem, "attack": attack, "detector": n,
                                        "plan": plan, "flows_per_h": float(r) * 3600,
                                        "detected": not quiet})
-                        if quiet and r > best[n]["rate"]:
+                        costly = plan.startswith("spread")
+                        if quiet and r > spread[n]["rate"]:
+                            spread[n] = {"rate": float(r), "plan": plan}
+                        if quiet and not costly and r > best[n]["rate"]:
                             best[n] = {"rate": float(r), "plan": plan}
                         if quiet and plan == "plain":
                             plain[n] = max(plain[n], float(r))
@@ -191,6 +223,8 @@ def main() -> None:
                              "plain_flows_per_h": plain[n] * 3600,
                              "adaptive_flows_per_h": best[n]["rate"] * 3600,
                              "best_plan": best[n]["plan"],
+                             "spread_flows_per_h": spread[n]["rate"] * 3600,
+                             "spread_plan": spread[n]["plan"],
                              "certified_flows_per_h": cert[n] * 3600 if n in cert else np.nan,
                              "rmax_flows_per_h": args.rmax * 3600})
                 print(rows[-1], flush=True)

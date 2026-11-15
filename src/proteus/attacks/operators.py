@@ -145,3 +145,63 @@ def slow_down(df: pd.DataFrame, sel: np.ndarray, factor: float) -> pd.DataFrame:
         out.loc[sel, c] = t0 + (out.loc[sel, c] - t0) * factor
     out.loc[sel, "duration_us"] = (out.loc[sel, "duration_us"] * factor).astype(np.int64)
     return out
+
+
+def reuse_connections(df: pd.DataFrame, sel: np.ndarray, k: int, timeout_s: float,
+                      saved_pkts: int = 4) -> pd.DataFrame:
+    """Carry up to ``k`` consecutive selected flows of the same source and service in
+    one connection (HTTP keep-alive, several attempts per session). The merged record
+    keeps the payload bytes and the requests' packets, saves ``saved_pkts`` forward
+    packets (handshake and teardown) per merged flow, and never spans more than the
+    exporter's active timeout. Per-connection counts (flows, resets, unanswered) drop."""
+    if k <= 1 or not sel.any():
+        return df
+    out = _with_ids(df)
+    a = out[sel].sort_values("t_start", kind="stable")
+    slot = (a["t_start"].astype("int64") // int(timeout_s * 1e6)).to_numpy()
+    grp = a.groupby([a["src_ip"].astype(str), a["dst_ip"].astype(str), a["dst_port"],
+                     a["proto"], slot], sort=False).cumcount() // k
+    keys = [a["src_ip"].astype(str), a["dst_ip"].astype(str), a["dst_port"], a["proto"],
+            pd.Series(slot, index=a.index), grp]
+    g = a.groupby(keys, sort=False)
+    first = g.head(1).copy()
+    n = g["fwd_pkts"].transform("size").loc[first.index].to_numpy()
+    agg = g.agg(t_start=("t_start", "min"), t_end=("t_end", "max"),
+                fwd_pkts=("fwd_pkts", "sum"), bwd_pkts=("bwd_pkts", "sum"),
+                fwd_bytes=("fwd_bytes", "sum"), bwd_bytes=("bwd_bytes", "sum"),
+                rst=("f_bwd_rst_flags", "max"))
+    first["t_start"], first["t_end"] = agg["t_start"].to_numpy(), agg["t_end"].to_numpy()
+    first["duration_us"] = (first["t_end"] - first["t_start"]).dt.total_seconds().mul(1e6) \
+        .astype(np.int64)
+    first["fwd_pkts"] = np.maximum(agg["fwd_pkts"].to_numpy() - saved_pkts * (n - 1), n)
+    first["bwd_pkts"] = agg["bwd_pkts"].to_numpy()
+    first["fwd_bytes"], first["bwd_bytes"] = agg["fwd_bytes"].to_numpy(), agg["bwd_bytes"].to_numpy()
+    first["f_bwd_rst_flags"] = agg["rst"].to_numpy()
+    return pd.concat([out[~sel], first], ignore_index=True)
+
+
+def spread_sources(df: pd.DataFrame, sel: np.ndarray, n: int,
+                   rng: np.random.Generator) -> pd.DataFrame:
+    """Send the selected flows from ``n`` sources (a costly operation: it needs the
+    hosts). Destination-side evidence is unchanged, source-side evidence is divided."""
+    out = df.copy()
+    srcs = np.array([f"198.18.{i // 250}.{i % 250 + 1}" for i in range(n)])  # benchmark net
+    out.loc[sel, "src_ip"] = pd.array(rng.choice(srcs, int(sel.sum())),
+                                      dtype=out["src_ip"].dtype)
+    return out
+
+
+def pulse(df: pd.DataFrame, sel: np.ndarray, period_s: float, duty: float) -> pd.DataFrame:
+    """Send the selected flows in bursts: the same flows and the same mean rate, but
+    only during the first ``duty`` fraction of every ``period_s`` (each flow moves
+    earlier within its period)."""
+    out = df.copy()
+    t = out.loc[sel, "t_start"].astype("int64").to_numpy()
+    t0 = int(t.min()) if len(t) else 0
+    per = int(period_s * 1e6)
+    phase = (t - t0) % per
+    new = t - phase + (phase * duty).astype(np.int64)
+    out.loc[sel, "t_start"] = pd.to_datetime(new, unit="us").astype(out["t_start"].dtype)
+    out.loc[sel, "t_end"] = (out.loc[sel, "t_start"]
+                             + pd.to_timedelta(out.loc[sel, "duration_us"], unit="us"))
+    return out

@@ -142,3 +142,54 @@ def test_splitting_can_lower_evidence_without_slack():
     f2o = f2.iloc[rows].set_axis(orig[rows]).sort_index()
     col = "dhost__fpkts__t10"
     assert np.any(f2o[col].to_numpy() < f1[col].to_numpy() - 1e-6)
+
+
+def _attack_flows(n=40, gap_s=1.0):
+    import pandas as pd
+
+    t0 = pd.Timestamp("2020-01-01 10:00")
+    return pd.DataFrame({
+        "t_start": (t0 + pd.to_timedelta(np.arange(n) * gap_s, unit="s")).astype("datetime64[us]"),
+        "duration_us": np.full(n, 200_000, dtype=np.int64),
+        "src_ip": pd.array(["10.0.0.9"] * n, dtype="string"),
+        "dst_ip": pd.array(["10.0.1.1"] * n, dtype="string"),
+        "src_port": np.arange(40000, 40000 + n, dtype=np.int32), "dst_port": np.int32(80),
+        "proto": np.int16(6), "fwd_pkts": np.full(n, 8, dtype=np.int64),
+        "bwd_pkts": np.full(n, 6, dtype=np.int64), "fwd_bytes": np.full(n, 900, dtype=np.int64),
+        "bwd_bytes": np.full(n, 3000, dtype=np.int64), "f_bwd_rst_flags": np.zeros(n, np.float32),
+    }).assign(t_end=lambda d: d["t_start"] + pd.to_timedelta(d["duration_us"], unit="us"))
+
+
+def test_reuse_keeps_bytes_and_lowers_flows_and_packets():
+    from proteus.attacks import operators as op
+
+    df = _attack_flows()
+    out = op.reuse_connections(df, np.ones(len(df), bool), k=10, timeout_s=120)
+    assert len(out) == 4                                   # 40 flows in connections of 10
+    assert out["fwd_bytes"].sum() == df["fwd_bytes"].sum()  # payload conserved
+    assert out["fwd_pkts"].sum() == df["fwd_pkts"].sum() - 4 * 36
+    assert (out["t_end"] - out["t_start"]).dt.total_seconds().max() <= 120
+    assert op.reuse_connections(df, np.ones(len(df), bool), k=1, timeout_s=120) is df
+
+
+def test_reuse_never_spans_the_active_timeout():
+    from proteus.attacks import operators as op
+
+    df = _attack_flows(n=30, gap_s=20.0)  # ten minutes of flows
+    out = op.reuse_connections(df, np.ones(len(df), bool), k=1000, timeout_s=120)
+    assert len(out) >= 5
+    assert (out["t_end"] - out["t_start"]).dt.total_seconds().max() <= 120.3
+
+
+def test_spread_and_pulse_keep_the_flows():
+    from proteus.attacks import operators as op
+
+    df = _attack_flows(n=200, gap_s=3.0)
+    sel = np.ones(len(df), bool)
+    s = op.spread_sources(df, sel, 50, np.random.default_rng(0))
+    assert s["src_ip"].nunique() > 30 and len(s) == len(df)
+    p = op.pulse(df, sel, period_s=60, duty=0.1)
+    assert len(p) == len(df) and p["fwd_bytes"].sum() == df["fwd_bytes"].sum()
+    phase = (p["t_start"] - p["t_start"].min()).dt.total_seconds() % 60
+    assert phase.max() <= 6.0                              # bursts in the first tenth
+    assert (p["t_end"] - p["t_start"]).equals(df["t_end"] - df["t_start"])
