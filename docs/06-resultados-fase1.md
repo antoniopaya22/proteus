@@ -1462,3 +1462,45 @@ Conexión fallida = sin respuesta o rechazada (RST). FPR 10⁻³:
 - El CUSUM no ve los DoS de aplicación (Hulk, GoldenEye), que completan sus conexiones.
 - Ninguno alcanza a Proteus en detección. En alarmas por entidad el TRW es más bajo (0,4–0,6 frente
   a 1,75).
+
+## 6.51 Revisión 2 (`r2`), 2017 → 2018, KitNET y líneas base clásicas en 2018 (2026-11-15, 23:30)
+
+FPR 10⁻³, umbral local, diez días de prueba (alarmas/h por destino-minuto y por entidad alertada):
+
+| Detector | Campañas (vol./escaneo) | Alarmas/h r2 (v3) | Por entidad r2 (v3) |
+|---|---|---|---|
+| `proteus` | 14/25 (13/13) | 24,9 (16,0) | **1,62** (6,76) |
+| `proteus_cert` | 14/25 (13/13) | 42,1 (42,0) | 3,68 (7,32) |
+| `proteus_cert@cert` | 7/25 (6/13) | 16,8 (17,0) | 2,22 (2,26) |
+| `proteus_sys` (Proteus ∪ Proteus-cert) | 14/25 (13/13) | 60,9 | 5,04 |
+| `proteus_cert_r` | 14/25 (12/13) | 48,8 | 7,28 |
+| `proteus_cert_r@certr` | 8/25 (6/13) | 32,0 | 6,13 |
+| `proteus_cert@certr` | 0/25 | 0 | 0 |
+| `proteus_free` | 17/25 (13/13) | 58,2 (62,9) | 17,8 (24,8) |
+| `core_free_dst_b` | 16/25 (13/13) | 135,8 (124,6) | 32,4 |
+| reglas de tasa | 15/25 (13/13) | 45,3 (45,5) | 10,8 (13,5) |
+| `flow_clf` | 9/25 (9/13) | 273,7 | 140,1 |
+
+- **Detección sin cambios** respecto a v3; el efecto del error de las líneas base es pequeño aquí
+  también (las alarmas de Proteus suben de 16,0 a 24,9 por destino-minuto).
+- **Por entidad alertada, Proteus baja de 6,76 a 1,62**: antes sus alertas del subnúcleo de origen
+  se contaban una vez por destino. Frente a las reglas: 1,62 contra 10,8 (6,6×). En los dos sentidos
+  Proteus da 5–7 veces menos alarmas por entidad que las reglas.
+- **Sistema desplegado** (`proteus_sys`): mismas campañas, 60,9 alarmas/h (5,0 por entidad); a 10⁻⁴,
+  16,5 (0,95 por entidad) con las 13 campañas y criterio estricto 13/13.
+- **Resistente a reutilización:** certificadas también frente a reutilización, 8/25 (6/13) a 32/h
+  (6,1 por entidad); antes 0/25.
+- Criterio estricto: a 10⁻⁴ Proteus conserva 13/13 con "algún flujo" pero solo 9/13 estrictas; el
+  sistema desplegado, 13/13 estrictas.
+
+**KitNET 18 → 17 (r2):** 11/21 (9/11), 10,4 alarmas/h, 3,98 por entidad (v3: 9/11 a 11,8/h).
+
+**Líneas base clásicas en CSE-CIC-IDS-2018** (FPR 10⁻³): TRW por host 0/13 (274 alarmas/h); TRW por
+servicio 6/13 (los 6 escaneos, recall 0,14) a 250/h; CUSUM 6/13 (los 6 escaneos) a 43,5/h y 5,8 por
+entidad. Ninguno detecta los DoS/DDoS de aplicación.
+
+**Fallo corregido (commit 3e4e35f):** los umbrales por presupuesto de los detectores locales se
+evaluaban sin el lado de la alerta y agrupaban por destino. En 18 → 17 Proteus salía con 35 alarmas
+por entidad/h a presupuesto 0,5 (el host del lunes contado por cada destino). Ahora el presupuesto
+y las alarmas por entidad usan la entidad alertada. 18 → 17 se reevalúa como `r2b`; 17 → 18 habrá que
+repetirlo con `--reuse` para los presupuestos.
