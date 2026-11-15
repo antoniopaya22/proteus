@@ -33,9 +33,14 @@ def day_scores(ds: str, day: Path) -> tuple[pd.DataFrame, dict[str, np.ndarray]]
         raise SystemExit(f"{ds}/{day.stem}: flows and evidence have different rows")
     failed = raw["bwd_pkts"].to_numpy() == 0
     t = ev["t_end"].to_numpy()
+    src, dst = ev["src_ip"].astype(str).to_numpy(), ev["dst_ip"].astype(str).to_numpy()
+    svc = pd.util.hash_pandas_object(ev[["dst_ip", "dst_port", "proto"]].astype(str),
+                                     index=False).to_numpy()
     scores = {
-        "trw": trw_scores(t, ev["src_ip"].astype(str).to_numpy(),
-                          ev["dst_ip"].astype(str).to_numpy(), failed),
+        "trw": trw_scores(t, src, dst, failed),
+        # The same walk over first contacts with services (host, port): vertical scans
+        # of one host, which the original host-level test cannot see.
+        "trw_svc": trw_scores(t, src, svc, failed),
         "syn_cusum": syn_cusum_scores(t, ev["dst_ip"].astype(str).to_numpy(), failed),
     }
     return ev, scores
@@ -76,7 +81,8 @@ def main() -> None:
             for b in args.entity_budgets:
                 th[(n, b, "entity")] = h1.entity_threshold(
                     tops, sum(kept[d][3] for d in others), b)
-        sides = {"trw": np.ones(len(ev), dtype=bool), "syn_cusum": np.zeros(len(ev), dtype=bool)}
+        sides = {"trw": np.ones(len(ev), dtype=bool), "trw_svc": np.ones(len(ev), dtype=bool),
+                 "syn_cusum": np.zeros(len(ev), dtype=bool)}
         results.append(h1.evaluate(ev, scores, th, sides))
         print(f"  evaluated {args.test}/{day.stem}", flush=True)
     res = pd.concat(results, ignore_index=True)
