@@ -1240,3 +1240,11 @@ arrastrar el estado y reconvertir.
   CIC → CIC-DDoS-2019). `h1` acepta la evidencia convertida si tiene las escalas largas.
 - CTU-13 en el paper: alarmas ponderadas por horas; s11 aparte como captura fuera de distribución
   (decisión de Antonio).
+
+**Reconversión (2026-11-15, 05:15).**
+- **UGR'16:** 2016-07-27 a 2016-08-08, ~7 h, estado estable en 180–220 M entradas (14–17 GB).
+- **CIC-DDoS-2019:** convertido, estado de ~1,3 M.
+- **CTU-SME-11:** parado a mano. Ventanas de 10 min con 2,3 M flujos de ataque llevaban el estado a
+  427 M entradas y subiendo (18,6 GB, 9 GB libres). Ningún `\todo` del paper depende de él; queda
+  sin convertir.
+- Han empezado los experimentos de `real2.sh` (pliegue julio → agosto de UGR'16).
