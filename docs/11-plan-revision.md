@@ -65,7 +65,7 @@ La ronda 1 son las fases A–E de abajo.
 - [ ] Evaluación en torno a un solo sistema; detectores superados y "we tried" a material
       suplementario; prosa numérica a tablas y figuras; frontera en ambos sentidos.
 - [ ] Nomenclatura única (rate thresholds; unconstrained; Proteus-cert frente a alertas certificadas).
-- [ ] Trabajo relacionado: verificar y posicionarse frente a Tong et al. 2019 (conserved features),
+- [x] Trabajo relacionado (commit del paper): Tong et al. 2019 verificado (USENIX Security, pp. 285–302),
       Pierazzi 2020, Lowd y Meek 2005, Dalvi 2004, Sommer y Paxson 2010, robustez de árboles,
       Whisper como defensa.
 - [ ] Resumen, introducción, título y conclusión ajustados a lo demostrado (reutilización, reglas,
