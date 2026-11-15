@@ -1504,3 +1504,15 @@ evaluaban sin el lado de la alerta y agrupaban por destino. En 18 → 17 Proteus
 por entidad/h a presupuesto 0,5 (el host del lunes contado por cada destino). Ahora el presupuesto
 y las alarmas por entidad usan la entidad alertada. 18 → 17 se reevalúa como `r2b`; 17 → 18 habrá que
 repetirlo con `--reuse` para los presupuestos.
+
+**`r2b`, 18 → 17 a igual presupuesto de alarmas por entidad** (volumétricos y escaneos, alarmas por
+entidad/h realizadas):
+
+| Presupuesto | `proteus` | `proteus_cert_r` | reglas | `core_free_dst_b` | `proteus_free` |
+|---|---|---|---|---|---|
+| 0,5/h | 11/11 a 1,0 | 8/11 a 0,4 | 9/11 a 5,3 | 7/11 a 1,3 | 8/11 a 0,7 |
+| 3/h | 11/11 a 2,6 | 9/11 a 1,9 | 9/11 a 5,9 | 8/11 a 2,9 | 8/11 a 2,8 |
+| 10/h | 11/11 a 7,0 | 9/11 a 3,7 | 9/11 a 9,4 | 9/11 a 7,5 | 8/11 a 7,1 |
+
+Con el presupuesto por entidad alertada, Proteus es el único con las 11 campañas a cualquier
+presupuesto. Las reglas no bajan de 5,3 alarmas por entidad/h. 17 → 18 en cola (`r2b.sh`).
