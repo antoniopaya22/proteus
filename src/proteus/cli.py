@@ -21,6 +21,7 @@ from proteus import __version__
 COMMANDS: dict[str, tuple[str, str]] = {
     "prepare": ("proteus.datasets.prepare", "convert a raw dataset to the common Parquet flow schema"),
     "detect": ("proteus.evaluation.h1", "train on one network and detect on another (cross-network)"),
+    "classic": ("proteus.evaluation.classic", "classic baselines: TRW (scans) and SYN-flood CUSUM"),
     "clean": ("proteus.evaluation.clean", "in-dataset per-flow evaluation, as in the literature"),
     "free-ops": ("proteus.evaluation.free_ops", "free operations against real campaigns (empirical check)"),
     "packets": ("proteus.evaluation.packet_check", "check the certificate on real attack packets"),
