@@ -1323,3 +1323,22 @@ Antonio delega las decisiones pendientes. Tomadas:
 - **Diagnóstico pendiente del resultado mixto de 17 → 18:** `alarms.py` sobre 2018 (`diag18.sh`)
   para ver qué subnúcleo y qué entidades dan las falsas alarmas del detector de todas las escalas.
 - Sigue en manos de los autores: la declaración de uso de IA.
+
+## 6.45 Fronteras sobre una víctima con tráfico, 2018 → 2017 (2026-11-15, 11:30)
+
+`frontier_exp --busy`: misma campaña contra el destino con más flujos benignos en el puerto atacado
+(servidor web externo 178.255.83.1:80, 227 flujos benignos/h; FTP 185.170.48.239:21, 15/h). Flujos/h:
+
+| Ataque (real) | Proteus: inactiva → con tráfico | Proteus-cert plana | Proteus-cert certificada |
+|---|---|---|---|
+| Hulk (518.525) | 1.407 → 22.171 | 5.427 → 11.135 | 11.291 → 11.272 |
+| GoldenEye (44.976) | 1.497 → 22.066 | 5.441 → 7.931 | 8.139 → 8.022 |
+| Slowloris (10.461) | 811 → 12.200 (pasa) | 3.996 → 4.014 | 6.002 → 5.829 |
+| Slowhttptest (5.107) | 629 → 11.542 (pasa) | 3.756 → 3.877 | 5.476 → 5.595 |
+| LOIC-HTTP (290.167) | 2.174 → 75.717 | 9.376 → 19.091 | 28.728 → 28.860 |
+| FTP (3.910) | 432 → 10 | 17.165 → 1.358 | 19.786 → 6.238 |
+
+- La frontera plana de Proteus (exceso sobre el historial) sube un orden de magnitud con solo 227
+  flujos/h de carga. La de Proteus-cert (subnúcleos brutos y de pares) casi no se mueve.
+- En el paper: cierra el último `\todo` experimental. 17 → 18 sigue corriendo.
+- OOM n.º 10 (11:06): `alarms.py` sobre los 10 días de 2018 (28 GB). Relanzado con dos días.
