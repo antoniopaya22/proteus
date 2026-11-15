@@ -1368,3 +1368,21 @@ dos días, así que es orientativo):
 - El suelo por destino ayuda a `proteus_cert` (4,35 → 1,99 alarmas/h sin perder campañas;
   certificadas 1,48 → 0,46 perdiendo una). A `proteus` le quita dos escaneos y cuatro campañas.
 - Pendiente 17 → 18, que es donde importa.
+
+## 6.47 Fronteras sobre un servicio con carga, 2017 → 2018 (2026-11-15, 15:20)
+
+Destino: 169.254.169.254:80 (metadatos de la instancia), ~31.000 flujos benignos/h. SSH: 172.31.65.76:22
+(269/h). Flujos/h, víctima original → con carga:
+
+| Ataque (real) | Proteus | Proteus-cert plana | Proteus-cert certificada |
+|---|---|---|---|
+| Hulk (8,38 M) | 14.114 → 16.876 | 20.817 → 27.697 | 28.011 → 28.033 |
+| GoldenEye (38.445) | 5.523 → 11.512 | 14.819 → 19.446 | 16.301 → 19.696 |
+| Slowloris (12.184) | 2.223 → 3.374 | 3.470 → 3.374 | 5.058 → 4.810 |
+| LOIC-HTTP (275.992) | 1.317 → sin cota (> 360.000) | 102.979 → sin cota | 188.314 → sin cota |
+| HOIC (1,19 M) | 179.605 → sin cota | 72.618 → 52.353 | 126.517 → 89.954 |
+| SSH (62.340) | 11.963 → 30.268 | 11.963 → 20.716 | 12.105 → 31.178 |
+
+- DoS de un solo origen: la frontera sube como mucho 2× y sigue bajo la campaña real.
+- DDoS: con 31.000 flujos/h de carga, LOIC-HTTP pasa a su ritmo real en ambos detectores; HOIC solo
+  lo acota Proteus-cert. Añadido al paper como límite.
