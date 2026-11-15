@@ -71,3 +71,30 @@ def test_persistent_needs_two_alerted_minutes_in_five():
     # a: minute 0 alone is not enough; minute 3 has minute 0 behind it; minute 20 alone
     assert out.tolist() == [False, False, True, False, False, True]
     assert not persistent(np.zeros(6, dtype=bool), test).any()
+
+
+def test_evaluate_reports_benign_days_strict_detection_and_the_union():
+    import pandas as pd
+
+    from proteus.evaluation import h1
+
+    t0 = pd.Timestamp("2020-01-01 10:00")
+    n = 200
+    test = pd.DataFrame({
+        "day": "d1", "t_start": [t0 + pd.Timedelta(seconds=i) for i in range(n)],
+        "src_ip": "10.0.0.1", "dst_ip": ["10.0.1.1"] * 100 + ["10.0.1.2"] * 100,
+        "dst_port": 80, "proto": 6,
+        "is_attack": [False] * 100 + [True] * 100, "attack": ["benign"] * 100 + ["dos"] * 100,
+        "clean": [True] * 100 + [False] * 100,
+    })
+    test["t_end"] = test["t_start"]
+    a = np.zeros(n); a[100:103] = 1.0      # three attack flows: a stray alert
+    b = np.zeros(n); b[150:200] = 1.0; b[5] = 1.0  # half the campaign and one benign flow
+    th = {("proteus", 1e-3, "local"): 0.5, ("proteus_cert", 1e-3, "local"): 0.5}
+    r = h1.evaluate(test, {"proteus": a, "proteus_cert": b}, th).set_index("model")
+    assert r.loc["proteus", "detected"] and not r.loc["proteus", "detected_strict"]
+    assert r.loc["proteus_cert", "detected_strict"]
+    assert r.loc["proteus_sys", "flow_recall"] == 0.53
+    assert r.loc["proteus_sys", "alarms_per_hour"] == r.loc["proteus_cert", "alarms_per_hour"] > 0
+    benign = h1.evaluate(test.iloc[:100], {"proteus": a[:100], "proteus_cert": b[:100]}, th)
+    assert set(benign["attack"]) == {h1.NO_CAMPAIGN} and len(benign) == 3

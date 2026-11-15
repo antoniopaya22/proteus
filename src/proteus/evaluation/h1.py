@@ -595,6 +595,9 @@ def alert_side(model, cols: list[str], X: np.ndarray) -> np.ndarray:
 ENTITY_BUCKET = "10min"
 NO_CAMPAIGN = "(none)"  # row of a day without campaigns in campaigns.csv
 STRICT_MIN_FLOWS, STRICT_MIN_RECALL = 5, 0.01
+# Deployed configurations evaluated as one detector when every member is in the run.
+UNIONS = {"proteus_sys": ("proteus", "proteus_cert"),
+          "proteus_sys_r": ("proteus", "proteus_cert", "proteus_cert_r")}
 
 
 def persistent(alert: np.ndarray, test: pd.DataFrame, k: int = 2, n: int = 5) -> np.ndarray:
@@ -634,19 +637,14 @@ def evaluate(test: pd.DataFrame, scores: dict[str, np.ndarray], thresholds: dict
                else np.zeros(len(test), dtype=bool))
     sus_src = test.loc[suspect, "src_ip"]
     rows = []
-    for (model, fpr, kind), thr in thresholds.items():
-        s = scores[model]
-        alert = s >= thr
-        if "+ent" in kind:
-            alert &= s > floors[model.removesuffix("@certr").removesuffix("@cert")]
-        if "+k2n5" in kind:
-            alert = persistent(alert, test)
+    masks: dict = {}
+
+    def emit(model, fpr, kind, alert, side) -> None:
         fa = test.loc[clean & alert]
         alarm_groups = fa.groupby(["day", "dst_ip", fa["t_start"].dt.floor("min")],
                                   observed=True).ngroups
         # Entity alarms: the alerted entity (source or destination host, by the
         # sub-core that fires) per ENTITY_BUCKET window.
-        side = (sides or {}).get(model.removesuffix("@certr").removesuffix("@cert"))
         is_src = (side[clean & alert] if side is not None
                   else np.zeros(len(fa), dtype=bool))
         ent = np.where(is_src, fa["src_ip"].astype(str), fa["dst_ip"].astype(str))
@@ -675,6 +673,31 @@ def evaluate(test: pd.DataFrame, scores: dict[str, np.ndarray], thresholds: dict
                          # and STRICT_MIN_RECALL of the campaign.
                          "detected_strict": bool(hit.sum() >= STRICT_MIN_FLOWS
                                                  and hit.mean() >= STRICT_MIN_RECALL)})
+
+    for (model, fpr, kind), thr in thresholds.items():
+        s = scores[model]
+        alert = s >= thr
+        if "+ent" in kind:
+            alert &= s > floors[model.removesuffix("@certr").removesuffix("@cert")]
+        if "+k2n5" in kind:
+            alert = persistent(alert, test)
+        side = (sides or {}).get(model.removesuffix("@certr").removesuffix("@cert"))
+        masks[(model, fpr, kind)] = (alert, side)
+        emit(model, fpr, kind, alert, side)
+    # The deployed system: an alert of any member, each at its own threshold.
+    for name, members in UNIONS.items():
+        for (model, fpr, kind) in [k for k in masks if k[0] == members[0]]:
+            got = [masks.get((m, fpr, kind)) for m in members]
+            if any(g is None for g in got):
+                continue
+            alert = np.logical_or.reduce([a for a, _ in got])
+            side = np.zeros(len(alert), dtype=bool)
+            done = np.zeros(len(alert), dtype=bool)
+            for a, sd in got:  # the side of the first member that alerts
+                if sd is not None:
+                    side[a & ~done] = sd[a & ~done]
+                done |= a
+            emit(name, fpr, kind, alert, side)
     return pd.DataFrame(rows)
 
 
