@@ -156,7 +156,8 @@ def day_table(ev: pd.DataFrame, cols: list[str], key: pd.Series,
     mask = masked_minutes(ev, key, malicious)
     hit = pd.MultiIndex.from_frame(t[["key", "minute"]]).isin(
         pd.MultiIndex.from_frame(mask[["key", "minute"]]))
-    first = (ev["t_end"].min().value // 60_000_000)
+    # Same unit as ``minute`` (int64 of the column), not Timestamp.value (nanoseconds).
+    first = int(ev["t_end"].astype("int64").min()) // 60_000_000
     inside = mask[(mask["minute"] >= first) & (mask["minute"] < first + minutes)]
     return DayTable(t[~hit].reset_index(drop=True), inside.groupby("key").size(), minutes)
 

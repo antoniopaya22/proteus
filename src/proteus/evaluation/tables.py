@@ -135,6 +135,8 @@ def summary_table(runs: list[Path], extra: list[Path], fpr: float,
             if detectors and m not in detectors:
                 continue
             g = g.drop_duplicates(["day", "attack", "flows"])
+            per_day_all = g.drop_duplicates("day")["alarms_per_hour"]  # benign-only days too
+            g = g[g["attack"] != "(none)"]
             vol = g["attack"].str.startswith(VOLUMETRIC)
             row = {"direction": DIRECTION.get(key, key), "model": m}
             for part, sel in (("volumetric", vol), ("other", ~vol)):
@@ -142,7 +144,7 @@ def summary_table(runs: list[Path], extra: list[Path], fpr: float,
                 lo, hi = wilson(k, n)
                 row.update({f"{part}_detected": k, f"{part}_campaigns": n,
                             f"{part}_lo": lo, f"{part}_hi": hi})
-            per_day = g.drop_duplicates("day")["alarms_per_hour"].to_numpy()
+            per_day = per_day_all.to_numpy()
             lo, hi = bootstrap_mean(per_day)
             row.update({"alarms_per_hour": float(per_day.mean()), "alarms_lo": lo,
                         "alarms_hi": hi, "days": len(per_day)})

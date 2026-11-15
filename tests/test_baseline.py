@@ -68,3 +68,28 @@ def test_masking_removes_attack_minutes_from_baseline():
         {"key": [0] * 30, "minute": [10_000 + i for i in range(30)], "x": [9.0] * 30})]),
         pd.Series(dtype=np.int64), 100)
     assert baseline([unmasked], ["x"]).loc[0, "x"] == 9.0
+
+
+def test_masked_minutes_are_discounted_from_the_quantile_rank():
+    """An entity attacked during most of a day: the masked minutes must leave the
+    reference, so its baseline is the quantile of the remaining benign minutes (not of
+    the whole day with the masked minutes counted as zeros)."""
+    import numpy as np
+    import pandas as pd
+
+    from proteus.evidence import baseline as bl
+
+    t0 = pd.Timestamp("2020-01-01 08:00")
+    n = 480  # one flow per minute, 8 hours; benign level rises with time
+    ev = pd.DataFrame({"t_end": (t0 + pd.to_timedelta(np.arange(n), unit="min")
+                                 ).astype("datetime64[us]"),
+                       "c": np.linspace(1.0, 5.0, n).astype(np.float32)})
+    ev["t_start"] = ev["t_end"]
+    key = pd.Series(np.zeros(n, dtype=np.int64))
+    mal = np.zeros(n, dtype=bool)
+    mal[60:420] = True  # attacked for six of the eight hours
+    d = bl.day_table(ev, ["c"], key, mal, n)
+    assert int(d.masked.get(0, 0)) >= 360  # the bug: this was always empty
+    b_masked = float(bl.baseline([d], ["c"])["c"].iloc[0])
+    rest = ev["c"].to_numpy()[np.r_[0:60, 431:480]]  # masked: 60..430 (ten minutes after)
+    assert abs(b_masked - np.quantile(rest, 0.95)) < 0.1

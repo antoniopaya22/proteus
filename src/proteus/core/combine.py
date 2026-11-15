@@ -68,17 +68,22 @@ class CalibratedMax(MaxCore):
                 self.active_ = [True] * len(self.ref_)
         return self
 
-    def score(self, X):
+    def part_scores(self, X):
+        """Calibrated value of every part, (parts, n); inactive parts are -inf."""
         u = []
         active = getattr(self, "active_", [True] * len(self.ref_))
         for (idx, m), ref, on in zip(self.parts, self.ref_, active):
             if not on:
+                u.append(np.full(len(X), -np.inf))
                 continue
             s = m.predict_proba(X[:, idx])[:, 1]
             f = np.searchsorted(ref, s, side="right") / len(ref)
             # Beyond the benign maximum keep ranking by the score instead of saturating.
             u.append(np.where(s > ref[-1], 1.0 + (s - ref[-1]), f))
-        return np.max(u, axis=0)
+        return np.vstack(u)
+
+    def score(self, X):
+        return self.part_scores(X).max(axis=0)
 
     def predict_proba(self, X):
         s = self.score(X)

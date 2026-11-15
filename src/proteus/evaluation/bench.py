@@ -91,8 +91,10 @@ def detection_alarms(runs: list[Path], fpr: float) -> pd.DataFrame:
             if m in rows:
                 continue
             g = g.drop_duplicates(["day", "attack", "flows"])
+            per_day_all = g.drop_duplicates("day")["alarms_per_hour"]  # benign-only days too
+            g = g[g["attack"] != "(none)"]
             vol = g["attack"].str.startswith(VOLUMETRIC)
-            per_day = g.drop_duplicates("day")["alarms_per_hour"]
+            per_day = per_day_all
             rows[m] = {"det_volumetric": g.loc[vol, "detected"].mean(),
                        "det_other": g.loc[~vol, "detected"].mean(),
                        "alarms_per_hour": per_day.mean()}

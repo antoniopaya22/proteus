@@ -538,6 +538,10 @@ def proteus_detectors(specs, rules, src_rules, raw, raw_of, cst) -> dict:
         "core_pair": (pair, hgb(cst(pair))),
         "proteus": calmax(parts),
         "proteus_cert": calmax(parts, keep=lambda c: _tau(c) >= 600),
+        # Certifiable against connection reuse too: only evidence that reuse cannot
+        # lower (payload bytes and distinct counts), at scales of 10 minutes and more.
+        "proteus_cert_r": calmax(parts, keep=lambda c: _tau(c) >= 600
+                                 and c.split("__")[1] in REUSE_SAFE),
         # The same four sub-cores without monotonicity constraints (price of
         # monotonicity for the combination itself, not only for one model).
         "proteus_free": calmax(parts, mono=False),
@@ -580,12 +584,17 @@ def alert_side(model, cols: list[str], X: np.ndarray) -> np.ndarray:
     parts = getattr(model, "parts", None)
     if not parts:
         return np.full(len(X), bool(cols) and all(c.startswith("shost") for c in cols))
-    subs = np.vstack([m.predict_proba(X[:, idx])[:, 1] for idx, m in parts])
+    if hasattr(model, "ref_"):  # calibrated maximum: the part that gives the maximum
+        subs = model.part_scores(X)
+    else:
+        subs = np.vstack([m.predict_proba(X[:, idx])[:, 1] for idx, m in parts])
     is_src = np.array([all(cols[i].startswith("shost") for i in idx) for idx, _ in parts])
     return is_src[subs.argmax(axis=0)]
 
 
 ENTITY_BUCKET = "10min"
+NO_CAMPAIGN = "(none)"  # row of a day without campaigns in campaigns.csv
+STRICT_MIN_FLOWS, STRICT_MIN_RECALL = 5, 0.01
 
 
 def persistent(alert: np.ndarray, test: pd.DataFrame, k: int = 2, n: int = 5) -> np.ndarray:
@@ -650,13 +659,22 @@ def evaluate(test: pd.DataFrame, scores: dict[str, np.ndarray], thresholds: dict
                 "entity_alarms_per_hour": entity_groups / hours,
                 "suspect_sources": int(sus_src.nunique()),
                 "suspect_detected": int(sus_src[alert[suspect]].nunique())}
+        if not camp:  # benign-only day: keep its false alarms (attack NO_CAMPAIGN)
+            for day in test["day"].astype(str).unique():
+                rows.append({**base, "day": day, "attack": NO_CAMPAIGN, "flows": 0,
+                             "detected": False, "flow_recall": np.nan, "ttd_s": np.nan,
+                             "detected_strict": False})
         for day, attack, idx in camp:
             hit = alert[test.index.get_indexer(idx)]
             start = test.loc[idx, "t_start"].min()
             ttd = ((test.loc[idx[hit], "t_end"].min() - start).total_seconds()
                    if hit.any() else np.nan)
             rows.append({**base, "day": day, "attack": attack, "flows": len(idx),
-                         "detected": bool(hit.any()), "flow_recall": hit.mean(), "ttd_s": ttd})
+                         "detected": bool(hit.any()), "flow_recall": hit.mean(), "ttd_s": ttd,
+                         # Not a stray alert: at least STRICT_MIN_FLOWS alerted flows
+                         # and STRICT_MIN_RECALL of the campaign.
+                         "detected_strict": bool(hit.sum() >= STRICT_MIN_FLOWS
+                                                 and hit.mean() >= STRICT_MIN_RECALL)})
     return pd.DataFrame(rows)
 
 
@@ -676,6 +694,22 @@ def entity_threshold(tops: list[tuple], hours: float, budget: float) -> float:
     if allowed >= len(g):
         return float(g[-1])
     return float(np.nextafter(g[allowed], np.inf))
+
+
+def write_manifest(out: Path, args) -> None:
+    """What produced a run: arguments, PROTEUS_* environment, code version."""
+    import subprocess
+    import sys
+
+    try:
+        commit = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=False,
+                                cwd=Path(__file__).parent).stdout.strip() or None
+    except OSError:
+        commit = None
+    info = {"argv": sys.argv[1:], "args": {k: str(v) for k, v in vars(args).items()},
+            "env": {k: v for k, v in os.environ.items() if k.startswith("PROTEUS_")},
+            "commit": commit, "started": time.strftime("%Y-%m-%dT%H:%M:%S%z")}
+    (out / "run.json").write_text(json.dumps(info, indent=1))
 
 
 # ---------------------------------------------------------------- main
@@ -714,6 +748,8 @@ def main() -> None:
                     help="also evaluate thresholds calibrated on the training network "
                          "(known not to transfer; slow because of the many alerts)")
     args = ap.parse_args()
+    if args.alert_variants and not args.entity_budgets:
+        raise SystemExit("--alert-variants needs --entity-budgets")
     BASELINE.update(mode=args.baseline, mask=args.mask)
     BALANCE.update(mode=args.balance)
     rng = np.random.default_rng(args.seed)
@@ -721,6 +757,7 @@ def main() -> None:
     if args.tag:
         out = out.with_name(f"{out.name}__{args.tag}")
     out.mkdir(parents=True, exist_ok=True)
+    write_manifest(out, args)
 
     t0 = time.time()
     if args.reuse is not None:
@@ -744,6 +781,10 @@ def main() -> None:
         models, thresholds, checks = {}, {}, {}
         chosen = detectors(specs, flow_cols)
         if args.models:
+            unknown = sorted(set(args.models) - set(chosen))
+            if unknown:
+                raise SystemExit(f"unknown models {unknown} (evidence {EVIDENCE_VERSION}); "
+                                 f"available: {sorted(chosen)}")
             chosen = {k: v for k, v in chosen.items() if k in args.models}
         for name, (cols, model) in chosen.items():
             X = tr[cols].to_numpy(np.float32)
@@ -875,7 +916,7 @@ def main() -> None:
             scores = {k.replace("__AT__", "@"): z[k] for k in z.files}
         # Unsupervised detectors fitted on the test network's own benign traffic of the
         # other days; their reference scores are those of the same benign sample.
-        refs = {}
+        refs, local_sides = {}, {}
         for n, c in local.items():
             m = copy.deepcopy(models[n][1]).fit(
                 np.concatenate([benign_feats[d][c].to_numpy() for d in others]))
@@ -886,14 +927,16 @@ def main() -> None:
             mono = getattr(m, "monotonic_cst", None) is not None
             cst = np.asarray(m.monotonic_cst) if mono else None
             sl = slack(c, specs, EXPORT_TIMEOUT_S, TIMER_S).astype(np.float32) if mono else None
-            acc: dict[str, list] = {"s": [], "cert": [], "certr": []}
+            acc: dict[str, list] = {"s": [], "cert": [], "certr": [], "side": []}
             for X in score_batches(path, c):
                 acc["s"].append(m.score(X))
+                acc["side"].append(alert_side(m, c, X))
                 if mono:
                     acc["cert"].append(m.score(worst_case_features(X, cst, sl)))
                     if "cert" in n:
                         acc["certr"].append(m.score(reuse_worst_case(X, c, cst, sl)))
             scores[n] = np.concatenate(acc["s"])
+            local_sides[n] = np.concatenate(acc["side"])
             if acc["cert"]:
                 scores[f"{n}@cert"] = np.concatenate(acc["cert"])
             if acc["certr"]:
@@ -949,7 +992,8 @@ def main() -> None:
             for suffix in ("@cert", "@certr"):
                 if f"{n}{suffix}" in scores:
                     th[(f"{n}{suffix}", fpr, kind)] = v
-        results.append(evaluate(ev, scores, th, day_sides.pop(day, None)))
+        results.append(evaluate(ev, scores, th, {**(day_sides.pop(day, None) or {}),
+                                                 **local_sides}))
         print(f"  evaluated {args.test}/{day.stem} at {time.time() - t0:.0f}s", flush=True)
         del ev
 
@@ -1002,10 +1046,18 @@ def main() -> None:
 
     shutil.rmtree(spill, ignore_errors=True)
     res = pd.concat(results, ignore_index=True)
+    # Every requested model must be in the results for every test day.
+    got = res.groupby("model", observed=True)["day"].nunique()
+    want = [n for n in models if not n.startswith("__")]
+    missing = [n for n in want if got.get(n, 0) < len(test_days)]
+    if missing:
+        raise SystemExit(f"incomplete run: {missing} lack results on some test day")
     res.to_csv(out / "campaigns.csv", index=False)
     summary = (
-        res.groupby(["model", "target_fpr", "threshold", "attack"], observed=True)
+        res[res["attack"] != NO_CAMPAIGN]
+        .groupby(["model", "target_fpr", "threshold", "attack"], observed=True)
         .agg(campaigns=("detected", "size"), detected=("detected", "sum"),
+             detected_strict=("detected_strict", "sum"),
              flow_recall=("flow_recall", "mean"), median_ttd_s=("ttd_s", "median"))
         .reset_index()
     )
