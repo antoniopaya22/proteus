@@ -703,7 +703,8 @@ def evaluate(test: pd.DataFrame, scores: dict[str, np.ndarray], thresholds: dict
 
 def entity_threshold(tops: list[tuple], hours: float, budget: float) -> float:
     """Lowest threshold giving at most ``budget`` alarms per hour, an alarm being a
-    (day, destination host, minute) group with a clean flow at or above it."""
+    (day, entity, minute) group with a clean flow at or above it. The entity is the
+    destination host, or the source host for detectors that alert about sources."""
     groups = []
     for i, (sc, key, minute) in enumerate(tops):
         if len(sc) == 0:
@@ -973,6 +974,7 @@ def main() -> None:
             # they were fitted on, so their top flows nearly coincide).
             loc = {k: v for k, v in scores.items()
                    if k.removesuffix("@certr").removesuffix("@cert") in local}
+            loc.update({f"__side__{k}": v for k, v in local_sides.items()})
             np.savez(spill / f"{day.stem}.local.npz", **{k.replace("@", "__AT__"): v
                                                         for k, v in loc.items()})
             local_scores[day] = spill / f"{day.stem}.local.npz"
@@ -994,6 +996,8 @@ def main() -> None:
                 ev["dst_ip"].iloc[cand].astype(str).to_numpy()).astype(np.uint64)
             feats["__minute"] = (ev["t_start"].iloc[cand].astype("int64")
                                  // 60_000_000).to_numpy().astype(np.uint64)
+            feats["__skey"] = pd.util.hash_array(
+                ev["src_ip"].iloc[cand].astype(str).to_numpy()).astype(np.uint64)
             feats.to_parquet(spill / f"{day.stem}.cand.parquet")
             budget_cand[day] = spill / f"{day.stem}.cand.parquet"
             del loc, feats
@@ -1030,20 +1034,27 @@ def main() -> None:
         ev, _ = evidence_b(args.test, day, columns=meta_cols)
         with np.load(local_scores.pop(day)) as z:
             scores = {k.replace("__AT__", "@"): z[k] for k in z.files}
+        sides3 = {k.removeprefix("__side__"): scores.pop(k).astype(bool)
+                  for k in [k for k in scores if k.startswith("__side__")]}
         th, floors = {}, {}
         hours = sum(hours_of[d] for d in others)
         dkey = pd.util.hash_array(ev["dst_ip"].astype(str).to_numpy()).astype(np.uint64)
         for n, c in local.items():
             m = copy.deepcopy(models[n][1]).fit(
                 np.concatenate([benign_feats[d][c].to_numpy() for d in others]))
-            tops = [(np.asarray(m.score(cands[d][c].to_numpy())),
-                     cands[d]["__key"].to_numpy(), cands[d]["__minute"].to_numpy())
-                    for d in others]
+            tops = []
+            for d in others:  # an alarm is about the alerted entity: source or destination
+                Xc = cands[d][c].to_numpy()
+                src_side = alert_side(m, c, Xc)
+                ent = np.where(src_side, cands[d]["__skey"].to_numpy(),
+                               cands[d]["__key"].to_numpy())
+                tops.append((np.asarray(m.score(Xc)), ent, cands[d]["__minute"].to_numpy()))
             if args.alert_variants:
                 # Benign maximum of each destination on the other days (among their top
                 # clean flows; a destination absent from them stays below any threshold).
-                mx = pd.concat([pd.Series(sc, index=k_) for sc, k_, _ in tops]
-                               ).groupby(level=0).max()
+                mx = pd.concat([pd.Series(np.asarray(m.score(cands[d][c].to_numpy())),
+                                          index=cands[d]["__key"].to_numpy())
+                                for d in others]).groupby(level=0).max()
                 floors[n] = mx.reindex(dkey).fillna(-np.inf).to_numpy()
                 for fpr in FPRS:
                     v = local_thr[(day, n, fpr)]
@@ -1056,7 +1067,7 @@ def main() -> None:
                 for m_ in (n, f"{n}@cert", f"{n}@certr"):
                     if m_ in scores:
                         th[(m_, budget, "entity")] = v
-        results.append(evaluate(ev, scores, th, floors=floors))
+        results.append(evaluate(ev, scores, th, sides3, floors=floors))
         print(f"  budgets {args.test}/{day.stem} at {time.time() - t0:.0f}s", flush=True)
         for n in local:
             print(f"    {n}: max {np.nanmax(scores[n]):.6g}, "

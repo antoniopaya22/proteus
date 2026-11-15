@@ -21,6 +21,9 @@ from proteus.baselines.classic import syn_cusum_scores, trw_scores
 from proteus.evaluation import h1
 
 
+SOURCE_SIDE = ("trw", "trw_svc")  # detectors whose alerts are about the source host
+
+
 def day_scores(ds: str, day: Path) -> tuple[pd.DataFrame, dict[str, np.ndarray]]:
     """Metadata (with ``clean``) and the score of every flow of one day."""
     import pyarrow.parquet as pq
@@ -65,9 +68,11 @@ def main() -> None:
         ev, scores = day_scores(args.test, day)
         clean = ev["clean"].to_numpy()
         key = pd.util.hash_array(ev["dst_ip"].astype(str).to_numpy()).astype(np.uint64)
+        skey = pd.util.hash_array(ev["src_ip"].astype(str).to_numpy()).astype(np.uint64)
         minute = (ev["t_start"].astype("int64") // 60_000_000).to_numpy().astype(np.uint64)
         hours = (ev["t_end"].max() - ev["t_start"].min()).total_seconds() / 3600
-        kept[day] = ({n: s[clean] for n, s in scores.items()}, key[clean], minute[clean], hours)
+        kept[day] = ({n: s[clean] for n, s in scores.items()}, key[clean], minute[clean], hours,
+                     skey[clean])
         print(f"  scored {args.test}/{day.stem}", flush=True)
     results = []
     for day in days:  # pass 2
@@ -79,12 +84,13 @@ def main() -> None:
             for fpr in h1.FPRS:
                 # strictly above the quantile: these scores have many ties (0, floor)
                 th[(n, fpr, "local")] = np.nextafter(np.quantile(ref, 1 - fpr), np.inf)
-            tops = [(kept[d][0][n], kept[d][1], kept[d][2]) for d in others]
+            # an alarm is about the alerted entity: the source for the scan detectors
+            ent = 4 if n in SOURCE_SIDE else 1
+            tops = [(kept[d][0][n], kept[d][ent], kept[d][2]) for d in others]
             for b in args.entity_budgets:
                 th[(n, b, "entity")] = h1.entity_threshold(
                     tops, sum(kept[d][3] for d in others), b)
-        sides = {"trw": np.ones(len(ev), dtype=bool), "trw_svc": np.ones(len(ev), dtype=bool),
-                 "syn_cusum": np.zeros(len(ev), dtype=bool)}
+        sides = {n: np.full(len(ev), n in SOURCE_SIDE) for n in scores}
         results.append(h1.evaluate(ev, scores, th, sides))
         print(f"  evaluated {args.test}/{day.stem}", flush=True)
     res = pd.concat(results, ignore_index=True)
