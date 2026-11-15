@@ -1248,3 +1248,25 @@ arrastrar el estado y reconvertir.
   427 M entradas y subiendo (18,6 GB, 9 GB libres). Ningún `\todo` del paper depende de él; queda
   sin convertir.
 - Han empezado los experimentos de `real2.sh` (pliegue julio → agosto de UGR'16).
+
+## 6.42 UGR'16 dentro del dataset, dos pliegues (2026-11-15, provisional)
+
+Evidencia v3 con estado, `--exclude-saturated 1e-3`, umbral local. Campañas por familia (UGR'16
+etiqueta varias por día):
+
+| Pliegue | Detector | FPR 10⁻³ | FPR 10⁻⁴ |
+|---|---|---|---|
+| jul → ago | `proteus` | 19,2/h (18,4 ent.); DoS 22/26, botnet 7/7, scan11 2/13, scan44 3/13 | 6,7/h; DoS 14/26 |
+| jul → ago | `core_both_x` | 7,0/h (0,33 ent.); DoS 23/26, scans 2+3/13 | 0,2/h; DoS 21/26 |
+| ago → jul | `proteus` | 20,3/h (17,5 ent.); DoS 19/20, botnet 4/4, scans 8/8 + 8/8 (recall 0,87/0,75) | 2,0/h; lo mismo (DoS 19/20, scans 16/16) |
+| ago → jul | `core_both_x` | 11,1/h (1,5 ent.); DoS 17/20, scans 16/16, botnet 4/4 | 0,7/h; DoS 10/20, scans 14/16 |
+
+- El spam, el sshscan y el udpscan apenas se detectan (≤ 3/22, 0/8, 1/4).
+- `proteus@cert` y `core_both_x@cert` = 0 en UGR'16. Las certificadas de `proteus_cert` sí
+  existen (ago → jul: DoS 14/20, botnet 4/4 a 7,0/h).
+- **Fallo de la línea base:** las reglas de tasa alertaban en todos los flujos (FPR 1,0). UGR'16 es
+  unidireccional, 20 contadores de RST y respuesta valen siempre 0 y la CDF benigna los ponía a 1.
+  Ahora `RateRules` ignora los rasgos constantes en la referencia (commit 02c0aed). En CIC no hay
+  ninguno (comprobado), así que sus resultados no cambian. Se repiten las reglas en los dos
+  pliegues y en 2017 → UGR'16 (`fix15.sh`).
+- Pendiente: 2017 → UGR'16 y CIC → CIC-DDoS-2019, y escribir la sección del paper.
