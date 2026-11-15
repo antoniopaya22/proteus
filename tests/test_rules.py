@@ -39,3 +39,15 @@ def test_report_flags_rules_the_benign_traffic_breaks():
     row = rep.iloc[0]
     assert row["benign_violation"] == 1 / 3 and row["attack_flows_caught"] == 1
     assert row["benign_lo"] < 1 / 3 < row["benign_hi"]
+
+
+def test_constant_features_are_ignored():
+    import numpy as np
+
+    from proteus.baselines.rate_rules import RateRules
+
+    rng = np.random.default_rng(0)
+    X = np.c_[rng.random(1000), np.zeros(1000)]  # second feature constant (e.g. bwd bytes)
+    r = RateRules().fit(X)
+    s = r.score(np.c_[rng.random(1000), np.zeros(1000)])
+    assert (s < 1.0).mean() > 0.95  # the constant column does not push every flow to 1

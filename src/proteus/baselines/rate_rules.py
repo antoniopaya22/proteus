@@ -10,6 +10,10 @@ class RateRules:
 
     def fit(self, X: np.ndarray) -> RateRules:
         self.cols_ = [np.sort(c[~np.isnan(c)]) for c in X.T]
+        # A feature constant on the benign reference carries no information, and with
+        # the CDF every flow at that value would score 1 (unidirectional records, such
+        # as UGR'16, have every response counter at 0): leave it out.
+        self.cols_ = [c if len(c) and c[0] < c[-1] else c[:0] for c in self.cols_]
         return self
 
     def score(self, X: np.ndarray) -> np.ndarray:
