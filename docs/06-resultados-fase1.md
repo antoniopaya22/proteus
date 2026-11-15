@@ -1386,3 +1386,23 @@ Destino: 169.254.169.254:80 (metadatos de la instancia), ~31.000 flujos benignos
 - DoS de un solo origen: la frontera sube como mucho 2× y sigue bajo la campaña real.
 - DDoS: con 31.000 flujos/h de carga, LOIC-HTTP pasa a su ritmo real en ambos detectores; HOIC solo
   lo acota Proteus-cert. Añadido al paper como límite.
+
+## 6.48 Variantes de alerta en 2017 → 2018 y cierre (2026-11-15, 17:20)
+
+FPR 10⁻³ (vol./escaneo, todas, alarmas/h), base → suelo por destino (+ent):
+
+| | base | +ent |
+|---|---|---|
+| `proteus` | 13/13, 14/25, 16,0 | 13/13, 14/25, 11,8 (recall 0,78 → 0,66) |
+| `proteus_cert` | 13/13, 14/25, 42,0 | 11/13, 12/25, 3,1 |
+| `proteus_cert@cert` | 6/13, 7/25, 17,0 | 5/13, 6/25, 0,22 |
+| reglas | 13/13, 15/25, 45,5 | 9/13, 10/25, 18,1 |
+
+- El suelo recorta mucho las alarmas del detector certificado (17,0 → 0,22 por una campaña), pero la
+  calibración por presupuesto ya daba algo mejor (`proteus_cert` 13/13 a 0,40/h, §6.34).
+- En 18 → 17 le cuesta a `proteus` dos escaneos (§6.46). No sustituye a nada; va al paper como
+  variante probada.
+- La persistencia queda descartada.
+- Paper: una frase sobre los atacantes RDP sin etiquetar de 2018 y las dos variantes (evaluación,
+  tras el párrafo de presupuestos).
+- Con esto no quedan experimentos en cola ni `\todo` en el paper.
