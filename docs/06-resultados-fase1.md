@@ -1308,3 +1308,18 @@ Quedan:
 Reglas de tasa locales en UGR'16 (las de la ejecución 2017 → UGR'16, ya corregidas): a 10⁻³,
 17,2 alarmas/h, ningún DoS ni escaneo (spam 3/46, botnet 1/11). Proteus: 25,1/h, DoS 32/46,
 escaneos 31/42. Añadido al paper.
+
+## 6.44 Cierre de decisiones (2026-11-15, 10:40)
+
+Antonio delega las decisiones pendientes. Tomadas:
+- **Resumen y conclusión:** se da el daño frente al atacante adaptativo en la dirección en que
+  Proteus gana (2018 → 2017: hasta 7× menos que las reglas, 4–170× menos que el modelo sin
+  restricciones o KitNET) y se dice que en la otra las reglas dejan menos daño con 3× sus falsas
+  alarmas (commit 03aee96 del paper).
+- **Fronteras sobre víctimas con tráfico:** se hacen. `frontier_exp --busy` apunta cada campaña al
+  destino con más flujos benignos en el puerto atacado ese día, no implicado en ataques (sin
+  escaneos). Lanzado en los dos sentidos para `proteus` y `proteus_cert` (`busy.sh`).
+- **CTU-SME-11:** abandonado; el paper solo lo cita como ejemplo de registros Zeek.
+- **Diagnóstico pendiente del resultado mixto de 17 → 18:** `alarms.py` sobre 2018 (`diag18.sh`)
+  para ver qué subnúcleo y qué entidades dan las falsas alarmas del detector de todas las escalas.
+- Sigue en manos de los autores: la declaración de uso de IA.
