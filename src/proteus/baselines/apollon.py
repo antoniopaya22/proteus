@@ -1,12 +1,9 @@
-"""Apollon v1 baselines (Paya et al., Computers & Security 136, 2024).
+"""Apollon (Paya et al., Computers & Security 136, 2024) as a baseline.
 
-* ``ApollonMAB``: the corrected implementation submitted to the v1 repository
-  (antoniopaya22/apollon PR #1): per-cluster training, rewards on all validation
-  samples, Thompson sampling with posterior updates.
-* ``ApollonV1Code``: what the public v1 notebooks actually ran (pool RF/DT/NB because of
-  ``n_arms=3``, every arm trained on the whole training set, reward of arm k computed
-  only on training samples with label k, fixed Beta(1 + r, 2 - r) selection). This is the
-  system behind the published numbers, kept to reproduce them.
+* ``ApollonMAB``: per-cluster training of the pool, Beta posteriors from validation
+  accuracy and Thompson sampling with posterior updates (release 2.0.0 of
+  antoniopaya22/apollon).
+* ``ApollonFlow``: Apollon as a per-flow detector on raw flow statistics.
 """
 
 from __future__ import annotations
@@ -216,70 +213,3 @@ class ApollonFlow:
             Z = self.scaler_.transform(np.asarray(X[i:i + self.batch], dtype=np.float64))
             out[i:i + self.batch] = self.mab.predict_proba(Z)
         return out
-
-
-class ApollonV1Code:
-    """Faithful re-implementation of the inline class used by the v1 notebooks.
-
-    Reproduces its behaviour, bugs included, so that the published setting can be
-    evaluated: see doc 01 of this repository.
-    """
-
-    def __init__(self, n_clusters=2, random_state=None):
-        self.arms = [RandomForestClassifier(random_state=random_state),
-                     DecisionTreeClassifier(random_state=random_state), GaussianNB()]
-        self.n_arms = 3
-        self.n_clusters = n_clusters
-        self.random_state = random_state
-        self.rng = np.random.default_rng(random_state)
-
-    def fit(self, X, y):
-        X = np.asarray(X, dtype=float)
-        y = np.asarray(y).astype(int)
-        self.kmeans_ = KMeans(n_clusters=self.n_clusters, n_init=10,
-                              random_state=self.random_state).fit(X)
-        clusters = self.kmeans_.labels_
-        # Masking by label == arm leaves a single class, so every arm falls back to the
-        # whole training set (the per-cluster models were never trained).
-        self.models_ = [clone(a).fit(X, y) for a in self.arms]
-        self.reward_ = np.zeros((self.n_clusters, self.n_arms))
-        for c in range(self.n_clusters):
-            for a in range(self.n_arms):
-                m = (clusters == c) & (y == a)  # the original indexing
-                if m.any():
-                    self.reward_[c, a] = np.mean(self.models_[a].predict(X[m]) == y[m])
-        return self
-
-    def select_arms(self, X):
-        clusters = self.kmeans_.predict(np.asarray(X, dtype=float))
-        r = self.reward_[clusters]
-        theta = self.rng.beta(1.0 + r, 2.0 - r)  # alpha = beta = 1 never updated
-        return clusters, np.argmax(theta, axis=1)
-
-    def _route(self, X, method):
-        X = np.asarray(X, dtype=float)
-        _, arms = self.select_arms(X)
-        out = None
-        for a in range(self.n_arms):
-            m = arms == a
-            if not m.any():
-                continue
-            res = getattr(self.models_[a], method)(X[m])
-            if out is None:
-                out = np.zeros((len(X),) + res.shape[1:], dtype=float)
-            out[m] = res
-        return out, arms
-
-    def predict(self, X, return_arms=False):
-        y, arms = self._route(X, "predict")
-        y = y.astype(int)
-        return (y, arms) if return_arms else y
-
-    def predict_proba(self, X):
-        return self._route(X, "predict_proba")[0]
-
-    def selection_frequencies(self, X, n_draws=1):
-        counts = np.zeros(self.n_arms)
-        for _ in range(n_draws):
-            counts += np.bincount(self.select_arms(X)[1], minlength=self.n_arms)
-        return counts / counts.sum()

@@ -121,7 +121,7 @@ Proteus-cert), `PROTEUS_TIMER_S` (re-scoring period δ in the certificate slack)
 | `examples/` | Runnable examples (no dataset needed) |
 | `scripts/` | `reproduce.sh` and `paper_tables.sh` |
 | `website/` | Documentation website (MkDocs Material, English and Spanish) |
-| `docs/` | Research notes (Spanish): analysis of Apollon, related work, design, plan and results log |
+| `docs/` | Research notes (Spanish): related work, design, plan and results log |
 | `experiments/outputs/` | Results (CSV/JSON), not versioned |
 
 ## Citation

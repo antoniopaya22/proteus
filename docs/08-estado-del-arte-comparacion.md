@@ -38,7 +38,7 @@ compare varias defensas con el mismo protocolo.**
 y APELID+).
 
 - Comparar con APELID+ (98,73 % bajo ataques combinados en IDS-2018), con ensembles
-  de árboles con entrenamiento adversario (A2PM) y con Apollon v1 (las dos variantes).
+  de árboles con entrenamiento adversario (A2PM) y con Apollon.
 - Atacar con ZOO, HSJA y PGD **con presupuestos declarados** y con un **ataque
   adaptativo**; APELID+ no da ninguna de las dos cosas.
 - Reejecutar los baselines con la misma partición, sin copiar cifras de otros

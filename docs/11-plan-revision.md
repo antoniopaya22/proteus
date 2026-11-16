@@ -113,12 +113,11 @@ tres detectores, se queda el de tres y se cuenta.
 
 ## Indicaciones de Antonio (2026-11-16)
 
-- **Apollon se evalúa como un solo sistema**, sin distinguir «publicado» y «corregido» ni mencionar
-  fallos de implementación: es la versión 2.0.0 de su repositorio. El lector de un sucesor quiere
-  ver la diferencia con el original, así que Apollon entra como detector por flujo en la detección
-  entre redes y en la comparación conjunta.
-  - [x] `ApollonFlow` (`--models apollon`, commit 759823d) y texto del paper sin la distinción
-        (commit 4030357 del paper: motivación, tabla de ataques por flujo, tabla de detectores).
+- **Apollon se evalúa como un solo sistema**: la versión 2.0.0 de su repositorio. El lector de un
+  sucesor quiere ver la diferencia con el original, así que Apollon entra como detector por flujo en
+  la detección entre redes y en la comparación conjunta.
+  - [x] `ApollonFlow` (`--models apollon`, commit 759823d) y texto del paper (commit 4030357 del
+        paper: motivación, tabla de ataques por flujo, tabla de detectores).
   - [ ] Resultados `ap_1817` y `ap_1718` (cola aparte `~/tools/apollon.sh`, mismo cerrojo): columna
         en la tabla de detección y fila en la comparación conjunta; medir qué miembro responde.
 - **AML como gancho.** «Adversarial machine learning» es la palabra clave que atrae lectores: debe

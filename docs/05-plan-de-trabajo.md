@@ -106,8 +106,7 @@ Punto de decisión (H1):
 
 Tareas:
 
-1. `proteus.baselines.apollon_v1`: variante "código" (comportamiento del repo
-   público) y variante "paper" (lo que el paper describe).
+1. `proteus.baselines.apollon`: Apollon como línea base.
 2. Reproducir las tablas 2–7 del paper original, incluida su evaluación por
    transferencia.
 3. Ataques directos contra v1 como caja negra: HSJA y ZOO consultando al sistema,

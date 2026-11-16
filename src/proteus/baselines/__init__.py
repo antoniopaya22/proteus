@@ -1,1 +1,1 @@
-"""Baselines: Apollon v1 (code and paper variants), per-flow classifiers, fixed-threshold rate detection."""
+"""Baselines: Apollon, rate thresholds, KitNET, classic rate-based detectors, randomised smoothing."""

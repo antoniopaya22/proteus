@@ -88,14 +88,13 @@ def prepare(ds: str, seed: int, cap_attack: int, cap_benign: int):
 def build_models(Xtr, ytr, seed):
     from sklearn.ensemble import RandomForestClassifier
 
-    from proteus.baselines.apollon import ApollonMAB, ApollonV1Code
+    from proteus.baselines.apollon import ApollonMAB
     from proteus.shell import flow as shell
 
     models = {
         "shell": shell.model(seed).fit(Xtr, ytr),
         "rf": RandomForestClassifier(n_estimators=100, n_jobs=-1, random_state=seed).fit(Xtr, ytr),
-        "apollon_v1_code": ApollonV1Code(random_state=seed).fit(Xtr, ytr),
-        "apollon_fixed": ApollonMAB(random_state=seed).fit(Xtr, ytr),
+        "apollon": ApollonMAB(random_state=seed).fit(Xtr, ytr),
     }
     return models
 

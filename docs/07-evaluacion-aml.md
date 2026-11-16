@@ -74,27 +74,23 @@ mueve las otras 55. Se atacan 79 flujos de ataque detectados por todos los model
 (≤ 7 por tipo, 14 tipos), con HSJA dirigido (~2.400 consultas por flujo) y ZOO
 (~400).
 
-En limpio, todos tienen F1 0,9999 salvo Apollon tal como se publicó (F1 0,993,
-FPR 1,2 %).
+En limpio, todos tienen F1 0,9999.
 
 | Modelo | HSJA evade | HSJA en alguna de 10 tiradas | ZOO evade | Bloqueadas por evasión (mediana / mín.) |
 |---|---|---|---|---|
 | Cáscara (HGB) | 0,10 | 0,10 | 0,01 | 863 / 805 |
 | Random forest | 0,04 | 0,04 | 0,01 | 2.123 / 1.091 |
-| Apollon publicado | 0,11 | **0,53** | 0,03 | 1.187 / 1.106 |
-| Apollon corregido | 0,05 | 0,05 | 0,00 | 2.179 / 1.889 |
+| Apollon | 0,05 | 0,05 | 0,00 | 2.179 / 1.889 |
 | Entrenamiento adversario | **0,27** | 0,27 | 0,00 | 1.308 / 862 |
 
-Transferencia (HSJA, origen → destino): de la cáscara a Apollon publicado, 0,165,
-más que el ataque directo (0,114). Del RF al modelo con entrenamiento adversario,
-0,177.
+Transferencia (HSJA, origen → destino): del RF al modelo con entrenamiento
+adversario, 0,177.
 
 Lectura:
 
-- **La aleatorización de Apollon no da robustez.** Publicado, se evade igual que la
-  cáscara sola; y como responde al azar, repetir sirve al atacante: el 53 % de los
-  ejemplos pasa en al menos una de diez tiradas. Corregido, queda como el RF que
-  contiene.
+- **La aleatorización de Apollon no añade robustez.** Se evade igual que el RF que
+  contiene (5 % frente a 4 %): el bandit responde con los miembros más precisos de
+  cada cluster, que coinciden en casi todas las entradas.
 - **El entrenamiento adversario empeora** (27 % frente a 10 %).
 - Las tasas son bajas en todos porque las características funcionales están fijas y
   el presupuesto es corto. Con 79 flujos la resolución es de ~1,3 puntos.

@@ -140,7 +140,7 @@ relativas al servicio, experimentales).
 | `tests/` | Tests, incluidos los de las propiedades que sostienen la garantía |
 | `scripts/` | `reproduce.sh` y `paper_tables.sh` |
 | `website/` | Web de documentación (MkDocs Material, en inglés y español) |
-| `docs/` | Análisis de Apollon, estado del arte, diseño, plan y resultados (`06`) |
+| `docs/` | Estado del arte, diseño, plan y resultados (`06`) |
 | `experiments/outputs/` | Resultados (CSV/JSON), no versionados |
 
 ## Citar
