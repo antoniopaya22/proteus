@@ -228,8 +228,11 @@ tres detectores, se queda el de tres y se cuenta.
   - [x] Resultado en 2017 (§6.64 de docs/06): A y B descartadas; Proteus-cert sobra (Proteus ∪
         cert-R da lo mismo); la fidelidad por ventana sube la cobertura de 11+3 a 11+5 por 0,6
         alarmas. Finalistas: Proteus ∪ cert-R ∪ fidelidad, y `proteus2` ∪ fidelidad.
-  - [ ] D: alertas con memoria (persistencia, suelo por entidad). Atacante por consultas contra los
-        finalistas (incluye adaptar el oráculo a la fidelidad por ventana). Repetir en 2018
+  - [x] Oráculo adaptado a detectores que puntúan flujos crudos (`WindowFidelity.flow_alerts`) y
+        objetivos-unión en el atacante por consultas (`--union`); commit 3aea8d8.
+  - [~] Atacante por consultas contra los finalistas en 2017 (`qa2_1817`, etiqueta `fin`:
+        fidelidad sola, Proteus ∪ cert-R, con fidelidad, y `proteus2` ∪ fidelidad), en marcha.
+  - [ ] D: alertas con memoria (persistencia, suelo por entidad). Repetir en 2018
         (`alerts_1718`, `wf300_1718` en cola). Daño a umbral estricto (`adapteq_1817`).
   - [ ] E (entrenar con ataques disfrazados) y F (marcadores por subred): solo si A–D no bastan.
 - **La GPU no es un límite.** No se escribe que algo «necesita GPU»; la máquina se ampliará.
