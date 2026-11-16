@@ -83,6 +83,8 @@ trabajo es de seguridad de redes (el certificado vale para detectores no aprendi
       `proteus_free`/`core_free_dst_b` vuelven a callar a ritmos altos. `--days` permite repartir
       por días cuando haya más memoria. En marcha: regresión código anterior ↔ nuevo
       (`reg_old`/`reg_full`/`reg_stop`) y medida de tiempo (`prof2`/`prof3`).
+      Resultado: la regresión es exacta (tablas y escalera idénticas en dos ataques y nueve
+      detectores) y el corte ahorra un 12 % (§6.60 de docs/06).
 - [x] Temporizador δ = 10 y 60 s repetido en r2 (`timer10_1817`, `timer60_1817`); falta llevarlo al
       apéndice.
 - [ ] Repeticiones encoladas tras `master.sh` (`~/tools/extra.sh`): temporizador δ = 10 y 60 s

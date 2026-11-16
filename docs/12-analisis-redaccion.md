@@ -54,9 +54,11 @@ abajo. Estado al final de este documento.
 4. **Hecho** (commit siguiente). Figura conceptual del certificado en la página 2.
 5. **Hecho a medias.** Tabla de variantes de Proteus en el diseño (Proteus, -cert, -cert-R, sistema).
    Falta el glosario de métricas en la configuración.
-6. **Pendiente**, junto con la reescritura de las secciones que esperan resultados: evaluación en
-   cuatro partes (detección; ¿se cumple el certificado?; qué conserva el adversario; tráfico real),
-   con frase de conclusión por parte.
+6. **Hecho en estructura** (commit del paper «one subsection per group of research questions»):
+   configuración; detección entre redes (RQ1, RQ2); ¿se cumple el certificado? (RQ3); qué conserva
+   el adversario (RQ4, RQ5), con frontera, atacante adaptativo, envenenamiento, ataques a la capa por
+   flujo y comparación de defensas; tráfico real (RQ6); coste. Subsubsecciones numeradas y frase
+   «In short» al cierre de las dos primeras partes; las otras la reciben al reescribirlas.
 7. **Hecho** (commit e9c34b3 del paper): el envenenamiento y el coste pasan de la discusión a la
    evaluación (subsecciones «Poisoning the baselines» y «Cost»).
 8. **Se queda como está**: en los artículos de revista el trabajo relacionado va pronto.
