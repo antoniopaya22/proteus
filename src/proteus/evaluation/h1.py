@@ -413,7 +413,8 @@ def training_set(ds: str, rng: np.random.Generator, cap_attack=50_000, cap_benig
 
 # Unsupervised detectors fitted, for each test day, on clean benign traffic of the
 # other days of the test network (no labels), like the local thresholds.
-LOCAL = {"rate_rules_local": RateRules, "kitnet_local": KitNET}
+LOCAL = {"rate_rules_local": RateRules, "rate_rules_sel": RateRules, "kitnet_local": KitNET}
+SEL_K = 10  # features kept by rate_rules_sel
 UNSUPERVISED = (RateRules, KitNET, CalibratedMax)
 
 CST = {"conserved": 1, "response": 1, "baseline": -1}
@@ -497,6 +498,9 @@ def detectors(specs: dict[str, str], flow_cols: list[str]) -> dict[str, tuple[li
         "core_free_dst_b": (with_b, hgb(None)),
         "rate_rules": (rules, RateRules()),
         "rate_rules_local": (rules, RateRules()),
+        # Rate thresholds on the SEL_K features that separate attacks best on the
+        # training network (columns chosen in main(); thresholds stay local).
+        "rate_rules_sel": (rules, RateRules()),
         # Kitsune's detector on our damped per-entity statistics (its AfterImage
         # counterpart): every evidence feature of both sides, no baselines.
         "kitnet_local": (raw_all, KitNET()),
@@ -720,6 +724,16 @@ def entity_threshold(tops: list[tuple], hours: float, budget: float) -> float:
     return float(np.nextafter(g[allowed], np.inf))
 
 
+def select_rule_features(X: pd.DataFrame, y: np.ndarray, k: int) -> list[str]:
+    """The ``k`` features that best separate attack from benign flows on their own
+    (area under the ROC curve of each feature as a score), on the training network."""
+    from sklearn.metrics import roc_auc_score
+
+    auc = {c: roc_auc_score(y, np.nan_to_num(X[c].to_numpy(np.float64), nan=-1e9))
+           for c in X.columns}
+    return sorted(auc, key=auc.get, reverse=True)[:k]
+
+
 def write_manifest(out: Path, args) -> None:
     """What produced a run: arguments, PROTEUS_* environment, code version."""
     import subprocess
@@ -790,6 +804,9 @@ def main() -> None:
         fitted = load_models(args.reuse)
         _, specs = evidence_b(args.test, days(args.test)[0], columns=["clean"])
         fresh = detectors(specs, [])  # local detectors are fitted per test day anyway
+        if "rate_rules_sel" in (args.models or []) and "rate_rules_sel" not in fitted:
+            raise SystemExit("rate_rules_sel needs its features selected on the training "
+                             "network: run it without --reuse first")
         models = {n: fresh[n] if (n not in fitted and n in fresh) else combined(fitted, n)
                   for n in (args.models or list(fitted))}
         thresholds = {}
@@ -811,6 +828,9 @@ def main() -> None:
                                  f"available: {sorted(chosen)}")
             chosen = {k: v for k, v in chosen.items() if k in args.models}
         for name, (cols, model) in chosen.items():
+            if name == "rate_rules_sel":
+                cols = select_rule_features(tr.loc[fit, cols], y[fit], SEL_K)
+                print(f"  rate_rules_sel keeps {cols}", flush=True)
             X = tr[cols].to_numpy(np.float32)
             if isinstance(model, CalibratedMax):
                 # Sub-cores on the labelled training network; the benign CDFs are

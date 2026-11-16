@@ -51,3 +51,16 @@ def test_constant_features_are_ignored():
     r = RateRules().fit(X)
     s = r.score(np.c_[rng.random(1000), np.zeros(1000)])
     assert (s < 1.0).mean() > 0.95  # the constant column does not push every flow to 1
+
+
+def test_rule_feature_selection_prefers_separating_features():
+    import numpy as np
+    import pandas as pd
+
+    from proteus.evaluation.h1 import select_rule_features
+
+    rng = np.random.default_rng(0)
+    y = (rng.random(2000) < 0.3).astype(int)
+    X = pd.DataFrame({"noise": rng.random(2000), "good": y + 0.3 * rng.random(2000),
+                      "weak": 0.3 * y + rng.random(2000), "nan": np.nan})
+    assert select_rule_features(X, y, 2) == ["good", "weak"]
