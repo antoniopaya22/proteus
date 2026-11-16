@@ -1736,3 +1736,38 @@ total, 6 GB). Ritmo real de la campaña: 10 461 flujos/h.
 resultados idénticos en todas las columnas; 18 min 04 s frente a 20 min 32 s (12 % menos). Poco: el
 tiempo está en calcular la evidencia de los ritmos altos, que hay que seguir haciendo para los
 detectores sin restricciones. Pico de memoria 11,3 GB en ambos.
+
+## 6.61 Piloto: detector de fidelidad por ventana (idea de METIS) como complemento sin garantía (2026-11-16, 16:10)
+
+Idea de Antonio: tratar las conexiones recientes de una entidad como una tabla y compararla con el
+tráfico benigno real, como METIS compara una tabla sintética con una real. Proteus admite un
+complemento sin certificado en el lugar de la capa por flujo. Piloto en `proteus window-fidelity`
+(commits 6a2daa2 y siguiente), CIC-IDS-2017, sin etiquetas de ataque para ajustar nada:
+
+- entidades: servicio de destino y máquina de origen; ventanas de 30 s y de 300 s con al menos 10
+  flujos; siete estadísticas por flujo (paquetes y bytes en cada sentido, duración, bytes por
+  paquete, razón de bytes);
+- referencia: deciles del tráfico benigno de los otros días, por puerto de destino;
+- estadístico: distancia de Kolmogorov-Smirnov sobre esa rejilla, media de las siete;
+- umbral: cuantil sobre ventanas benignas limpias de los otros días, **por clase de tamaño de la
+  ventana** (sin esto, la primera versión solo veía la fuerza bruta SSH: una ventana de diez flujos
+  se aleja de cualquier referencia por azar y marcaba el umbral de todas).
+
+| Ventana, FPR | Ataques (por día) con alguna ventana alertada | Alarmas por entidad/h |
+|---|---|---|
+| 30 s, 10⁻³ | SSH (recall 0,79), LOIC-HTTP (0,99), Hulk (1,00), GoldenEye (0,38), escaneos 2/2 (0,75) | 0,78 |
+| 300 s, 10⁻³ | los anteriores y además **FTP (0,49)**, Slowloris (0,24), Slowhttptest (0,11), **infiltración (0,20)** | 0,59 |
+
+No detecta la botnet ni los ataques web. Tarda 34 s y 1 GB para los cinco días.
+
+Lectura, con cautelas:
+
+- Detecta la fuerza bruta FTP y la infiltración, que Proteus no ve en 2018 → 2017, y la SSH con
+  recall 0,6–0,8 (Proteus: una de dos campañas con 0,03), a menos de una alarma por entidad y hora.
+  La capa por flujo actual da 23,1 y Apollon 21,3, y ninguna de las dos detecta esas campañas.
+- No es comparable todavía con la tabla del paper: aquí una «campaña» es un tipo de ataque por día,
+  no los episodios de `h1`, y «detectada» es alguna ventana alertada, no el criterio estricto.
+- El umbral por tamaño se introdujo tras ver el primer resultado sobre los datos de prueba.
+- Falta 2018 (esta versión carga todos los días en memoria), el criterio de `h1`, la unión con
+  Proteus y, sobre todo, atacarlo: la forma del tráfico la controla el atacante, así que se espera
+  que el atacante por consultas lo evada; lo que aportaría es cobertura sin garantía.

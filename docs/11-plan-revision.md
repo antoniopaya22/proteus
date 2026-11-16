@@ -210,6 +210,12 @@ tres detectores, se queda el de tres y se cuenta.
         partición, reutilización, reparto entre orígenes, pulsos), que maximiza el daño sin ser
         detectado, contra Proteus y contra cada línea base; comparar con la rejilla actual y contar
         consultas. Responde también a la objeción del atacante adaptativo débil.
+- **Complemento al estilo de METIS** (idea de Antonio, 2026-11-16): comparar la ventana reciente de
+  cada entidad con el tráfico benigno real, sin etiquetas, en el lugar de la capa por flujo.
+  - [x] Piloto en 2017 (§6.61 de docs/06): con ventanas de 300 s detecta fuerza bruta FTP y SSH e
+        infiltración, que Proteus no ve, a 0,59 alarmas por entidad/h.
+  - [ ] Decidir con Antonio si entra en el paper. Para ello: criterio de `h1`, 2018, unión con
+        Proteus y atacarlo con el atacante por consultas.
 - **La GPU no es un límite.** No se escribe que algo «necesita GPU»; la máquina se ampliará.
   - [x] Quitadas las menciones del paper (BARS, entorno).
   - [ ] Fase con GPU (cuando esté): código original de BARS, PANTS y CertTA sobre los mismos datos,
