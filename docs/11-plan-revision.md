@@ -201,6 +201,10 @@ tres detectores, se queda el de tres y se cuenta.
         orígenes) con carrera de ritmos; objetivo = un detector o una unión. `adaptive.py` expone
         `day_models` y `Oracle`, que comparten los dos atacantes. Falta ejecutarlo (prueba de humo en
         marcha) y compararlo con la rejilla.
+        2026-11-16: la primera ejecución completa murió por memoria (la búsqueda sube a ritmos cuyo
+        tráfico no cabe); relanzada con `--max-flows 300000` (cota inferior), sin KitNET ni los
+        detectores sin restricciones, y guardando tras cada objetivo (`qa_1817`, etiqueta `b150`).
+        `tables query` genera su tabla (commit siguiente).
   - [ ] (texto original) **Atacante que usa AML para generar mejores ataques**: búsqueda por consultas con etiqueta
         dura (sin conocer el modelo) sobre los parámetros de las operaciones (ritmo, relleno,
         partición, reutilización, reparto entre orígenes, pulsos), que maximiza el daño sin ser
