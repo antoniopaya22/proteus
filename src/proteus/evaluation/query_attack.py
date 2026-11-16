@@ -211,6 +211,28 @@ def transfer(quiet: Callable[[Shape, int], bool], n_rates: int, index: int,
     return {"index": index, "shape": best, "queries": used}
 
 
+def shape_pool(own: dict, found: list[dict]) -> list[tuple[str, Shape, int]]:
+    """Shapes worth replaying against the target of the search ``own``, best first:
+    (target they were found against, shape, index reached there).
+
+    ``found`` has one entry per search of a scenario (``row``, ``index``, ``shape``).
+    The free shapes always qualify, those that spread over sources only when ``own``
+    may spread. The target's own shape qualifies too when another search took it
+    further (the rate is not monotone, and the search with sources restarts from the
+    free shape)."""
+    best: dict[str, tuple[str, Shape, int]] = {}
+    for g in found:
+        if g is own or g["index"] < 0 or not (own["row"]["costly"] or g["shape"].sources == 1):
+            continue
+        key = json.dumps(asdict(g["shape"]))
+        if key not in best or g["index"] > best[key][2]:
+            best[key] = (g["row"]["target"], g["shape"], g["index"])
+    mine = json.dumps(asdict(own["shape"]))
+    if mine in best and best[mine][2] <= own["index"]:
+        del best[mine]
+    return sorted(best.values(), key=lambda b: -b[2])
+
+
 def submit(full: pd.DataFrame, sc, oracle: Oracle, rates: np.ndarray, rmax: float,
            members: list[str], sent: dict[int, int],
            max_flows: int | None = None) -> Callable[[Shape, int], bool]:
@@ -343,15 +365,7 @@ def main() -> None:
                                 "shape": json.dumps(t["shape"])} for t in res["trace"]]
                 save()
             for f in ([] if args.no_transfer else found):
-                # Shapes of the other searches: the free ones always, those that spread
-                # over sources only for the search that may spread.
-                pool, seen = [], {json.dumps(asdict(f["shape"]))}
-                for g in sorted(found, key=lambda g: -g["index"]):
-                    key = json.dumps(asdict(g["shape"]))
-                    if g["index"] >= 0 and key not in seen and (
-                            f["row"]["costly"] or g["shape"].sources == 1):
-                        seen.add(key)
-                        pool.append((g["row"]["target"], g["shape"], g["index"]))
+                pool = shape_pool(f, found)
                 sent: dict[int, int] = {}
                 quiet = submit(full, sc, oracle, rates, args.rmax, f["members"], sent,
                                args.max_flows)
@@ -362,6 +376,7 @@ def main() -> None:
                     f["row"]["query_flows_per_h"] = float(rates[res["index"]]) * 3600
                     f["row"]["shape"] = json.dumps(asdict(res["shape"]))
                     f["row"]["shape_from"] = next(n for n, s, _ in pool if s == res["shape"])
+                    f["index"], f["shape"] = res["index"], res["shape"]  # for the next pools
                     print("  transfer", {k: f["row"][k] for k in (
                         "attack", "target", "costly", "search_flows_per_h",
                         "query_flows_per_h", "shape_from")}, flush=True)

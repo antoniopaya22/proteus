@@ -1,7 +1,15 @@
 import numpy as np
 import pandas as pd
 
-from proteus.evaluation.query_attack import CHOICES, Shape, apply, mutate, search, transfer
+from proteus.evaluation.query_attack import (
+    CHOICES,
+    Shape,
+    apply,
+    mutate,
+    search,
+    shape_pool,
+    transfer,
+)
 
 
 def test_mutate_changes_the_shape_and_keeps_sources_unless_costly():
@@ -114,3 +122,17 @@ def test_transfer_reaches_what_a_shape_reached_elsewhere_even_if_rates_are_not_m
 def test_transfer_stops_at_the_top_of_the_grid():
     res = transfer(lambda shape, i: True, 5, 1, [(Shape(pad=100), 0), (Shape(pad=400), 0)])
     assert (res["index"], res["shape"]) == (4, Shape(pad=100))
+
+
+def test_shape_pool_offers_free_shapes_and_the_own_shape_when_it_went_further_elsewhere():
+    def entry(target, costly, shape, index):
+        return {"row": {"target": target, "costly": costly}, "shape": shape, "index": index}
+
+    free = entry("a", False, Shape(reuse=20), 9)
+    spread = entry("a", True, Shape(reuse=20), 6)  # same shape, lower rate: the restart lost it
+    other = entry("b", True, Shape(sources=100), 11)
+    none = entry("b", False, Shape(pad=100), -1)
+    found = [free, spread, other, none]
+    assert shape_pool(spread, found) == [("b", Shape(sources=100), 11), ("a", Shape(reuse=20), 9)]
+    # The free search takes no shape that spreads, nor its own shape from a worse search.
+    assert shape_pool(free, found) == []
