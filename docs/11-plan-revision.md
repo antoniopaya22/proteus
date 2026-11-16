@@ -57,7 +57,8 @@ La ronda 1 son las fases A–E de abajo.
       `proteus_sys_r` añade el resistente a reutilización): detección y alarmas. Falta: reevaluar
       18 → 17 con `--reuse` (el run r2 empezó antes) y la frontera de esa configuración.
 - [ ] 5–10 semillas con dispersión para los detectores principales.
-- [ ] Curvas campañas detectadas frente a alarmas/h (figura principal), ambos sentidos.
+- [x] Curvas campañas detectadas frente a alarmas por entidad/h: `tables curves` genera la figura
+      (probada con 18 → 17). Falta: generarla con los dos sentidos y meterla en el paper (fase D).
 - [x] Líneas base clásicas: TRW (por host y por servicio) y CUSUM de flujos fallidos
       (`proteus classic`, commit 0541084). 2017 hecho (`classic__cicids2017__r2`); 2018 en cola.
 - [ ] Línea base: reglas de tasa con selección de rasgos.
