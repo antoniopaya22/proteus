@@ -86,7 +86,15 @@
     function start() { if (on) return; on = true; last = t0 = performance.now(); raf = requestAnimationFrame(draw); }
     function stop() { on = false; cancelAnimationFrame(raf); }
     size(); window.addEventListener("resize", size);
-    if (reduce) { level = 0.82; phase = 2; for (let k = 0; k < 26; k++) { spawn(true, true); P[k].x = W * (0.3 + Math.random() * 0.5); } draw(performance.now()); return; }
+    if (reduce) {                                   // one still frame: a disguised flood, alert certified
+      const still = () => {
+        size(); P = []; level = 0.82; phase = 2; t0 = last = performance.now();
+        for (let k = 0; k < 34; k++) { spawn(true, true); P[k].x = W * (0.3 + Math.random() * 0.52); }
+        draw(performance.now());
+      };
+      still(); window.addEventListener("load", still); window.addEventListener("resize", still);
+      return;
+    }
     new IntersectionObserver((es) => es.forEach((e) => (e.isIntersecting && !document.hidden ? start() : stop()))).observe(c);
     document.addEventListener("visibilitychange", () => (document.hidden ? stop() : start()));
   })();

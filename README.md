@@ -25,7 +25,7 @@
 </p>
 
 <p align="center">
-  <a href="https://antoniopaya22.github.io/proteus/"><img src="website/assets/screenshot-home.png" alt="Proteus website: evasion only adds evidence" width="860"></a>
+  <a href="https://antoniopaya22.github.io/proteus/"><img src="website/assets/screenshot-home.png" alt="Proteus website: certified robustness to adversarial evasion in network intrusion detection" width="860"></a>
 </p>
 
 ---
