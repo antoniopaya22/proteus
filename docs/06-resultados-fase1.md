@@ -1799,3 +1799,46 @@ FPR objetivo 10⁻³, ventana de 300 s:
 - Cautelas: el umbral por tamaño y la ventana de 300 s se eligieron mirando estos datos; falta 2018
   (`alerts_1718` y `wf300_1718`, en cola bajo el cerrojo) y atacarlo (el oráculo del atacante por
   consultas trabaja con rasgos de evidencia, no con ventanas de flujos: hay que adaptarlo).
+
+## 6.63 Atacante adaptativo 2018 → 2017 con rejilla de 30 y todos los detectores (2026-11-16, 16:55)
+
+`adapt_1817` (etiqueta `g30`, 6 h 33 min): rejilla de 30 ritmos, planes fijos (sin disfraz, mimetismo,
+cuatro combinaciones al azar, reutilización, ráfagas, ambas, y los mismos repartidos entre 100
+orígenes), cada detector con su umbral local a FPR 10⁻³. Daño = ritmo más alto (flujos/h) sin alerta
+atribuible. Las uniones salen de la escalera (`adaptive_ladder_0.001_g30.csv`): una unión calla
+cuando callan todos sus miembros en el mismo plan y ritmo.
+
+| Ataque (ritmo real) | Proteus | Sistema de tres | `proteus2` | Reglas | Reglas con selección | Sin restricciones | KitNET |
+|---|---|---|---|---|---|---|---|
+| SSH (1 541) | 16 300 | 1 987 | **159** | 1 987 | ≥720 000 | 1 987 | 203 681 |
+| FTP (3 910) | 10 700 | 10 700 | 16 300 | 16 300 | ≥720 000 | 16 300 | 37 825 |
+| Hulk (518 525) | 37 825 | 7 024 | **8** | 4 611 | 24 830 | 1 987 | ≥720 000 |
+| GoldenEye (44 976) | 16 300 | 4 611 | **0** | 3 027 | 24 830 | 3 027 | 87 773 |
+| Slowloris (10 461) | 16 300 | 1 987 | **8** | 1 987 | 24 830 | 1 987 | 37 825 |
+| Slowhttptest (5 107) | 16 300 | 1 987 | **8** | 1 304 | 24 830 | 1 987 | 57 619 |
+| Escaneo jue. (10 418) | 8 | 8 | 30 | 69 | 10 700 | 369 | 1 304 |
+| Escaneo vie. (107 850) | 242 | 69 | **4** | 1 304 | ≥720 000 | 4 611 | 3 027 |
+| LOIC-HTTP (290 167) | 37 825 | 37 825 | **856** | 57 619 | 57 619 | 10 700 | 87 773 |
+| Media geométrica del ritmo real conservado | 12 % | 5,8 % | **0,2 %** | 9,2 % | 56 % | 10 % | 47 % |
+| Ataques que pasan a su ritmo real | 4 | 2 | 1 | 2 | 6 | 2 | 6 |
+
+Lectura:
+
+- **`proteus2` (todos los subnúcleos sobre evidencia que la reutilización no baja) deja órdenes de
+  magnitud menos daño** que cualquier otro en siete de nueve ataques, y nunca más que las reglas de
+  tasa. El plan que rompe a Proteus (`reuse`) no le hace nada. `proteus2_sys` y Proteus ∪ `proteus2`
+  dan lo mismo que `proteus2`.
+- **Las reglas con selección se evaden casi siempre** (seis de nueve ataques pasan a su ritmo real
+  con reutilización). La línea base que igualaba a Proteus en alarmas (§6.55) no aguanta al
+  atacante: la objeción M2 queda respondida, y a favor.
+- Las reglas con todos los rasgos empatan con el sistema de tres (5,8 % frente a 9,2 %) con 8,97
+  alarmas por entidad/h frente a 4,17.
+- La fuerza bruta FTP pasa a más de su ritmo real contra todos: nadie la detecta aquí salvo el
+  complemento de fidelidad (§6.62).
+- **Cautela decisiva: los umbrales no dan las mismas alarmas.** `proteus2` a 10⁻³ da 5,39 alarmas
+  por entidad/h (Proteus 1,75; sistema de tres 4,17; reglas 8,97) y a presupuesto bajo solo detecta
+  8/11. Un daño de 0–8 flujos/h significa que alerta casi con cualquier flujo añadido a la víctima:
+  parte de su robustez puede ser un umbral más sensible. A 10⁻⁴ da 1,05 alarmas, como Proteus:
+  en cola `adapteq_1817` (mismos planes a FPR 10⁻⁴ para Proteus, cert, cert-R y `proteus2`).
+- Frente a la rejilla de 20 (§6.54): Proteus sube de 15–29 k a 16–38 k (rejilla más fina); el resto
+  no cambia de orden.
