@@ -120,6 +120,12 @@ tres detectores, se queda el de tres y se cuenta.
       escalera de `adaptive`). Añadir a `adaptive`/`tables` el cálculo de uniones.
 - [ ] Evaluación en torno a un solo sistema; detectores superados y "we tried" a material
       suplementario; prosa numérica a tablas y figuras; frontera en ambos sentidos.
+- [~] Figura de detección frente a alarmas por entidad (`figures/curves.tex`, `tables curves
+      --detectors`), con TRW, CUSUM y reglas con selección en el texto (commit e260ce5 del paper). Se
+      corrigió de paso que `curve_points` archivaba las ejecuciones 17 → 18 en 18 → 17. Falta la curva
+      de reglas con selección en 17 → 18 (`p2_fit_1718`) y regenerarla con el sistema final; en el
+      texto «el sistema» aún es el de dos detectores (1,1 alarmas) y la figura muestra el de tres (1,4).
+- [x] `uv.lock` versionado y sincronizado con `pyproject.toml` (commit eee6d3c).
 - [ ] Nomenclatura única (rate thresholds; unconstrained; Proteus-cert frente a alertas certificadas).
 - [x] Trabajo relacionado (commit del paper): Tong et al. 2019 verificado (USENIX Security, pp. 285–302),
       Pierazzi 2020, Lowd y Meek 2005, Dalvi 2004, Sommer y Paxson 2010, robustez de árboles,
