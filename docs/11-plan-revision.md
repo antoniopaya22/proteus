@@ -34,6 +34,8 @@ La ronda 1 son las fases A–E de abajo.
       escribe `run.json`.
 - [x] `rev2.sh`: líneas base regeneradas, ambos sentidos reentrenados y evaluados, KitNET
       (§6.49–6.51 de docs/06). `r2b`: presupuestos por entidad alertada (18 → 17 hecho; 17 → 18 en cola).
+- [ ] `freeops.sh` (en cola): comprobación empírica del certificado y del de reutilización sobre
+      los detectores r2 (`free_ops` ya recalibra el máximo en local).
 - [ ] `rev2c.sh` (en cola): Después: CTU-13, UGR'16, CIC-DDoS-2019, fronteras
       (inactiva y con carga), adaptativo, envenenamiento, ablación, paquetes, realimentación.
 - [ ] Medir cuánto cambian las cifras respecto a `v3` y apuntarlo en docs/06.
@@ -73,6 +75,8 @@ La ronda 1 son las fases A–E de abajo.
 
 ## D. Reescritura
 
+- [~] (en curso) Configuración, métricas, tabla de detección, reutilización, presupuestos y precio de
+      la monotonía ya reescritos con r2 (commit del paper); quedan RQ3–RQ6 y el apéndice.
 - [ ] Evaluación en torno a un solo sistema; detectores superados y "we tried" a material
       suplementario; prosa numérica a tablas y figuras; frontera en ambos sentidos.
 - [ ] Nomenclatura única (rate thresholds; unconstrained; Proteus-cert frente a alertas certificadas).
