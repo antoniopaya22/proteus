@@ -227,11 +227,16 @@ def main() -> None:
             full = nested_attack(sc, args.rmax, np.random.default_rng(args.seed))
             oracle = Oracle(sc, models, thr, base, specs)
             for target, ms in members.items():
+                free_shape = None
                 for costly in ([False, True] if args.costly else [False]):
                     sent: dict[int, int] = {}
                     quiet = submit(full, sc, oracle, rates, args.rmax, list(ms), sent)
+                    # The search with sources starts from the best free shape, so that
+                    # what it reports is never below the free result.
                     res = search(quiet, len(rates), args.budget,
-                                 np.random.default_rng(args.seed + 1), costly=costly)
+                                 np.random.default_rng(args.seed + 1), costly=costly,
+                                 start=free_shape)
+                    free_shape = res["shape"] if not costly else free_shape
                     ok = res["index"] >= 0 and sent.get(res["index"], 0) > 0
                     rate = float(rates[res["index"]]) if ok else 0.0
                     rows.append({"day": day.stem, "attack": attack, "target": target,
