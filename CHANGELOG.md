@@ -11,7 +11,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Query attacker in the traffic space (`proteus query-attack`): a black-box search over
   the shape and the rate of the attacker's traffic that only observes whether it was
-  alerted.
+  alerted. The shapes found against one target are replayed against the others, so a
+  union of detectors is never reported easier to evade than one of its members.
 - Structured plans for the adaptive attacker: connection reuse, bursts and spreading over
   sources; damage of a union of detectors from the per-rate ladder.
 - Proteus-cert-R, fitted only on evidence that connection reuse cannot lower, and the
@@ -31,6 +32,12 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- `scripts/reproduce.sh` and `scripts/paper_tables.sh` rewritten for the current
+  experiments: new stages (`baselines`, `systems`, `cert`, `query`, `robustness`), a dry
+  run (`DRY=1`) that prints every command, and tables generated from any copy of the
+  results (`O=... T=...`).
+- Splitting flows (`attacks.operators.split_flows`) no longer loops over flows: same
+  output, about a thousand times faster.
 - Detection of a campaign also reported under a strict criterion (at least five alerted
   flows and 1% of the campaign); false alarms reported per alerted entity as well as
   per destination and minute.

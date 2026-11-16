@@ -19,193 +19,55 @@ de registro que se muestra en el terminal indica el comando exacto.
 
 | Etapa | Produce | Notas |
 |---|---|---|
-| `data` | Ficheros Parquet de CIC-IDS2017, CSE-CIC-IDS2018, CTU-13 y UNSW-NB15 | Los ficheros originales deben estar en `data/raw/<dataset>`; consulta [Datasets](datasets.md) |
-| `h1` | Detección entre redes en ambas direcciones para Proteus, Proteus-cert y los detectores de comparación; KitNET y umbrales de tasa sobre la misma evidencia | Evidencia v3. La ejecución 2017 → 2018 tarda alrededor de 1.5 h y alcanza un pico de unos 16 GB |
-| `single` | Núcleos de un solo modelo sobre la evidencia v1 (tablas del apéndice); operaciones gratuitas sobre las campañas reales | Evidencia por defecto (v1) |
-| `review` | Máximo calibrado sin restricciones, umbrales con igual presupuesto de alarmas, holgura del certificado con temporizador de re-puntuación | Reutiliza los modelos de `h1` |
+| `data` | Ficheros Parquet de CIC-IDS2017, CSE-CIC-IDS2018, CTU-13, UGR'16, CIC-DDoS2019 y UNSW-NB15 | Los ficheros originales deben estar en `data/raw/<dataset>`; consulta [Datasets](datasets.md) |
+| `h1` | Detección entre redes en ambos sentidos: se ajustan todos los detectores de Proteus y después se evalúan juntos, con los mismos umbrales y presupuestos de alarmas | La ejecución 2017 → 2018 tarda alrededor de 1,5 h y alcanza un pico de unos 16 GB |
+| `baselines` | Los detectores con los que se compara Proteus: KitNET, umbrales de tasa con rasgos seleccionados, Apollon y el clasificador por flujo, TRW y CUSUM | Reutiliza los modelos de `h1` donde puede |
+| `systems` | Alertas por flujo de cada detector, el complemento de fidelidad por ventana y los sistemas candidatos (uniones) que se forman con ellas | Consulta [Experimentos](experiments.md) |
+| `cert` | Operaciones gratuitas sobre las campañas reales, cada campaña sin los demás ataques de su día, holgura del certificado con temporizador de recálculo, subnúcleos saturados | Reutiliza los modelos de `h1` |
+| `frontier` | Frontera de daño por tipo de ataque, simple y certificada, sobre la víctima real y sobre el servicio con más tráfico | |
+| `adaptive` | Daño bajo el atacante adaptativo con planes fijos, todos los detectores | Pico de unos 12 GB |
+| `query` | Daño bajo el atacante por consultas (búsqueda de caja negra con etiqueta dura), todos los candidatos en una ejecución | Unas 3 h |
 | `ablation` | Ablación de subnúcleos (`proteus-K` elimina el subnúcleo K) | Reutiliza los modelos de `h1` |
-| `packets` | Comprobación del certificado a nivel de paquete sobre el pcap del viernes de CIC-IDS2017 | Necesita el pcap y el extra `packets` (`dpkt`) |
+| `poisoning` | Fronteras bajo envenenamiento de la línea base | |
 | `budget` | Certificado de presupuesto (suavizado aleatorizado, el mecanismo de BARS) frente a operaciones gratuitas | |
-| `frontier` | Frontera de daño por tipo de ataque, simple y certificada, con alertas atribuibles | |
-| `adaptive` | Daño bajo el atacante adaptativo; dimensión de robustez de la comparación de defensas | |
-| `poisoning` | Fronteras bajo envenenamiento de la línea base y crecimiento de las líneas base benignas | |
-| `real` | CTU-13 (dos particiones de escenarios) y UNSW-NB15; fronteras del lado del origen y alarmas en CTU-13 | |
+| `real` | CTU-13 y UGR'16 (dos particiones cada uno), CIC-DDoS2019 y UNSW-NB15; fronteras del lado del origen en CTU-13 | |
 | `shell` | Ataques basados en decisión y en puntuación contra detectores por flujo; calibración del contador de realimentación | Necesita el extra `attacks` (ART); tarda horas |
+| `robustness` | Cuatro semillas más, líneas base calculadas sin etiquetas, balance de clases del conjunto de entrenamiento | Vuelve a ajustar los detectores |
+| `packets` | Comprobación del certificado a nivel de paquete sobre el pcap del viernes de CIC-IDS2017 | Necesita el pcap y el extra `packets` (`dpkt`) |
 | `cost` | Rendimiento del cálculo de evidencia, rendimiento de la puntuación y estado por entidad | Medido en un núcleo de CPU |
-| `tables` | Ejecuta `scripts/paper_tables.sh` | Solo usa ejecuciones terminadas |
+| `tables` | Ejecuta `scripts/paper_tables.sh` | Usa solo las ejecuciones terminadas |
 
 ## Comandos por etapa
 
-Las variables que se usan a continuación se definen al principio del script:
+El script es la referencia: cada etapa es una función corta con los comandos exactos.
+Para leerlos sin ejecutar nada, pide una pasada en seco, que imprime cada comando y el
+fichero de registro que escribiría:
 
 ```bash
+DRY=1 bash scripts/reproduce.sh adaptive query
+```
+
+Las variables que usan los comandos se definen al principio del script:
+
+```bash
+export PROTEUS_EVIDENCE=v3
 PY=".venv/bin/python -m"
 O=experiments/outputs/h1
-P=data/processed
-R=data/raw
-A=$O/csecicids2018__cicids2017__loo_labels   # trained on 2018, tested on 2017
-B=$O/cicids2017__csecicids2018__loo_labels   # trained on 2017, tested on 2018
-V3="proteus proteus_cert core_pair core_mono_dst_x core_cert core_free_dst_b rate_rules_local"
+A=$O/csecicids2018__cicids2017__loo_labels__r2   # entrenado en 2018, probado en 2017
+B=$O/cicids2017__csecicids2018__loo_labels__r2   # entrenado en 2017, probado en 2018
+BUD="--entity-budgets 0.5 1 3 10"                # presupuestos de alarmas por entidad y hora
 ```
 
-### `data`
+El directorio de una ejecución se llama `<train>__<test>__loo_labels__<tag>`; las etapas
+posteriores encuentran los modelos ajustados por `h1` con `--reuse` y `--extra-runs`.
+
+`scripts/paper_tables.sh` escribe las tablas y los datos de las figuras en
+`experiments/outputs/paper_tables/`. Toma del entorno el directorio de las ejecuciones y
+el de salida, así que también funciona sobre una copia de los resultados:
 
 ```bash
-for d in cicids2017 csecicids2018 ctu13 unsw_nb15; do
-  $PY proteus.datasets.prepare --dataset $d --raw $R/$d --out $P/$d
-done
+O=/ruta/a/ejecuciones T=/ruta/a/tablas bash scripts/paper_tables.sh
 ```
-
-### `h1`
-
-```bash
-export PROTEUS_EVIDENCE=v3
-$PY proteus.evaluation.h1 --train csecicids2018 --test cicids2017 --models $V3 --tag v3
-$PY proteus.evaluation.h1 --train cicids2017 --test csecicids2018 --models $V3 --tag v3
-# KitNET and rate thresholds on the same evidence, fitted on local benign traffic
-$PY proteus.evaluation.h1 --train csecicids2018 --test cicids2017 --reuse ${A}__v3 \
-  --models kitnet_local rate_rules_local proteus proteus_cert --tag v3_kitnet
-$PY proteus.evaluation.h1 --train cicids2017 --test csecicids2018 --reuse ${B}__v3 \
-  --models kitnet_local rate_rules_local proteus proteus_cert --tag v3_kitnet
-```
-
-### `single`
-
-```bash
-$PY proteus.evaluation.h1 --train csecicids2018 --test cicids2017
-$PY proteus.evaluation.h1 --train cicids2017 --test csecicids2018
-$PY proteus.evaluation.h1 --train csecicids2018 --test cicids2017 --models core_cert --tag cert
-$PY proteus.evaluation.h1 --train cicids2017 --test csecicids2018 --models core_cert --tag cert
-$PY proteus.evaluation.free_ops --run ${A}__cert --test cicids2017 \
-  --models core_cert core_mono_dst_x --variants 20
-```
-
-### `review`
-
-```bash
-export PROTEUS_EVIDENCE=v3
-# for each direction (shown for 2018 -> 2017)
-$PY proteus.evaluation.h1 --train csecicids2018 --test cicids2017 --models proteus_free \
-  --entity-budgets 0.5 1 3 10 --tag v3_free
-$PY proteus.evaluation.h1 --train csecicids2018 --test cicids2017 --reuse ${A}__v3 \
-  --models proteus proteus_cert rate_rules_local core_free_dst_b \
-  --entity-budgets 0.5 1 3 10 --tag v3_budget
-# certificate slack with a re-scoring timer of 10 s and 60 s
-PROTEUS_TIMER_S=10 $PY proteus.evaluation.h1 --train csecicids2018 --test cicids2017 \
-  --reuse ${A}__v3 --models proteus proteus_cert --tag v3_timer10
-PROTEUS_TIMER_S=60 $PY proteus.evaluation.h1 --train csecicids2018 --test cicids2017 \
-  --reuse ${A}__v3 --models proteus proteus_cert --tag v3_timer60
-```
-
-### `ablation`
-
-```bash
-export PROTEUS_EVIDENCE=v3
-p="proteus proteus-0 proteus-1 proteus-2 proteus-3"
-c="proteus_cert proteus_cert-0 proteus_cert-1 proteus_cert-2 proteus_cert-3"
-$PY proteus.evaluation.h1 --train csecicids2018 --test cicids2017 --reuse ${A}__v3 --models $p $c --tag v3_ablation
-$PY proteus.evaluation.h1 --train cicids2017 --test csecicids2018 --reuse ${B}__v3 --models $p --tag v3_ablation
-$PY proteus.evaluation.h1 --train cicids2017 --test csecicids2018 --reuse ${B}__v3 --models $c --tag v3_ablation_cert
-```
-
-### `packets`
-
-```bash
-PROTEUS_EVIDENCE=v3 $PY proteus.evaluation.packet_check \
-  --pcap $R/cicids2017_pcap/Friday-WorkingHours.pcap \
-  --packets experiments/outputs/packet_check/loic_packets.parquet \
-  --victim 192.168.10.50 --attackers 172.16.0.1 --port 80 --start 1499453400 --minutes 25 \
-  --out experiments/outputs/packet_check_v3
-```
-
-### `budget`
-
-```bash
-PROTEUS_EVIDENCE=v3 $PY proteus.evaluation.smoothing \
-  --run ${A}__v3 --test cicids2017 --base core_free_dst_b --certified proteus_cert
-```
-
-### `frontier`
-
-```bash
-export PROTEUS_EVIDENCE=v3
-for m in proteus_cert proteus; do
-  $PY proteus.evaluation.frontier_exp --run ${A}__v3 --test cicids2017 --model $m --rmax 200
-  $PY proteus.evaluation.frontier_exp --run ${B}__v3 --test csecicids2018 --model $m --rmax 200
-done
-```
-
-### `adaptive`
-
-```bash
-export PROTEUS_EVIDENCE=v3
-m="proteus proteus_cert core_mono_dst_x core_free_dst_b core_pair"
-$PY proteus.evaluation.adaptive --run ${A}__v3 --test cicids2017 \
-  --models $m --local rate_rules_local kitnet_local --certify proteus_cert --grid 20
-$PY proteus.evaluation.adaptive --run ${B}__v3 --test csecicids2018 \
-  --models $m --local rate_rules_local kitnet_local --certify proteus_cert --variants 8 --grid 20
-```
-
-### `poisoning`
-
-```bash
-$PY proteus.evaluation.poisoning --run $A --test cicids2017 --model core_mono_dst_x --rounds 8 --caps none 0.25 0.1
-$PY proteus.evaluation.poisoning --run $A --test cicids2017 --growth-only --caps 0.1 0.25 0.5 1
-$PY proteus.evaluation.poisoning --run $B --test csecicids2018 --growth-only --caps 0.1 0.25 0.5 1
-export PROTEUS_EVIDENCE=v3
-$PY proteus.evaluation.poisoning --run ${A}__v3 --test cicids2017 --model proteus_cert --rounds 8 --caps none 0.25 0.1
-$PY proteus.evaluation.poisoning --run ${A}__v3 --test cicids2017 --model proteus --rounds 8 --caps none 0.1
-```
-
-### `real`
-
-```bash
-fa="s01 s02 s03 s04 s06 s10"; fb="s05 s07 s08 s09 s11 s12 s13"
-m="proteus proteus_cert core_both_x core_both_cert core_pair rate_rules_local"
-export PROTEUS_EVIDENCE=v3
-$PY proteus.evaluation.h1 --train ctu13 --test ctu13 --train-days $fb --test-days $fa \
-  --tag foldB_v3 --entity-budgets 1 0.1 --models $m
-$PY proteus.evaluation.h1 --train ctu13 --test ctu13 --train-days $fa --test-days $fb \
-  --tag foldA_v3 --entity-budgets 1 0.1 --models $m
-for h in 1 6; do
-  $PY proteus.evaluation.frontier_scan --run $O/ctu13__ctu13__loo_labels__foldB_v3 \
-    --test ctu13 --model proteus --fpr 1e-3 --hours $h
-done
-$PY proteus.evaluation.alarms --run $O/ctu13__ctu13__loo_labels__foldB_v3 --test ctu13 \
-  --models proteus proteus_cert --days $fa --top 30
-unset PROTEUS_EVIDENCE
-$PY proteus.evaluation.h1 --train cicids2017 --test unsw_nb15 \
-  --models core_both_x core_both_cert core_src_x rate_rules_local --tag src
-```
-
-### `shell`
-
-```bash
-$PY proteus.evaluation.aml_feature --dataset cicids2017 --n 100 --workers 8
-for f in 1e-3 1e-4; do
-  $PY proteus.evaluation.feedback --run $A --test cicids2017 --block-fpr $f
-  $PY proteus.evaluation.feedback --run $B --test csecicids2018 --block-fpr $f
-done
-```
-
-### `cost`
-
-```bash
-PROTEUS_EVIDENCE=v3 $PY proteus.evaluation.cost --run ${A}__v3 --test cicids2017 \
-  --day wednesday --models proteus proteus_cert core_mono_dst_x
-```
-
-### `tables`
-
-```bash
-bash scripts/paper_tables.sh
-```
-
-Escribe tablas LaTeX y datos de figuras en `experiments/outputs/paper_tables/`:
-detección entre redes a dos tasas de falsos positivos, intervalos de confianza
-(intervalos de Wilson para las campañas, bootstrap sobre días para las alarmas), la
-comparación de defensas, la tabla del atacante adaptativo, las ablaciones de subnúcleos
-y las fronteras de daño.
 
 ## Determinismo
 

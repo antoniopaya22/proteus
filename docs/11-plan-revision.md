@@ -281,8 +281,13 @@ tres detectores, se queda el de tres y se cuenta.
 ## E. Artefacto
 
 - [x] Test de extremo a extremo con un mini-dataset sintético (commit 7d4aa7d; 78 s).
-- [ ] `reproduce.sh` que funcione en un clon limpio y cubra todas las salidas citadas; `uv.lock`
-      versionado; tabla de tiempo, memoria y disco.
+- [~] `reproduce.sh` y `paper_tables.sh` reescritos con las órdenes r2 reales (2026-11-16): etapas
+      nuevas (`baselines`, `systems`, `cert`, `query`, `robustness`), pasada en seco (`DRY=1`) y tablas
+      desde cualquier copia de los resultados; `paper_tables.sh` regenera idénticas las dos tablas de
+      detección y la figura de curvas del paper. Tests: nombres de módulos y detectores del script
+      contra el código (`test_scripts.py`, `test_end_to_end.py`). Falta: repasarlo cuando el sistema
+      final y las tablas del paper estén fijados, probarlo en un clon limpio y la tabla de tiempo,
+      memoria y disco.
 - [ ] API `Detector` (`fit / calibrate / score / explain / save / load`) y `proteus fit | score |
       explain`; documentación "usar Proteus con tus flujos".
 - [ ] Streaming real (estado persistente, `tick`, validación de unidades): después del paper.

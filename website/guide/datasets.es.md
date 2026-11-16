@@ -65,8 +65,8 @@ python -m proteus.datasets.prepare --dataset ctusme11 --raw data/raw/ctusme11_ze
     --out data/processed/ctusme11
 ```
 
-`bash scripts/reproduce.sh data` convierte los cuatro datasets que usan los experimentos
-principales (los dos datasets CIC, CTU-13 y UNSW-NB15).
+`bash scripts/reproduce.sh data` convierte los seis datasets que usan los experimentos
+(los dos datasets CIC, CTU-13, UGR'16, CIC-DDoS2019 y UNSW-NB15).
 
 !!! note "Capturas muy grandes"
     UGR'16 y CIC-DDoS2019 no caben en memoria. Sus conversores leen la entrada en

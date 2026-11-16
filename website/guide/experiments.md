@@ -383,19 +383,21 @@ Options: `--h1` (run directories; the first wins for a repeated model), `--adapt
 
 Writes the LaTeX tables of the manuscript, and CSV data for the figures, from the
 outputs above. The first argument selects the table: `h1`, `summary`, `ablation`,
-`frontier`, `frontier_system` or `adaptive`.
+`frontier`, `frontier_system`, `adaptive`, `query` or `curves`.
 
 ```bash
-python -m proteus.evaluation.tables h1 --set v3 --fpr 1e-3 \
-    --runs experiments/outputs/h1/csecicids2018__cicids2017__loo_labels__v3 \
-           experiments/outputs/h1/cicids2017__csecicids2018__loo_labels__v3 \
-    --out experiments/outputs/paper_tables/h1_v3_1e-3.tex
+python -m proteus.evaluation.tables h1 --set r2 --fpr 1e-3 \
+    --runs experiments/outputs/h1/csecicids2018__cicids2017__loo_labels__r2c \
+           experiments/outputs/h1/cicids2017__csecicids2018__loo_labels__r2c \
+    --extra experiments/outputs/h1/csecicids2018__cicids2017__loo_labels__r2_kitnet \
+            experiments/outputs/h1/csecicids2018__cicids2017__loo_labels__r2_apollon \
+    --out experiments/outputs/paper_tables/h1_r2_1e-3.tex
 ```
 
 | Option | Meaning |
 |---|---|
 | `--runs`, `--extra` | Run directories; `--extra` adds detectors for the same direction |
-| `--csv` | Frontier or adaptive CSV files |
+| `--csv` | Frontier, adaptive or query-attack CSV files |
 | `--data-out` | CSV with the data of the corresponding figure |
 | `--detectors`, `--set` | Detector columns |
 | `--base` | Full model of an ablation table |

@@ -9,6 +9,7 @@ unknown models fail, and ``--reuse`` reproduces the detections.
 
 import json
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -175,6 +176,10 @@ def test_cross_network_run_end_to_end(world):
 def test_unknown_models_and_bad_flags_fail(world):
     r = _run(world, "--train", "net1", "--test", "net2", "--models", "proteus", "typo", "--tag", "bad")
     assert r.returncode != 0 and "unknown models" in r.stderr
+    # The message lists what h1 offers: every detector of scripts/reproduce.sh is there.
+    from test_scripts import script_models
+    available = set(re.findall(r"'([^']+)'", r.stderr.split("available:")[1]))
+    assert script_models() <= available | {"kitnet_local"}, script_models() - available
     r = _run(world, "--train", "net1", "--test", "net2", "--models", "proteus",
              "--alert-variants", "--tag", "bad")
     assert r.returncode != 0 and "--entity-budgets" in r.stderr
