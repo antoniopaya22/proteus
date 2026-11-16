@@ -1971,3 +1971,15 @@ F = complemento de fidelidad por ventana.
 - De paso: `split_flows` recorría los flujos uno a uno (8 min por consulta con 300 000 flujos);
   vectorizado con salida idéntica (commit 7736e20). El trabajo de finalistas pasó de 1 búsqueda en 90
   min a 72 en 57 min.
+
+## 6.68 Frontera de Proteus-cert con r2, 2018 → 2017 (2026-11-16, 22:25)
+
+`fr_proteus_cert_1817`. La frontera certificada (flujos/h) coincide con la tabla que ya tiene el
+paper en ocho de nueve ataques: SSH 4 602, FTP 19 786, Hulk 11 291, GoldenEye 8 139, Slowloris 6 002,
+Slowhttptest 5 476, escaneo del jueves 629, LOIC-HTTP 28 728. Cambia el escaneo del viernes: 4 280
+(antes 3 692; factor 25 en vez de 29). La frontera simple de Proteus-cert queda entre 20 (escaneo del
+jueves) y 17 165 (FTP), por encima de la de Proteus en todos los ataques, como se esperaba de un
+detector que solo usa escalas de diez minutos o más.
+
+La tabla del paper se regenera con `scripts/paper_tables.sh` cuando estén las fronteras de 2017 → 2018
+(`fr_*_1718`, en cola); de momento solo cambia esa celda.
