@@ -98,6 +98,71 @@ def mimic(df: pd.DataFrame, bg: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
+def day_models(test: str, day: Path, dets: dict, local: list[str], fpr: float,
+               rng: np.random.Generator) -> tuple[dict, dict[str, float]]:
+    """Detectors as deployed on one test day: the local ones fitted on clean benign
+    traffic of the other days, and every threshold at ``fpr`` on that same traffic."""
+    models, thr = {}, {}
+    for n, (cols, m) in dets.items():
+        ref = local_benign(test, day, cols, rng)
+        if n in local or n in h1.LOCAL or getattr(m, "local", False):
+            m = copy.deepcopy(m).fit(ref)
+        if not hasattr(m, "predict_proba"):
+            m = Scored(m)
+        models[n] = (cols, m)
+        thr[n] = float(np.quantile(m.predict_proba(ref)[:, 1], 1 - fpr, method="higher"))
+    return models, thr
+
+
+class Oracle:
+    """What an attacker can observe about one scenario: for a variant of its traffic,
+    whether each detector stays quiet. Only alerts on attacker flows in minutes where
+    the victim's background alone raises none count (benign false positives are not
+    the attack's doing). ``queries`` counts the variants submitted."""
+
+    def __init__(self, sc, models: dict, thr: dict[str, float], base: dict, specs: dict,
+                 certify: tuple[str, ...] = (), delta: float = h1.EXPORT_TIMEOUT_S) -> None:
+        self.models, self.thr, self.base, self.specs = models, thr, base, specs
+        self.certify = tuple(n for n in certify if n in models)
+        self.delta = delta
+        self.cols = list(dict.fromkeys(c for cols, _ in models.values() for c in cols))
+        self.queries = 0
+        bg_feats = _features(sc.background, self.cols, base)
+        bg_min = sc.background["t_end"].astype("int64").to_numpy() // 60_000_000
+        self.noisy, self.noisy_cert = {}, {}
+        for n, (cols, m) in models.items():
+            X = bg_feats[cols].to_numpy(np.float64)
+            self.noisy[n] = np.unique(bg_min[m.predict_proba(X)[:, 1] >= thr[n]])
+            if n in self.certify:
+                self.noisy_cert[n] = np.unique(bg_min[self._worst(n, X) >= thr[n]])
+
+    def _worst(self, n: str, X: np.ndarray) -> np.ndarray:
+        cols, m = self.models[n]
+        W = worst_case_features(X, np.asarray(m.monotonic_cst),
+                                slack(cols, self.specs, self.delta))
+        return m.predict_proba(W)[:, 1]
+
+    def query(self, v: pd.DataFrame, names: list[str] | None = None,
+              certified: bool = False) -> tuple[dict[str, bool], dict[str, bool]]:
+        """Quiet or not, per detector, on the traffic ``v``; with ``certified``, also
+        whether the certified alerts of the ``certify`` detectors stay quiet."""
+        names = list(self.models) if names is None else names
+        cols = list(dict.fromkeys(c for n in names for c in self.models[n][0]))
+        feats = _features(v, cols, self.base)
+        minute = v["t_end"].astype("int64").to_numpy() // 60_000_000
+        self.queries += 1
+        quiet, cert = {}, {}
+        for n in names:
+            mcols, m = self.models[n]
+            X = feats[mcols].to_numpy(np.float64)
+            hit = m.predict_proba(X)[:, 1] >= self.thr[n]
+            quiet[n] = not (hit & ~np.isin(minute, self.noisy[n])).any()
+            if certified and n in self.certify:
+                hit = self._worst(n, X) >= self.thr[n]
+                cert[n] = not (hit & ~np.isin(minute, self.noisy_cert[n])).any()
+        return quiet, cert
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--run", type=Path, required=True)
@@ -139,34 +204,15 @@ def main() -> None:
         if not present:
             continue
         base = baselines.for_day(day)
-        models, thr = {}, {}
-        for n, (cols, m) in dets.items():
-            ref = local_benign(args.test, day, cols, rng)
-            if n in args.local or n in h1.LOCAL or getattr(m, "local", False):
-                m = copy.deepcopy(m).fit(ref)
-            if not hasattr(m, "predict_proba"):
-                m = Scored(m)
-            models[n] = (cols, m)
-            thr[n] = float(np.quantile(m.predict_proba(ref)[:, 1], 1 - args.fpr,
-                                       method="higher"))
-        all_cols = list(dict.fromkeys(c for cols, _ in models.values() for c in cols))
+        models, thr = day_models(args.test, day, dets, args.local, args.fpr, rng)
         for attack, sc, A in scenarios(flows, present):
             span = max((A["t_end"].max() - A["t_start"].min()).total_seconds(), 1.0)
             full = nested_attack(sc, args.rmax, np.random.default_rng(args.seed))
             plans = [("plain", None), ("mimic", None)] + [
                 (f"random{k}", k) for k in range(args.variants)] + [
                 (name, None) for name in STRUCTURED if not args.no_structured]
-            # Minutes where the victim's background alone alerts: not the attack's doing.
-            bg_feats = _features(sc.background, all_cols, base)
-            bg_min = sc.background["t_end"].astype("int64").to_numpy() // 60_000_000
-            noisy, noisy_cert = {}, {}
-            for n, (cols, m) in models.items():
-                X = bg_feats[cols].to_numpy(np.float64)
-                noisy[n] = np.unique(bg_min[m.predict_proba(X)[:, 1] >= thr[n]])
-                if n in args.certify:
-                    W = worst_case_features(X, np.asarray(m.monotonic_cst),
-                                            slack(cols, specs, delta))
-                    noisy_cert[n] = np.unique(bg_min[m.predict_proba(W)[:, 1] >= thr[n]])
+            oracle = Oracle(sc, models, thr, base, specs, tuple(args.certify), delta)
+            noisy = oracle.noisy
             best = {n: {"rate": 0.0, "plan": None} for n in models}
             spread = {n: {"rate": 0.0, "plan": None} for n in models}
             plain = {n: 0.0 for n in models}
@@ -192,12 +238,9 @@ def main() -> None:
                     else:
                         v, _ = variant(df, np.random.default_rng(1000 + k), sc.target_ip,
                                        sc.target_port, retime=bool(k % 2))
-                    feats = _features(v, all_cols, base)
-                    minute = v["t_end"].astype("int64").to_numpy() // 60_000_000
-                    for n, (cols, m) in models.items():
-                        X = feats[cols].to_numpy(np.float64)
-                        clean_min = ~np.isin(minute, noisy[n])
-                        quiet = not ((m.predict_proba(X)[:, 1] >= thr[n]) & clean_min).any()
+                    quiet_of, cert_of = oracle.query(v, certified=plan == "plain")
+                    for n in models:
+                        quiet = quiet_of[n]
                         quiet_any[n] = quiet_any[n] or quiet
                         ladder.append({"day": day.stem, "attack": attack, "detector": n,
                                        "plan": plan, "flows_per_h": float(r) * 3600,
@@ -209,13 +252,9 @@ def main() -> None:
                             best[n] = {"rate": float(r), "plan": plan}
                         if quiet and plan == "plain":
                             plain[n] = max(plain[n], float(r))
-                        if plan == "plain" and n in cert:
-                            W = worst_case_features(X, np.asarray(m.monotonic_cst),
-                                                    slack(cols, specs, delta))
-                            hit = m.predict_proba(W)[:, 1] >= thr[n]
-                            if not (hit & ~np.isin(minute, noisy_cert[n])).any():
-                                cert[n] = max(cert[n], float(r))
-                                quiet_any[n] = True  # keep scanning for the certified frontier
+                        if cert_of.get(n):
+                            cert[n] = max(cert[n], float(r))
+                            quiet_any[n] = True  # keep scanning for the certified frontier
                 for n in models:
                     streak[n] = 0 if quiet_any[n] else streak[n] + 1
             for n in models:
