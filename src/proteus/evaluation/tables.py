@@ -399,7 +399,7 @@ CURVE_STYLE = {  # detector -> (legend, pgfplots style)
     "proteus2_sys": (r"\sysname-2 system", "color=pgreen, mark=triangle, densely dashed"),
     "rate_rules_local": ("rate thresholds", "color=porange, mark=o"),
     "rate_rules_sel": ("selected rate thresholds", "color=porange, mark=square, densely dashed"),
-    "proteus_free": ("unconstrained sub-cores", "color=pgrey, mark=x, densely dashed"),
+    "proteus_free": ("unconstrained core", "color=pgrey, mark=x, densely dashed"),
     "kitnet_local": ("KitNET", "color=porange, mark=diamond, densely dotted"),
     "syn_cusum": ("failed-flow CUSUM", "color=pgrey, mark=+, densely dotted"),
     "trw_svc": ("TRW (services)", "color=pgrey, mark=asterisk, densely dotted"),

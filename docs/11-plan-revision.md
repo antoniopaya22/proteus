@@ -262,7 +262,9 @@ tres detectores, se queda el de tres y se cuenta.
       de reglas con selección en 17 → 18 (`p2_fit_1718`) y regenerarla con el sistema final; en el
       texto «el sistema» aún es el de dos detectores (1,1 alarmas) y la figura muestra el de tres (1,4).
 - [x] `uv.lock` versionado y sincronizado con `pyproject.toml` (commit eee6d3c).
-- [ ] Nomenclatura única (rate thresholds; unconstrained; Proteus-cert frente a alertas certificadas).
+- [x] Nomenclatura única: «rate thresholds», «unconstrained core» (también en la leyenda de la
+      figura), «alarm budget»; «shell» es el componente y «per-flow classifier» el detector de la
+      comparación. Quedan «certified core/detector» en pasajes que se reescriben con r2.
 - [x] Trabajo relacionado (commit del paper): Tong et al. 2019 verificado (USENIX Security, pp. 285–302),
       Pierazzi 2020, Lowd y Meek 2005, Dalvi 2004, Sommer y Paxson 2010, robustez de árboles,
       Whisper como defensa.
