@@ -68,6 +68,12 @@ trabajo es de seguridad de redes (el certificado vale para detectores no aprendi
       cambios 1–5 (contribuciones, certificado como lema y teorema, tabla de supuestos, figura
       conceptual, tabla de variantes); pendientes la evaluación en cuatro partes con conclusiones, el
       traslado de resultados fuera de la discusión y el bloque de revistas.
+- [~] **Extensión** (la guía de la revista habla de 5 000–10 000 palabras): cuerpo de unas 15 200 a
+      13958 tras pasar al apéndice cinco bloques secundarios con puntero en el cuerpo (arrastre entre
+      campañas, ablación de subnúcleos, certificados de presupuesto, CIC-DDoS-2019 y UNSW-NB15,
+      calibración del contador de realimentación; commit c4d9570 del paper). Presupuesto objetivo al
+      reescribir: introducción 950, contexto 900, motivación 400, amenaza 550, diseño 2 100,
+      evaluación 4 300, discusión 800, conclusión 250.
 - [ ] Repeticiones encoladas tras `master.sh` (`~/tools/extra.sh`): temporizador δ = 10 y 60 s
       (`timer*_1817`) y balance de clases en ambos sentidos (`bal_*`).
 
