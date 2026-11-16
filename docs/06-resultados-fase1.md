@@ -1932,3 +1932,42 @@ formas gratuitas (flujos/h):
 - Primer dato contra el complemento de fidelidad solo (`qa2_1817`): fuerza bruta SSH pasa a 11 491
   flujos/h (7,5 veces su ritmo real) con 100 peticiones por conexión, partición y señuelos. Como se
   esperaba, se evade: con tan pocas conexiones la ventana no llega al mínimo para puntuarse.
+
+## 6.67 Atacante por consultas contra los finalistas, 2018 → 2017 (2026-11-16, 21:30)
+
+`qa2_1817` (etiqueta `fin`, completo) y `qa_1817` (`b150`, 124 de 126 búsquedas). FPR 10⁻³, 150
+consultas por búsqueda, formas gratuitas (flujos/h sin alerta). P = Proteus, cR = Proteus-cert-R,
+F = complemento de fidelidad por ventana.
+
+| Ataque (real) | P | P ∪ cR | P ∪ cR ∪ F | `proteus2` | `proteus2` ∪ F | F sola | Reglas |
+|---|---|---|---|---|---|---|---|
+| LOIC-HTTP (290 167) | 137 578 | 73 961ᵃ | 73 961 | 9 344 | 9 344 | 137 578 | — |
+| Escaneo vie. (107 850) | 341 | 80 | 80 | 4 | 4 | 3 321 | 1 180 |
+| Escaneo jue. (10 418) | 10 | 10 | 10 | 80 | 28 | 5 023 | 65 |
+| FTP (3 910) | 48 900 | 32 331 | 9 344 | 21 376 | 7 598 | 73 961 | 39 761 |
+| SSH (1 541) | 26 288 | 2 196 | 2 196 | 99 | 80 | 11 491 | 2 196 |
+| GoldenEye (44 976) | 90 960 | 5 023 | 5 023 | 23 | 5 | 9 344 | 4 084 |
+| Hulk (518 525) | 137 578 | 6 178 | 6 178 | 10 | 10 | 21 376 | 5 023 |
+| Slowhttptest (5 107) | 48 900 | 2 196 | 2 196 | 10 | 10 | ≥ 255 913 | 1 785 |
+| Slowloris (10 461) | 48 900 | 2 196 | 2 196 | 10 | 8 | 9 344 | 1 785 |
+
+ᵃ La búsqueda contra P ∪ cR se quedó en 9 344; la forma que pasa la unión con F a 73 961
+(100 peticiones por conexión en ráfagas) pasa también sus miembros.
+
+- **El complemento de fidelidad no aporta robustez**: P ∪ cR ∪ F deja el mismo daño que P ∪ cR en
+  siete de nueve ataques (baja solo en FTP), y a `proteus2` le baja poco (FTP, GoldenEye, un escaneo).
+  Sola se evade en todo (pasan a su ritmo real SSH, FTP y Slowhttptest; repartiendo entre orígenes,
+  casi todos). Su papel es de detección (2 campañas más de «otros» en §6.62), no de robustez.
+- **`proteus2` sigue siendo el más robusto con diferencia**: conserva un 0,4 % del ritmo real en
+  media geométrica (0,3 % con F) frente a un 5–7 % de P ∪ cR y un 19 % de Proteus solo. FTP pasa a
+  ritmo real contra todos; SSH pasa contra P ∪ cR (2 196 frente a 1 541).
+- Repartir entre orígenes sube el daño contra P ∪ cR en GoldenEye (26 288) y Hulk (39 761), aún por
+  debajo del ritmo real; contra `proteus2` apenas (Hulk 99).
+- **La búsqueda no converge con 150 consultas**: una unión salió más evadible que un miembro (nota
+  ᵃ), lo que es imposible. Arreglo (commit b436c19): tras las búsquedas de un escenario, cada
+  objetivo vuelve a probar las formas halladas contra los demás (`transfer`); así una unión nunca
+  sale más evadible que un miembro y lo que se informa sigue siendo una consulta real. Relanzado todo
+  junto (`qa3_1817`, etiqueta `all`, diez objetivos) para tener cifras coherentes.
+- De paso: `split_flows` recorría los flujos uno a uno (8 min por consulta con 300 000 flujos);
+  vectorizado con salida idéntica (commit 7736e20). El trabajo de finalistas pasó de 1 búsqueda en 90
+  min a 72 en 57 min.

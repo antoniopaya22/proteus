@@ -95,7 +95,10 @@ trabajo es de seguridad de redes (el certificado vale para detectores no aprendi
       de los pliegues r2 (`~/tools/extra2.sh`: `ctuB_nox`, `ctuA_nox`, `ugrJA_nox`, `ugrAJ_nox`; empieza
       al acabar `master.sh` y `extra.sh`). Si a presupuesto dan lo mismo, se quita `--exclude-saturated`
       del paper y de la discusión.
-- [~] Atacante por consultas 18 → 17 (`qa_1817`, `qa2_1817`): parciales en §6.66 de docs/06.
+- [~] Atacante por consultas 18 → 17: `qa_1817` y `qa2_1817` en §6.66–6.67 de docs/06 (la fidelidad
+      no aporta robustez; `proteus2` el más robusto). La búsqueda no convergía: añadida la pasada
+      `transfer` y relanzado todo junto (`qa3_1817`, etiqueta `all`); las cifras del paper saldrán
+      de esa ejecución.
 
 **Computers & Security** (Elsevier), por la vía de suscripción (sin coste); reserva: *Journal of
 Information Security and Applications*. Se buscaron números especiales abiertos y gratuitos y no hay
