@@ -57,7 +57,7 @@ abajo. Estado al final de este documento.
 
 ---
 
-## Bloque A. Cómo están escritos cuatro artículos muy citados sobre detección de intrusiones en red
+# Bloque A. Cómo están escritos cuatro artículos muy citados sobre detección de intrusiones en red
 
 Análisis de oficio de escritura (estructura, formato, retórica), no de contenido técnico.
 Fecha: 2026-11-16.
