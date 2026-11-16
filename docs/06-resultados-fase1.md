@@ -1696,3 +1696,16 @@ Proteus-cert-R con `--exclude-saturated 1e-3`.
   altos (Proteus a presupuesto 10: 6,58 → 8,14; sistema de tres: 9,48 → 11,38) y nada en 0,5.
 - Falta `sat_1718`, que es donde Proteus-cert-R satura (§6.56). Si allí la regla arregla cert-R sin
   tocar lo demás, se adopta para todas las ejecuciones.
+
+## 6.59 Temporizador de recálculo con r2, 2018 → 2017 (2026-11-16, 14:00)
+
+`timer10_1817` y `timer60_1817` (`PROTEUS_TIMER_S`, holgura (2Δ + δ)/τ), sobre los modelos de `r2`.
+
+| δ | Cert.: campañas, recall medio de flujos, alarmas por entidad/h | Cert.-R |
+|---|---|---|
+| 0 s | 8/11, 0,863, 0,865 | 8/11, 0,712, 1,735 |
+| 10 s | 8/11, 0,863, 0,840 | 8/11, 0,711, 1,735 |
+| 60 s | 8/11, 0,860, 0,815 | 8/11, 0,707, 1,662 |
+
+Las alertas sin certificar no cambian (Proteus 11/11 a 1,75; Proteus-cert 9/11 a 1,88). Como en v3,
+el temporizador no cuesta campañas certificadas. Llevado al apéndice del paper.
