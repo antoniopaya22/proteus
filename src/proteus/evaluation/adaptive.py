@@ -22,8 +22,11 @@ alerted, maximised over
 
 Only alerts in minutes where the victim's background alone raises none count against
 the attacker (benign false positives are not the attack's doing). Rates are scanned on
-a geometric grid (the attacker needs one quiet rate, so no
-monotonicity in the rate is assumed). For monotone detectors free operations only
+a geometric grid. The attacker needs one quiet rate, and detectors without constraints
+can alert at a middle rate and be quiet at a higher one, so they are scored at every
+rate. A monotone detector that alerted at two consecutive rates is not scored at the
+higher ones: the attack is nested, so more flows only add evidence (``--full-scan``
+scores it anyway). For monotone detectors free operations only
 raise evidence, so the best variant is the plain attack, and for ``--certify``
 models the certified frontier (worst case over all free operations) is reported too.
 Thresholds are local (FPR on clean benign traffic of the other days); ``--local``
@@ -184,6 +187,9 @@ def main() -> None:
                     help="skip the structured plans (reuse, bursts, spreading)")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--tag", default="", help="suffix of the output files")
+    ap.add_argument("--days", nargs="*", default=None, help="test days (file stems)")
+    ap.add_argument("--full-scan", action="store_true",
+                    help="score every detector at every rate (no per-detector stop)")
     args = ap.parse_args()
     rng = np.random.default_rng(args.seed)
     fitted = h1.load_models(args.run)
@@ -198,6 +204,8 @@ def main() -> None:
     baselines = Baselines(args.test)
     rows, ladder = [], []
     for day in h1.days(args.test):
+        if args.days and day.stem not in args.days:
+            continue
         flows = pd.read_parquet(day, columns=FLOW_COLS)
         want = args.attacks or ATTACKS
         present = [a for a in want if (flows["is_attack"] & (flows["attack"] == a)).any()]
@@ -218,10 +226,18 @@ def main() -> None:
             plain = {n: 0.0 for n in models}
             cert = {n: 0.0 for n in args.certify if n in models}
             streak = {n: 0 for n in models}  # consecutive rates where every variant alerts
+            mono = {n: getattr(m, "monotonic_cst", None) is not None
+                    for n, (_, m) in models.items()}
             for r in rates:
                 if all(v >= STOP_AFTER for v in streak.values()):
                     break  # higher rates are only more evidence: stop paying for them
                 quiet_any = {n: False for n in models}
+                # A monotone detector that alerted at the last STOP_AFTER rates alerts at
+                # every higher one (the attack is nested: more flows only add evidence),
+                # so it is no longer scored. Detectors without that property are.
+                done = set() if args.full_scan else {
+                    n for n in models if mono[n] and streak[n] >= STOP_AFTER}
+                active = [n for n in models if n not in done]
                 a = full[full["u"] < r / args.rmax].drop(columns=["u"])
                 if a.empty:
                     continue
@@ -238,13 +254,17 @@ def main() -> None:
                     else:
                         v, _ = variant(df, np.random.default_rng(1000 + k), sc.target_ip,
                                        sc.target_port, retime=bool(k % 2))
-                    quiet_of, cert_of = oracle.query(v, certified=plan == "plain")
-                    for n in models:
+                    quiet_of, cert_of = oracle.query(v, active, certified=plan == "plain")
+                    for n in done:
+                        ladder.append({"day": day.stem, "attack": attack, "detector": n,
+                                       "plan": plan, "flows_per_h": float(r) * 3600,
+                                       "detected": True, "assumed": True})
+                    for n in active:
                         quiet = quiet_of[n]
                         quiet_any[n] = quiet_any[n] or quiet
                         ladder.append({"day": day.stem, "attack": attack, "detector": n,
                                        "plan": plan, "flows_per_h": float(r) * 3600,
-                                       "detected": not quiet})
+                                       "detected": not quiet, "assumed": False})
                         costly = plan.startswith("spread")
                         if quiet and r > spread[n]["rate"]:
                             spread[n] = {"rate": float(r), "plan": plan}
