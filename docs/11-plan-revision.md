@@ -216,6 +216,17 @@ tres detectores, se queda el de tres y se cuenta.
         infiltración, que Proteus no ve, a 0,59 alarmas por entidad/h.
   - [ ] Decidir con Antonio si entra en el paper. Para ello: criterio de `h1`, 2018, unión con
         Proteus y atacarlo con el atacante por consultas.
+- **Buscar el mejor Proteus** (pedido por Antonio el 2026-11-16: evaluar Proteus, Apollon y METIS
+  como experto, proponer varias opciones y probarlas).
+  Debilidades medidas: la reutilización rompe a Proteus solo; el sistema de tres suma las alarmas
+  de sus miembros; fuera de inundaciones y escaneos detecta 1 de 10 campañas.
+  - [~] A: un solo máximo calibrado sobre todos los subnúcleos (`a&b` en `combined`). B: reglas de
+        tasa sobre evidencia que la reutilización no baja (`rate_rules_r`). C: complemento de
+        fidelidad por ventana. Trece candidatos en 2017 con las métricas del paper
+        (`h1 --export-alerts` + `proteus.evaluation.unions`; ejecución `r2_opt`/`r2_unions`).
+  - [ ] D: alertas con memoria (persistencia, suelo por entidad). Atacante por consultas contra los
+        mejores. Repetir en 2018.
+  - [ ] E (entrenar con ataques disfrazados) y F (marcadores por subred): solo si A–D no bastan.
 - **La GPU no es un límite.** No se escribe que algo «necesita GPU»; la máquina se ampliará.
   - [x] Quitadas las menciones del paper (BARS, entorno).
   - [ ] Fase con GPU (cuando esté): código original de BARS, PANTS y CertTA sobre los mismos datos,
