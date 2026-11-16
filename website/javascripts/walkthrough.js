@@ -13,8 +13,9 @@
     quiet: "SIN ALERTA", cert: "certificada", evaded: "evadido",
     rate: "Ritmo del ataque", real: "ritmo real", strength: "Fuerza del ataque",
     pad: "Rellenar paquetes", decoy: "Tráfico señuelo", split: "Partir conexiones",
-    normal: "lo normal", thr: "umbral", step: "Paso", prev: "Anterior", next: "Siguiente",
-    play: "Reproducir", pause: "Pausar", note: "Ilustración con cifras inventadas, no datos medidos.",
+    normal: "lo normal", thr: "umbral", step: "Paso", of: "de", prev: "← Anterior", next: "Siguiente paso →",
+    again: "Volver a empezar ↺", own: "O prueba tú: mueve el ritmo y los disfraces",
+    play: "▶ Reproducir todo", pause: "❚❚ Pausar", note: "Ilustración con cifras inventadas, no datos medidos.",
     up: "sube", attacker: "atacante", clients: "clientes", server: "servidor web", net: "red interna",
     other: "otros destinos", host: "máquina que escanea", unit: "conexiones/s", probes: "sondas/s"
   } : {
@@ -26,8 +27,9 @@
     quiet: "NO ALERT", cert: "certified", evaded: "evaded",
     rate: "Attack rate", real: "real rate", strength: "Attack strength",
     pad: "Pad packets", decoy: "Decoy traffic", split: "Split connections",
-    normal: "normal", thr: "threshold", step: "Step", prev: "Back", next: "Next",
-    play: "Play", pause: "Pause", note: "Illustration with made-up figures, not measured data.",
+    normal: "normal", thr: "threshold", step: "Step", of: "of", prev: "← Back", next: "Next step →",
+    again: "Start again ↺", own: "Or try it yourself: move the rate and the disguises",
+    play: "▶ Play all", pause: "❚❚ Pause", note: "Illustration with made-up figures, not measured data.",
     up: "up", attacker: "attacker", clients: "clients", server: "web server", net: "internal network",
     other: "other destinations", host: "scanning host", unit: "connections/s", probes: "probes/s"
   };
@@ -168,12 +170,14 @@
       }).join("") + "</div>" +
       "<div class='wt-str'><span>" + T.strength + "</span><i><b></b></i><em></em></div>");
     var story = el("div", "wt-story",
-      "<p class='wt-step'></p><p class='wt-text' aria-live='polite'></p>" +
-      "<div class='wt-nav'><button type='button' data-n='-1'>" + T.prev + "</button>" +
-      "<button type='button' data-n='play' class='wt-play'>" + T.play + "</button>" +
-      "<button type='button' data-n='1'>" + T.next + "</button></div>" +
-      "<p class='wt-note'>" + T.note + "</p>");
-    [tabs, stage, panels, ctl, story].forEach(function (n) { root.appendChild(n); });
+      "<div class='wt-head'><ol class='wt-prog'></ol><p class='wt-step'></p></div>" +
+      "<p class='wt-text' aria-live='polite'></p>" +
+      "<div class='wt-nav'><button type='button' data-n='-1' class='wt-back'>" + T.prev + "</button>" +
+      "<button type='button' data-n='1' class='wt-next'>" + T.next + "</button>" +
+      "<button type='button' data-n='play' class='wt-play'>" + T.play + "</button></div>");
+    var own = el("p", "wt-own", T.own);
+    var note = el("p", "wt-note", T.note);
+    [tabs, story, stage, panels, own, ctl, note].forEach(function (n) { root.appendChild(n); });
 
     var slider = ctl.querySelector("input[type=range]");
     var bars = pe.querySelector(".wt-bars");
@@ -199,6 +203,11 @@
         bars.appendChild(li);
       });
       C = sc.counters.map(function (c) { return c.base * c.tau; });
+      var prog = story.querySelector(".wt-prog"); prog.innerHTML = "";
+      sc.steps.forEach(function (_, i) {
+        var li = el("li", "", "<button type='button' data-g='" + i + "' aria-label='" + T.step + " " + (i + 1) + "'>" + (i + 1) + "</button>");
+        prog.appendChild(li);
+      });
       go(first); first = 0;
     }
 
@@ -208,8 +217,16 @@
       st = { rate: s.rate || 0, pad: !!s.pad, decoy: !!s.decoy, split: !!s.split };
       slider.value = st.rate;
       ["pad", "decoy", "split"].forEach(function (k) { ctl.querySelector("[data-t=" + k + "]").checked = st[k]; });
-      story.querySelector(".wt-step").textContent = T.step + " " + (step + 1) + " / " + sc.steps.length;
+      story.querySelector(".wt-step").textContent = T.step + " " + (step + 1) + " " + T.of + " " + sc.steps.length;
       story.querySelector(".wt-text").textContent = sc.steps[step][1];
+      var lastStep = step === sc.steps.length - 1;
+      var nx = story.querySelector(".wt-next");
+      nx.textContent = lastStep ? T.again : T.next;
+      nx.classList.toggle("is-hint", step === 0 && !playing);
+      story.querySelector(".wt-back").disabled = step === 0;
+      Array.prototype.forEach.call(story.querySelectorAll(".wt-prog li"), function (li, i) {
+        li.className = i === step ? "is-on" : i < step ? "is-done" : "";
+      });
       render();
     }
 
@@ -286,7 +303,9 @@
       var k = ev.target.dataset.t; if (k) { st[k] = ev.target.checked; render(); }
     });
     story.addEventListener("click", function (ev) {
+      if (ev.target.dataset.g != null) { go(+ev.target.dataset.g); return; }
       var n = ev.target.dataset.n; if (!n) return;
+      if (n === "1" && step === sc.steps.length - 1) { go(0); return; }
       if (n === "play") {
         playing = !playing;
         ev.target.textContent = playing ? T.pause : T.play;
