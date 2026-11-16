@@ -1709,3 +1709,30 @@ Proteus-cert-R con `--exclude-saturated 1e-3`.
 
 Las alertas sin certificar no cambian (Proteus 11/11 a 1,75; Proteus-cert 9/11 a 1,88). Como en v3,
 el temporizador no cuesta campañas certificadas. Llevado al apéndice del paper.
+
+## 6.60 Atacante por consultas: primera prueba, y cuánto acelera el corte por detector (2026-11-16, 14:45)
+
+**Prueba de humo** (`query_attack`, Slowloris 2018 → 2017, 40 consultas por objetivo, 2 min 36 s en
+total, 6 GB). Ritmo real de la campaña: 10 461 flujos/h.
+
+| Objetivo | Atacante por consultas (flujos/h) | Forma encontrada | Rejilla de 8 ritmos (`prof2`) |
+|---|---|---|---|
+| Proteus | 21 376 (48 900 en la búsqueda con orígenes) | 100 peticiones por conexión, ráfagas | 3 850 (`reuse`) |
+| Sistema de tres | 2 196 | 100 peticiones por conexión, ráfagas | — |
+| Reglas con selección | 73 961 | 100 peticiones por conexión, ráfagas, señuelos | 22 017 (`reuse`) |
+| Reglas (todos los rasgos) | 1 452 | ataque sin modificar | 673 |
+
+- Con 40 consultas el atacante ya supera a la rejilla de planes fijos (5,5 veces contra Proteus solo) y
+  **dobla el ritmo real de la campaña sin alerta contra Proteus solo**; el sistema de tres lo deja en
+  una quinta parte del ritmo real. La búsqueda aún mejoraba en la última consulta: hace falta más
+  presupuesto. En marcha con 150 consultas, diez objetivos y todas las campañas (`qa_1817`, etiqueta
+  `b150`).
+- Las reglas con todos los rasgos son aquí las más robustas, y las reglas con selección las peores:
+  la selección elige conteos por conexión de escala corta, justo lo que la reutilización baja.
+- La búsqueda con orígenes dio menos que la libre en un caso (semilla distinta, presupuesto corto);
+  corregido: ahora parte de la mejor forma libre (commit e4231be).
+
+**Corte por detector** (`prof3` frente a `prof2`, misma campaña, nueve detectores, rejilla de 8):
+resultados idénticos en todas las columnas; 18 min 04 s frente a 20 min 32 s (12 % menos). Poco: el
+tiempo está en calcular la evidencia de los ritmos altos, que hay que seguir haciendo para los
+detectores sin restricciones. Pico de memoria 11,3 GB en ambos.
