@@ -86,7 +86,7 @@ def test_cross_network_run_end_to_end(world):
     models = ["proteus", "proteus_cert", "proteus2", "proteus_cert_r", "rate_rules_local",
               "rate_rules_sel", "flow_clf", "apollon"]
     r = _run(world, "--train", "net1", "--test", "net2", "--models", *models,
-             "--entity-budgets", "1", "--alert-variants", "--tag", "e2e")
+             "--entity-budgets", "1", "--alert-variants", "--export-alerts", "--tag", "e2e")
     assert r.returncode == 0, r.stderr[-2000:]
     out = world / "experiments/outputs/h1/net1__net2__loo_labels__e2e"
     c = pd.read_csv(out / "campaigns.csv")
@@ -100,6 +100,11 @@ def test_cross_network_run_end_to_end(world):
     assert {"entity", "local+ent", "local+k2n5"} <= set(c["threshold"])
     s = pd.read_csv(out / "summary.csv")
     assert "(none)" not in set(s["attack"])
+    from proteus.evaluation.h1 import load_alerts
+    al = load_alerts(out / "alerts" / "day1.npz")
+    n_rows = len(pd.read_parquet(world / "data/processed/net2/day1.parquet"))
+    assert al["proteus__local0.001"].shape == (n_rows,) and al["proteus__local0.001"].any()
+    assert "proteus_sys_r__local0.001" in al and "proteus__side" in al
     info = json.loads((out / "run.json").read_text())
     assert info["env"] == {"PROTEUS_EVIDENCE": "v3"} and "--alert-variants" in info["argv"]
 

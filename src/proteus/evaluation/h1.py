@@ -609,6 +609,9 @@ STRICT_MIN_FLOWS, STRICT_MIN_RECALL = 5, 0.01
 # Deployed configurations evaluated as one detector when every member is in the run.
 UNIONS = {"proteus_sys": ("proteus", "proteus_cert"),
           "proteus_sys_r": ("proteus", "proteus_cert", "proteus_cert_r"),
+          # with the uncertified window-fidelity complement (evaluation.window_fidelity)
+          "proteus_w": ("proteus", "window_fidelity"),
+          "proteus_sys_rw": ("proteus", "proteus_cert", "proteus_cert_r", "window_fidelity"),
           "proteus2_sys": ("proteus2", "proteus_cert_r")}
 
 
@@ -635,8 +638,10 @@ def persistent(alert: np.ndarray, test: pd.DataFrame, k: int = 2, n: int = 5) ->
 
 def evaluate(test: pd.DataFrame, scores: dict[str, np.ndarray], thresholds: dict,
              sides: dict[str, np.ndarray] | None = None,
-             floors: dict[str, np.ndarray] | None = None) -> pd.DataFrame:
-    """Threshold kinds may carry suffixes: ``+ent`` also requires the score to exceed
+             floors: dict[str, np.ndarray] | None = None,
+             export: dict | None = None) -> pd.DataFrame:
+    """``export``, if given, receives the alert of every flow and its side per
+    (model, target, kind), unions included. Threshold kinds may carry suffixes: ``+ent`` also requires the score to exceed
     the per-row floor of the model in ``floors`` (the benign maximum of the flow's
     destination on the other days); ``+k2n5`` requires persistence (``persistent``)."""
     camp = campaigns(test)
@@ -696,6 +701,8 @@ def evaluate(test: pd.DataFrame, scores: dict[str, np.ndarray], thresholds: dict
         side = (sides or {}).get(model.removesuffix("@certr").removesuffix("@cert"))
         masks[(model, fpr, kind)] = (alert, side)
         emit(model, fpr, kind, alert, side)
+        if export is not None:
+            export[(model, fpr, kind)] = (alert, side)
     # The deployed system: an alert of any member, each at its own threshold.
     for name, members in UNIONS.items():
         for (model, fpr, kind) in [k for k in masks if k[0] == members[0]]:
@@ -710,7 +717,29 @@ def evaluate(test: pd.DataFrame, scores: dict[str, np.ndarray], thresholds: dict
                     side[a & ~done] = sd[a & ~done]
                 done |= a
             emit(name, fpr, kind, alert, side)
+            if export is not None:
+                export[(name, fpr, kind)] = (alert, side)
     return pd.DataFrame(rows)
+
+
+def save_alerts(path: Path, export: dict) -> None:
+    """Per-flow alerts of one test day (rows in the order of the day's file), for the
+    plain threshold kinds: ``<model>__<kind><target>`` and ``<model>__side``."""
+    arrays = {}
+    for (model, target, kind), (alert, side) in export.items():
+        if "+" in kind:
+            continue
+        key = model.replace("@", "__AT__")
+        arrays[f"{key}__{kind}{target:g}"] = alert
+        if side is not None:
+            arrays[f"{key}__side"] = side
+    path.parent.mkdir(parents=True, exist_ok=True)
+    np.savez_compressed(path, **arrays)
+
+
+def load_alerts(path: Path) -> dict[str, np.ndarray]:
+    with np.load(path) as z:
+        return {k.replace("__AT__", "@"): z[k] for k in z.files}
 
 
 def entity_threshold(tops: list[tuple], hours: float, budget: float) -> float:
@@ -783,6 +812,8 @@ def main() -> None:
                     help="class balance of the training set (see BALANCE)")
     ap.add_argument("--extra-runs", type=Path, nargs="*", default=[],
                     help="with --reuse: more runs of the same pair to take fitted models from")
+    ap.add_argument("--export-alerts", action="store_true",
+                    help="write the alert of every flow per detector (alerts/<day>.npz)")
     ap.add_argument("--alert-variants", action="store_true",
                     help="local detectors (needs --entity-budgets): also evaluate a "
                          "per-destination floor (+ent) and persistence (+k2n5)")
@@ -1051,8 +1082,11 @@ def main() -> None:
             for suffix in ("@cert", "@certr"):
                 if f"{n}{suffix}" in scores:
                     th[(f"{n}{suffix}", fpr, kind)] = v
+        exported = {} if args.export_alerts else None
         results.append(evaluate(ev, scores, th, {**(day_sides.pop(day, None) or {}),
-                                                 **local_sides}))
+                                                 **local_sides}, export=exported))
+        if exported is not None:
+            save_alerts(out / "alerts" / f"{day.stem}.npz", exported)
         print(f"  evaluated {args.test}/{day.stem} at {time.time() - t0:.0f}s", flush=True)
         del ev
 
@@ -1099,7 +1133,10 @@ def main() -> None:
                 for m_ in (n, f"{n}@cert", f"{n}@certr"):
                     if m_ in scores:
                         th[(m_, budget, "entity")] = v
-        results.append(evaluate(ev, scores, th, sides3, floors=floors))
+        exported = {} if args.export_alerts else None
+        results.append(evaluate(ev, scores, th, sides3, floors=floors, export=exported))
+        if exported is not None:
+            save_alerts(out / "alerts" / f"{day.stem}.budgets.npz", exported)
         print(f"  budgets {args.test}/{day.stem} at {time.time() - t0:.0f}s", flush=True)
         for n in local:
             print(f"    {n}: max {np.nanmax(scores[n]):.6g}, "
