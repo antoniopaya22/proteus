@@ -1887,3 +1887,48 @@ Lectura:
 - Candidatos finales: (1) **Proteus ∪ cert-R ∪ fidelidad**: máxima cobertura (11+5) a 2,0 alarmas a
   presupuesto, robustez media; (2) **`proteus2` ∪ fidelidad**: robustez muy alta pero 10+5 y dudas
   sobre su umbral (`adapteq_1817` en cola). Faltan 2018 y el atacante por consultas.
+
+## 6.65 Exclusión de subnúcleos saturados en 2017 → 2018: no se adopta (2026-11-16, 19:30)
+
+`sat_1718` (etiqueta `r2_sat`) frente a `r2b`, mismas puntuaciones con `--exclude-saturated 1e-3`
+(«13+1» = volumétricas y escaneos de 13 + resto; alarmas por entidad/h):
+
+| Detector | Sin exclusión | Con exclusión |
+|---|---|---|
+| Proteus, FPR 10⁻³ | 13+1 a 1,57 | igual (no satura) |
+| Proteus-cert, FPR 10⁻⁴ | 13+1 a 0,49 | 13+1 a 0,13 |
+| Proteus-cert, FPR 10⁻³ | 13+1 a 3,67 | 13+2 a 3,42 |
+| Proteus-cert-R, FPR 10⁻³ | 12+2 a 7,28 | **8+2 a 15,12** |
+| Proteus-cert-R, presupuesto 0,5–3 | 12+1 a 0,08 | **0+0** |
+| Sistema de tres, FPR 10⁻³ | 13+2 a 11,88 | 13+2 a 18,84 |
+| Sistema de tres, presupuesto 0,5 | 13+1 a 0,30 | 13+1 a 0,29 |
+
+- A Proteus-cert le ayuda algo; a Proteus-cert-R lo rompe: el subnúcleo que satura es el que detecta,
+  y sin él pierde cuatro campañas a FPR fija y todas a presupuesto.
+- **No se adopta como regla general.** La saturación de cert-R en 2018 no se arregla excluyendo; se
+  evita operando a presupuesto de alarmas, donde cert-R detecta 12/13 a 0,08 alarmas por entidad/h y
+  el sistema 13/13 a 0,30. Refuerza la decisión de operar el sistema a presupuesto (§6.56).
+- Pendiente de coherencia: CTU-13 usa hoy la exclusión; hay que mirar si a presupuesto tampoco hace
+  falta allí, para no tener una regla por dataset.
+
+## 6.66 Atacante por consultas, 2018 → 2017: resultados parciales (2026-11-16, 19:35)
+
+`qa_1817` (150 consultas, tope de 300 000 flujos por intento), seis de nueve escenarios. Daño con
+formas gratuitas (flujos/h):
+
+| Ataque (real) | Proteus | Sistema de tres | `proteus2` | Reglas | Reglas con selección |
+|---|---|---|---|---|---|
+| FTP (3 910) | 48 900 | 32 331 | 21 376 | 39 761 | 255 913 |
+| SSH (1 541) | 26 288 | 2 196 | 99 | 2 196 | 255 913 |
+| GoldenEye (44 976) | 90 960 | 5 023 | 23 | 4 084 | 137 578 |
+| Hulk (518 525) | 137 578 | 6 178 | 10 | 5 023 | 137 578 |
+| Slowhttptest (5 107) | 48 900 | 2 196 | 10 | — | — |
+| Slowloris (10 461) | 48 900 | 2 196 | 10 | 1 785 | 137 578 |
+
+- Frente a la rejilla de planes fijos (§6.63), el atacante por consultas saca entre 3 y 5,6 veces
+  más daño contra Proteus solo (encuentra 100 peticiones por conexión; la rejilla probaba 20) y
+  prácticamente lo mismo contra el sistema de tres, `proteus2` y las reglas (razones 0,9–1,3).
+- El orden no cambia: `proteus2` ≫ sistema de tres ≈ reglas ≫ Proteus ≫ reglas con selección.
+- Primer dato contra el complemento de fidelidad solo (`qa2_1817`): fuerza bruta SSH pasa a 11 491
+  flujos/h (7,5 veces su ritmo real) con 100 peticiones por conexión, partición y señuelos. Como se
+  esperaba, se evade: con tan pocas conexiones la ventana no llega al mínimo para puntuarse.
