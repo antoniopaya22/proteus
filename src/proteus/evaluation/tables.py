@@ -361,13 +361,15 @@ def curves_figure(points: pd.DataFrame, x: str = "entity_alarms_per_hour") -> st
              r"  grid style={draw=pgreyL}, axis line style={draw=pgrey}, tick style={draw=pgrey},",
              r"  every axis plot/.append style={line width=0.8pt, mark size=1.5pt},",
              r"  legend style={draw=none, fill=none, font=\sffamily\tiny, cells={anchor=west}}]"]
-    for i, (key, title) in enumerate(DIRECTION.items()):
+    present = [k for k in DIRECTION if (points["direction"] == k).any()]
+    for key in present:
+        title, last = DIRECTION[key], key == present[-1]
         d = points[points["direction"] == key]
         if d.empty:
             continue
         n = int(d["campaigns"].max())
         opts = f"title={{{title}}}, ymin=0, ymax={n + 0.5}, ylabel={{campaigns detected (of {n})}}"
-        if i == len(DIRECTION) - 1:
+        if last:  # one legend for both panels
             opts += ", legend to name=curveslegend, legend columns=4"
         lines.append(rf"\nextgroupplot[{opts}]")
         for m, (label, style) in CURVE_STYLE.items():
@@ -377,7 +379,7 @@ def curves_figure(points: pd.DataFrame, x: str = "entity_alarms_per_hour") -> st
             c = c.assign(best=c["detected"].cummax()).drop_duplicates(x, keep="last")
             coords = " ".join(f"({r[x]:.3g},{int(r['best'])})" for _, r in c.iterrows())
             lines.append(rf"\addplot[{style}] coordinates {{{coords}}};")
-            if i == len(DIRECTION) - 1:
+            if last:
                 lines.append(rf"\addlegendentry{{{label}}}")
     lines += [r"\end{groupplot}", r"\end{tikzpicture}", "", r"\ref{curveslegend}"]
     return "\n".join(lines) + "\n"
