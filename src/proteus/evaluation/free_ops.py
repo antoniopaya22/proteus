@@ -28,12 +28,13 @@ import numpy as np
 import pandas as pd
 
 from proteus.attacks import operators as op
-from proteus.core.certify import slack, worst_case_features
+from proteus.core.certify import reuse_worst_case, slack, worst_case_features
 from proteus.core.frontier import _features
 from proteus.evaluation import h1
 from proteus.evaluation.frontier_exp import ATTACKS, FLOW_COLS, Baselines, local_threshold
 
 ATTACK_WINDOW_S = 600.0
+REUSE_KS = (5, 20, 100)  # requests per connection tried against the reuse certificate
 WARMUP_S = 3600.0
 
 
@@ -77,13 +78,18 @@ def main() -> None:
     _, specs = h1.evidence_b(args.test, h1.days(args.test)[0], columns=["clean"])
     delta = h1.EXPORT_TIMEOUT_S
     baselines = Baselines(args.test)
-    rows = []
+    rows, reuse_rows = [], []
     for day in h1.days(args.test):
         flows = pd.read_parquet(day, columns=FLOW_COLS)
         present = [a for a in ATTACKS if (flows["is_attack"] & (flows["attack"] == a)).any()]
         if not present:
             continue
         base = baselines.for_day(day)
+        for c, m in models.values():
+            if getattr(m, "local", False):  # calibrated maximum: fit on local benign
+                from proteus.evaluation.poisoning import local_benign
+
+                m.fit(local_benign(args.test, day, c, rng))
         thr = {n: local_threshold(args.test, day, m, c, args.fpr, rng)
                for n, (c, m) in models.items()}
         for attack in present:
@@ -131,6 +137,30 @@ def main() -> None:
                         ok = (alert & to_v & (t_end <= first_cert + np.timedelta64(int(delta * 1e6), "us"))).any()
                         row["cert_violation"] = not bool(ok)
                     rows.append(row)
+                # Connection reuse (not a free operation of the proposition): alerts
+                # certified also against reuse must survive it.
+                cr = model.predict_proba(reuse_worst_case(X0, cols, cst, sl))[:, 1] >= thr[name]
+                first_r = t_end0[cr].min() if cr.any() else None
+                for k_reuse in REUSE_KS:
+                    v = op.reuse_connections(df, atk0, k_reuse, delta)
+                    v = v.sort_values("t_end", kind="stable").reset_index(drop=True)
+                    X = _features(v, cols, base)[cols].to_numpy(np.float64)
+                    alert = model.predict_proba(X)[:, 1] >= thr[name]
+                    to_v = (v["dst_ip"].astype(str) == victim).to_numpy()
+                    t_end = v["t_end"].to_numpy()
+                    r = {"day": day.stem, "attack": attack, "model": name,
+                         "variant": f"reuse{k_reuse}", "retime": True,
+                         "threshold": thr[name], "orig_attack_flows": int(atk0.sum()),
+                         "orig_attack_alerts": int((s0 >= thr[name])[atk0].sum()),
+                         "variant_attack_alerts": int(alert[v["_atk"].to_numpy()].sum()),
+                         "variant_victim_alerted": bool((alert & to_v).any()),
+                         "orig_certified": first_cert is not None,
+                         "orig_certified_reuse": first_r is not None}
+                    if first_r is not None:
+                        ok = (alert & to_v & (t_end <= first_r + np.timedelta64(
+                            int(delta * 1e6), "us"))).any()
+                        r["reuse_cert_violation"] = not bool(ok)
+                    reuse_rows.append(r)
                 last = pd.DataFrame(rows[-args.variants:])
                 print(f"{day.stem} {attack} {name}: orig alerts {row['orig_attack_alerts']}"
                       f"/{row['orig_attack_flows']}, variant alerts min "
@@ -139,6 +169,16 @@ def main() -> None:
                       f"{row['orig_certified']}", flush=True)
     out = pd.DataFrame(rows)
     out.to_csv(args.run / "free_ops.csv", index=False)
+    reuse = pd.DataFrame(reuse_rows)
+    reuse.to_csv(args.run / "free_ops_reuse.csv", index=False)
+    if len(reuse):
+        gr = reuse.groupby(["model", "attack"])
+        print(pd.DataFrame({
+            "certified_reuse": gr["orig_certified_reuse"].first(),
+            "victim_alerted_share": gr["variant_victim_alerted"].mean(),
+            "reuse_cert_violations": (gr["reuse_cert_violation"].sum()
+                                      if "reuse_cert_violation" in reuse else np.nan),
+        }).to_string())
     g = out.groupby(["model", "attack"])
     summ = pd.DataFrame({
         "orig_alerts": g["orig_attack_alerts"].first(),
