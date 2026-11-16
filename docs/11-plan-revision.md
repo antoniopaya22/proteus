@@ -27,6 +27,13 @@ La ronda 1 son las fases A–E de abajo.
 
 ### Revista destino (decidido con Antonio el 2026-11-16)
 
+> **Aviso (2026-11-16, tarde): decisión en revisión.** Computers & Security mantiene desde principios
+> de 2024 una moratoria: no considera envíos con IA o ML como componente significativo, ni la
+> aplicación de técnicas de IA/ML a seguridad (texto en la página de Elsevier de la revista y en su
+> guía de autores). Proteus entra de lleno. JISA excluye solo la «aplicación rutinaria de modelos
+> existentes» y pide una visión de seguridad novedosa. Pendiente: revisar el alcance de cada
+> candidata (JISA, Computer Networks, JNCA, IEEE TIFS/TDSC/TNSM, IJIS) y decidir con Antonio.
+
 **Computers & Security** (Elsevier), por la vía de suscripción (sin coste); reserva: *Journal of
 Information Security and Applications*. Se buscaron números especiales abiertos y gratuitos y no hay
 ninguno que encaje (el de C&S sobre detección robusta cerró en dic. 2024). El paper ya usa `elsarticle`
