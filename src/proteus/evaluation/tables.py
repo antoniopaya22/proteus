@@ -331,6 +331,52 @@ def adaptive_table(csvs: list[Path]) -> str:
     return "\n".join(lines) + "\n"
 
 
+QUERY = [("proteus", "Proteus"), ("proteus_sys_r", "System"), ("proteus_cert_r", "Cert.-R"),
+         ("rate_rules_local", "Rules"), ("rate_rules_sel", "Sel. rules")]
+
+
+def query_table(csvs: list[Path], targets: list[tuple[str, str]] | None = None) -> str:
+    """Damage under the query attacker: the highest rate (flows/h) at which an attempt
+    passed without an alert, per target; one block per direction. Bold: the attack
+    passes at its real rate. s: only by spreading over sources (the costly search). c:
+    the largest attack tried was reached, so the figure is a lower bound."""
+    targets = targets or QUERY
+    n = len(targets)
+    lines = [r"\begin{tabular}{l" + "r" * (n + 1) + "}", r"\toprule",
+             "Attack & Real & " + " & ".join(h for _, h in targets) + r" \\"]
+    for path in csvs:
+        d = pd.read_csv(path)
+        key = "__".join(path.parent.name.split("__")[:2])
+        lines += [r"\midrule", rf"\multicolumn{{{n + 2}}}{{l}}{{\emph{{{DIRECTION.get(key, key)}}}}} \\"]
+        attacks = d.drop_duplicates(["day", "attack"])[["day", "attack", "real_flows_per_h"]]
+        for _, a in attacks.iterrows():
+            name = ATTACK_NAMES.get(a["attack"], a["attack"])
+            if (attacks["attack"] == a["attack"]).sum() > 1:
+                name += f" ({a['day'][:3].title()}.)"
+            g = d[(d["day"] == a["day"]) & (d["attack"] == a["attack"])]
+            cells = []
+            for m, _ in targets:
+                t = g[g["target"] == m]
+                if t.empty:
+                    cells.append("--")
+                    continue
+                free = t.loc[~t["costly"].astype(bool), "query_flows_per_h"].max()
+                best = t["query_flows_per_h"].max()  # the costly search includes the free one
+                free = 0.0 if not np.isfinite(free) else float(free)
+                c = _rate(float(best), float(t["rmax_flows_per_h"].iloc[0]))
+                if best >= a["real_flows_per_h"]:
+                    c = rf"\textbf{{{c}}}"
+                if best > free:
+                    c += r"$^s$"
+                if "capped" in t and t["capped"].astype(bool).any():
+                    c += r"$^c$"
+                cells.append(c)
+            lines.append(f"{name} & {_rate(a['real_flows_per_h'], np.inf)} & "
+                         + " & ".join(cells) + r" \\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    return "\n".join(lines) + "\n"
+
+
 CURVE_STYLE = {  # detector -> (legend, pgfplots style)
     "proteus": (r"\sysname", "color=pblue, mark=*, line width=1.1pt"),
     "proteus_sys": (r"\sysname{} $\cup$ \sysname-cert", "color=pnavy, mark=square*"),
@@ -419,7 +465,7 @@ def curves_figure(points: pd.DataFrame, x: str = "entity_alarms_per_hour",
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("table", choices=["h1", "summary", "ablation", "frontier", "frontier_system",
-                                       "adaptive", "curves"])
+                                       "adaptive", "curves", "query"])
     ap.add_argument("--csv", type=Path, nargs="*", default=[], help="frontier or adaptive CSVs")
     ap.add_argument("--data-out", type=Path, default=None)
     ap.add_argument("--detectors", nargs="*", default=None)
@@ -451,6 +497,10 @@ def main() -> None:
         return
     if args.table == "adaptive":
         args.out.write_text(adaptive_table(args.csv))
+        print(args.out.read_text())
+        return
+    if args.table == "query":
+        args.out.write_text(query_table(args.csv))
         print(args.out.read_text())
         return
     if args.table == "frontier_system":

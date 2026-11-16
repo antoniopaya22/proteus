@@ -79,3 +79,31 @@ def test_curves_figure_restricts_detectors_and_rejects_unknown_ones():
     assert r"\addlegendimage" in tex and "KitNET" in tex  # absent here, still in the legend
     with pytest.raises(ValueError):
         curves_figure(pts, detectors=["nope"])
+
+
+def test_query_table_takes_the_best_of_the_free_and_costly_searches(tmp_path):
+    import pandas as pd
+
+    from proteus.evaluation.tables import query_table
+
+    run = tmp_path / "csecicids2018__cicids2017__loo_labels__r2"
+    run.mkdir()
+    rows = []
+    for target, free, costly, capped in (("proteus", 2000.0, 9000.0, False),
+                                         ("proteus_sys_r", 300.0, 200.0, False),
+                                         ("rate_rules_sel", 50000.0, 50000.0, True)):
+        for c, v in ((False, free), (True, costly)):
+            rows.append({"day": "wednesday", "attack": "dos_hulk", "target": target, "costly": c,
+                         "real_flows_per_h": 5000.0, "query_flows_per_h": v, "queries": 150,
+                         "capped": capped and not c, "rmax_flows_per_h": 720000.0})
+    path = run / "query_attack_0.001_b150.csv"
+    pd.DataFrame(rows).to_csv(path, index=False)
+    tex = query_table([path])
+    line = next(ln for ln in tex.splitlines() if ln.startswith("DoS Hulk"))
+    cells = [c.strip() for c in line.rstrip("\\").split("&")]
+    assert cells[1] == "5.0k"
+    assert cells[2] == r"\textbf{9.0k}$^s$"      # passes at its real rate, only with sources
+    assert cells[3] == "300"                       # the costly search found less: the free one counts
+    assert cells[4] == "--" and cells[5] == "--"   # Cert.-R and Rules were not attacked
+    assert cells[6] == r"\textbf{50k}$^c$"
+    assert r"2018$\to$2017" in tex
