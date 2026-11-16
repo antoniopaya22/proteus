@@ -2075,3 +2075,69 @@ escaneos de 13 + otros de 12; alarmas por entidad/h.
 **Estado de la decisión del sistema final:** fuera Proteus-cert (redundante en detección y en daño) y
 fuera el complemento de fidelidad. Quedan P ∪ cR y `proteus2`, equivalentes a igual nivel de alarmas
 en 2017; decide 2018 (`p2_fit_1718`, `p2_all_1718`, `adapt_1718`, en cola).
+
+## 6.72 `proteus2` en 2017 → 2018: peor que Proteus y que cert-R (2026-11-17, 00:25)
+
+`p2_fit_1718` (etiqueta `r2_p2`) frente a `r2b`. «13+2» = volumétricas y escaneos de 13 + otros de
+12 (criterio estricto); alarmas por entidad alertada y hora.
+
+| Umbral | `proteus2` | Proteus | cert-R | Sistema de tres | Reglas | Reglas con selección |
+|---|---|---|---|---|---|---|
+| FPR 10⁻³ | 12+2 a 10,26 | 13+1 a 1,57 | 12+2 a 7,28 | 13+2 a 11,88 | 13+2 a 13,46 | 13+5 a 18,66 |
+| FPR 10⁻⁴ | 10+2 a 4,00 | 9+1 a 0,27 | 12+2 a 7,28 | 13+2 a 7,86 | 13+2 a 2,93 | 13+2 a 1,55 |
+| Presupuesto 0,5 | 8+1 a 0,04 | 8+1 a 0,20 | 12+1 a 0,08 | 13+1 a 0,30 | 13+2 a 1,31 | 13+2 a 0,61 |
+| Presupuesto 1 | 8+1 a 0,04 | 11+1 a 0,42 | 12+1 a 0,08 | 13+1 a 0,55 | 13+2 a 1,93 | 13+2 a 0,71 |
+| Presupuesto 3 | 8+1 a 0,04 | 13+1 a 1,02 | 12+1 a 0,08 | 13+1 a 1,12 | 13+2 a 2,50 | 13+2 a 1,29 |
+| Presupuesto 10 | 12+2 a 6,40 | 13+1 a 2,18 | 12+1 a 0,08 | 13+1 a 5,73 | 13+2 a 4,97 | 13+2 a 3,40 |
+
+- **`proteus2` no se sostiene en la red grande**: a FPR fija detecta menos que Proteus con seis veces
+  más alarmas (12 a 10,26 frente a 13 a 1,57), y a presupuesto se queda en 8 de 13 donde cert-R solo
+  detecta 12 a 0,08 y el sistema las 13 a 0,30. Sus alertas certificadas son nulas hasta el
+  presupuesto 10.
+- Con §6.70 (en 2017 los dos candidatos empatan a igual nivel de alarmas) la elección queda clara:
+  **el sistema final es Proteus ∪ Proteus-cert-R**, operado a presupuesto de alarmas. `proteus2`
+  queda como variante evaluada (más robusta a FPR 10⁻³ en la red pequeña, al precio de alarmas, y que
+  no se transfiere a la grande).
+- **Ojo, reglas con selección en 2018**: 13+2 a 0,61 alarmas con presupuesto 0,5 y 11+2 certificadas
+  a 0,43 con presupuesto 1. Detectan lo mismo que el sistema con el doble de alarmas (0,61 frente a
+  0,30), pero su daño bajo ataque en 2017 es el peor de todos (conservan el 85 % del ritmo real,
+  §6.69). El paper tiene que decirlo así: en detección y alarmas unas reglas bien elegidas compiten;
+  lo que no tienen es robustez, porque los rasgos que seleccionan son los que el atacante mueve.
+- Cifras exactas de la unión de dos (`proteus_pcr`, nuevo en `h1.UNIONS`) en ambos sentidos: en
+  marcha (`pcr_1817` en paralelo, `p2_all_1718` bajo el cerrojo).
+
+## 6.73 Ablación de subnúcleos y fronteras con r2, 2018 → 2017 (2026-11-17, 00:30)
+
+`abl_1817`. Detección como parte de campañas (volumétricas y escaneos / otros) y alarmas por entidad
+alertada y hora, a FPR 10⁻³:
+
+| Variante | Proteus | Proteus-cert |
+|---|---|---|
+| Todos los subnúcleos | 1,00 / 0,20 a 1,75 | 0,82 / 0,10 a 1,87 |
+| sin destino (exceso) | 1,00 / 0,20 a 1,21 | 0,82 / 0,10 a 1,51 |
+| sin origen | 1,00 / 0,20 a 1,21 | 0,82 / 0,10 a 1,89 |
+| sin par | 1,00 / 0,20 a 2,20 | 0,82 / 0,00 a 2,26 |
+| sin destino en bruto | 0,82 / 0,00 a 1,82 | 0,82 / 0,10 a 2,01 |
+
+- Las conclusiones del apéndice se mantienen: en este sentido el subnúcleo de destino en bruto lleva
+  la detección (sin él se pierden dos campañas de volumen y todas las demás), y quitar los de destino
+  u origen sobre el exceso solo baja alarmas. Cambian las cifras de alarmas porque la métrica es ahora
+  por entidad (`tables ablation` la usa desde el commit 4a84a58). Falta 2017 → 2018 (`abl_1718`).
+
+Fronteras (flujos/h; simple y certificada) de los detectores que faltaban:
+
+| Ataque (real) | cert-R simple / certificada | `proteus2` simple / certificada |
+|---|---|---|
+| SSH (1 541) | 2 379 / 2 403 | 75 / 3 847 |
+| FTP (3 910) | 38 534 / 38 980 | 24 656 / 63 437 |
+| Hulk (518 525) | 7 570 / 8 612 | 0 / 17 850 |
+| GoldenEye (44 976) | 5 372 / 6 179 | 0 / 12 466 |
+| Slowloris (10 461) | 2 611 / 2 925 | 7 / 6 002 |
+| Slowhttptest (5 107) | 2 464 / 2 809 | 6 / 5 476 |
+| Escaneo jue. (10 418) | 31 / 563 | 31 / por encima del máximo |
+| Escaneo vie. (107 850) | 84 / 544 | 5 / por encima del máximo |
+| LOIC-HTTP (290 167) | 87 599 / 164 536 | 5 / 372 610 |
+
+- En cert-R la frontera certificada queda pegada a la simple (salvo escaneos y LOIC): casi todo lo
+  que alerta lo certifica, también frente a reutilización. Es el dato que justifica que sea el
+  miembro certificado del sistema. SSH y FTP quedan por encima de su ritmo real: límite declarado.
