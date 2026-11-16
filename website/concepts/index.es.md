@@ -1,18 +1,52 @@
 # Cómo funciona Proteus
 
-Proteus es un sistema de detección de intrusiones en red que trabaja sobre registros de
-flujo (NetFlow/IPFIX). Su diseño parte de una pregunta: *¿qué no puede cambiar un
-atacante sin que su ataque deje de funcionar?* Una denegación de servicio necesita
-volumen sobre su víctima, un escaneo necesita tocar muchos puertos o hosts, un ataque de
-fuerza bruta necesita muchos intentos. El atacante puede añadir tráfico encima de esa
-actividad, cambiarle la forma o partirla, pero no puede eliminarla sin renunciar a parte
-del ataque.
+Un detector de intrusiones convencional escucha el tráfico y clasifica cada conexión.
+Proteus también escucha y clasifica, pero clasifica otra cosa: el estado de las máquinas
+que cada conexión toca.
 
-Proteus detecta sobre esa parte del tráfico, a la que llama **evidencia conservada**,
-con un modelo que solo puede subir su puntuación cuando se añade evidencia. En
-consecuencia, las transformaciones baratas en las que se apoya un ataque de evasión no
-pueden eliminar una alerta, y Proteus puede comprobarlo para cada alerta al coste de una
-evaluación adicional del modelo.
+## La idea en un minuto
+
+- **Un detector convencional pregunta, por cada conexión: ¿esta conexión parece un
+  ataque?** Todo lo que mira (duración, tamaño de los paquetes, tiempos) lo elige quien
+  envía la conexión, así que un atacante puede darle la forma que haga falta hasta que
+  la respuesta sea no.
+- **Proteus pregunta: ¿le está pasando algo anormal a esta máquina ahora mismo?** Lleva
+  la cuenta de cada servicio, máquina y origen: cuánto tráfico recibe, desde cuántos
+  orígenes, cuántas conexiones quedan sin respuesta. Cada conexión solo actualiza los
+  marcadores de las máquinas que implica.
+- **Un atacante siempre puede enviar más, pero no puede enviar menos sin debilitar su
+  ataque.** Rellenar paquetes, mandar señuelos o partir conexiones es tráfico de más,
+  así que sube los marcadores. El modelo de Proteus está construido para que su
+  puntuación solo pueda subir cuando un marcador sube. Por eso los disfraces no pueden
+  quitar una alerta, y Proteus lo comprueba para cada alerta con una evaluación más del
+  modelo: una alerta *certificada*.
+
+## Míralo paso a paso
+
+<div class="wt" data-scenario="flood"></div>
+
+Pulsa *Siguiente* para seguir la historia, o mueve tú los controles. Las pestañas
+muestran una inundación HTTP, un escaneo de puertos y el caso que Proteus no resuelve:
+un ataque que cabe en una sola conexión.
+
+## De un detector convencional a Proteus
+
+| | Detector convencional | Proteus |
+|---|---|---|
+| Qué ve el modelo | Rasgos de una conexión | Marcadores de las máquinas implicadas |
+| Sobre qué es la alerta | Una conexión | Una máquina o un servicio |
+| Memoria | Ninguna entre conexiones | De segundos a horas |
+| Qué controla el atacante | Casi todos los rasgos | Solo puede subir los marcadores |
+| Un ataque de una conexión | Visible | Casi invisible: queda para la capa por flujo |
+
+## Con más detalle
+
+Proteus trabaja sobre registros de flujo (NetFlow/IPFIX). Su diseño parte de una
+pregunta: *¿qué no puede cambiar un atacante sin que su ataque deje de funcionar?* Una
+denegación de servicio necesita volumen sobre su víctima, un escaneo necesita tocar
+muchos puertos o máquinas, un ataque de fuerza bruta necesita muchos intentos. Proteus
+detecta sobre esa parte del tráfico, a la que llama **evidencia conservada**, con un
+modelo que solo puede subir su puntuación cuando se añade evidencia.
 
 ## Cadena de procesamiento
 

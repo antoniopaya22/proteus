@@ -154,10 +154,12 @@ markdown_extensions:
 
 extra_css:
   - stylesheets/extra.css
+  - stylesheets/walkthrough.css
 
 extra_javascript:
   - https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js
   - https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js
+  - javascripts/walkthrough.js
 
 extra:
   header_nav:

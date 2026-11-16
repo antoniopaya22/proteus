@@ -1,16 +1,50 @@
 # How Proteus works
 
-Proteus is a network intrusion detection system that works on flow records
-(NetFlow/IPFIX). Its design starts from one question: *what can an attacker not
-change without its attack ceasing to work?* A denial of service needs volume on its
-victim, a scan needs to touch many ports or hosts, a brute force needs many attempts.
-The attacker can add traffic on top of that activity, reshape it or split it, but it
-cannot remove it without giving up part of the attack.
+A conventional intrusion detector listens to traffic and classifies each connection.
+Proteus also listens and classifies, but it classifies something else: the state of the
+machines that a connection touches.
 
-Proteus detects on that part of the traffic, which it calls **conserved evidence**,
-with a model that can only raise its score when evidence is added. As a consequence,
-the cheap transformations an evasion attack relies on cannot remove an alert, and
-Proteus can check this for every alert at the cost of one extra model evaluation.
+## The idea in one minute
+
+- **A conventional detector asks, for every connection: does this connection look like
+  an attack?** Everything it looks at (duration, packet sizes, timing) is chosen by
+  whoever sends the connection, so an attacker can reshape it until the answer is no.
+- **Proteus asks: is something abnormal happening to this machine right now?** It keeps
+  a tally for every service, host and source: how much traffic it receives, from how
+  many sources, how many connections go unanswered. A connection only updates the
+  tallies of the machines it involves.
+- **An attacker can always send more, but it cannot send less without weakening the
+  attack.** Padding, decoys and split connections are all extra traffic, so they raise
+  the tallies. The model inside Proteus is built so that its score can only go up when
+  a tally goes up. Disguises therefore cannot remove an alert, and Proteus checks this
+  for each alert with one extra evaluation of the model: a *certified* alert.
+
+## See it step by step
+
+<div class="wt" data-scenario="flood"></div>
+
+Press *Next* to follow the story, or move the controls yourself. The tabs show an HTTP
+flood, a port scan, and the case that Proteus does not solve: an attack that fits in
+one connection.
+
+## From a conventional detector to Proteus
+
+| | Conventional detector | Proteus |
+|---|---|---|
+| What the model sees | Features of one connection | Tallies of the machines involved |
+| What an alert is about | A connection | A machine or a service |
+| Memory | None between connections | From seconds to hours |
+| What the attacker controls | Almost every feature | It can only raise the tallies |
+| An attack in one connection | Visible | Almost invisible: left to the per-flow shell |
+
+## In more detail
+
+Proteus works on flow records (NetFlow/IPFIX). Its design starts from one question:
+*what can an attacker not change without its attack ceasing to work?* A denial of
+service needs volume on its victim, a scan needs to touch many ports or hosts, a brute
+force needs many attempts. Proteus detects on that part of the traffic, which it calls
+**conserved evidence**, with a model that can only raise its score when evidence is
+added.
 
 ## Pipeline
 
