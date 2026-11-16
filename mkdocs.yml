@@ -52,6 +52,7 @@ nav:
       - Certificate: concepts/certificate.md
       - Harm frontier: concepts/harm-frontier.md
       - Threat model: concepts/threat-model.md
+      - Glossary: concepts/glossary.md
   - Guide:
       - Datasets: guide/datasets.md
       - Reproducing the experiments: guide/reproduce.md
@@ -98,6 +99,7 @@ plugins:
             Certificate: Certificado
             Harm frontier: Frontera de daño
             Threat model: Modelo de amenaza
+            Glossary: Glosario
             Guide: Guía
             Datasets: Datasets
             Reproducing the experiments: Reproducir los experimentos

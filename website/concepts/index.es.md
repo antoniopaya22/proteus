@@ -117,15 +117,18 @@ decaimiento, por origen, de las sondas bloqueadas que el atacante no puede retir
 ataque por consultas que necesita muchas sondas contra la capa lanza, por tanto, una
 alerta sobre su propio origen.
 
-## Dos detectores, una familia de modelos
+## Tres detectores, una familia de modelos
 
-| Detector | Escalas de tiempo | Función |
-|---|---|---|
-| **Proteus** | todas (de 10 s a 6 h) | Detección rápida; sus alertas pueden estar certificadas o no. |
-| **Proteus-cert** | 10 minutos o más | Suelo certificado: sus alertas resisten cualquier combinación de operaciones gratuitas. |
+| Detector | Evidencia | Escalas de tiempo | Función |
+|---|---|---|---|
+| **Proteus** | todos los contadores conservados | todas (de 10 s a 6 h) | Detección rápida; sus alertas rara vez están certificadas, porque la holgura es grande en escalas cortas. |
+| **Proteus-cert** | todos los contadores conservados | 10 minutos o más | Suelo certificado: sus alertas certificadas resisten cualquier combinación de operaciones gratuitas. |
+| **Proteus-cert-R** | solo bytes de carga y recuentos distintos | 10 minutos o más | Sus alertas certificadas resisten además la reutilización de conexiones, que baja los recuentos por conexión. |
 
-Ambos son máximos calibrados de los mismos cuatro subnúcleos. Un despliegue ejecuta los
-dos: el detector de todas las escalas por rapidez y Proteus-cert como garantía.
+Los tres son máximos calibrados de cuatro subnúcleos del mismo tipo. Un despliegue los
+combina: el detector de todas las escalas por rapidez y los otros dos como garantía.
+Como cada detector añade sus propias falsas alarmas, la combinación se calibra a un
+presupuesto de alarmas y no cada miembro a su propia tasa.
 
 ## Relación con Apollon
 

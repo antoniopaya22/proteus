@@ -393,7 +393,7 @@ body { background: var(--sand); }
    taller than the viewport still scrolls inside itself before the next snap. */
 @media (min-width: 900px) and (min-height: 620px) {
   /* Sizes follow the height of the window, so that a slide fits a laptop screen. */
-  html { scroll-snap-type: y mandatory; font-size: clamp(11.5px, 1.62vh, 16px) !important; }
+  html { scroll-snap-type: y mandatory; font-size: clamp(12.5px, 1.62vh, 16px) !important; }
   .lp-hero, .lp-sec {
     min-height: 100svh; display: flex; flex-direction: column; justify-content: center;
     scroll-snap-align: start; scroll-snap-stop: always;
@@ -403,6 +403,7 @@ body { background: var(--sand); }
   .lp-hero { padding: clamp(4.4rem, 9vh, 7rem) 0 clamp(1.2rem, 2.5vh, 2.5rem); }
   .lp-hero .lp-strip { margin-top: clamp(1rem, 2.4vh, 2.4rem); }
   .lp-foot { scroll-snap-align: end; }
+  .lp-sec.is-tall, .lp-hero.is-tall { scroll-snap-stop: normal; justify-content: flex-start; }
   /* The walkthrough is the tallest block: tighten it on the landing page. */
   #walkthrough .lp-split { margin-bottom: .3rem; align-items: end; }
   #walkthrough .lp-h2 { font-size: clamp(1.7rem, 3.1vw, 2.7rem); }

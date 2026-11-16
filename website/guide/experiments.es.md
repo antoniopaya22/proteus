@@ -26,6 +26,8 @@ La tabla resume los módulos; cada uno se describe más abajo.
 | [`frontier_scan`](#frontier_scan) | Frontera de daño de los escaneos horizontales (lado del origen) |
 | [`adaptive`](#adaptive) | Daño bajo un atacante adaptativo (tasa, operaciones gratuitas, mimetismo) |
 | [`query_attack`](#query_attack) | Daño bajo un atacante que busca con consultas de etiqueta dura |
+| [`unions`](#unions) | Cualquier unión de detectores, a partir de sus alertas por flujo |
+| [`window_fidelity`](#window_fidelity) | Piloto: detector de fidelidad por ventana como complemento sin certificado |
 | [`poisoning`](#poisoning) | Envenenamiento de la línea base y crecimiento de las líneas base benignas |
 | [`packet_check`](#packet_check) | Comprobación del certificado sobre paquetes reales |
 | [`smoothing`](#smoothing) | Si un certificado de presupuesto (suavizado aleatorizado) cubre las operaciones gratuitas |
@@ -53,6 +55,7 @@ PROTEUS_EVIDENCE=v3 python -m proteus.evaluation.h1 \
 |---|---|
 | `--train`, `--test` | Datasets de entrenamiento y de prueba (obligatorios) |
 | `--models` | Detectores que se entrenan y evalúan (por defecto: todos) |
+| `--export-alerts` | Escribe además la alerta de cada flujo por detector (`alerts/<día>.npz`), para `unions` y `window_fidelity` |
 | `--reuse RUN` | Evaluar los modelos ajustados de una ejecución anterior en lugar de entrenar; `--models` puede entonces nombrar máximos como `a+b` |
 | `--tag` | Sufijo del directorio de salida |
 | `--baseline {loo,prior}` | Días de referencia de las líneas base: dejar un día fuera, o solo los días anteriores |
@@ -217,6 +220,36 @@ Opciones: `--targets` (detectores o uniones de detectores), `--budget` (consulta
 objetivo y escenario), `--grid`, `--rmin`, `--rmax`, `--costly` (también repartirse entre
 orígenes), `--attacks`, `--days`, `--fpr`, `--seed`, `--tag`. Resultados:
 `query_attack_<fpr>.csv` y `query_attack_trace_<fpr>.csv` en el directorio de la ejecución.
+
+## `unions`
+
+Evalúa sistemas candidatos sin volver a puntuar nada. `h1 --export-alerts` escribe, por
+cada día de prueba, la alerta de cada flujo para cada detector y umbral; una unión
+alerta sobre un flujo cuando lo hace cualquiera de sus miembros.
+
+```bash
+python -m proteus.evaluation.unions --test cicids2017 \
+    --alerts experiments/outputs/h1/<ejecución con alertas> \
+    --union sys=proteus,proteus_cert,proteus_cert_r \
+    --out experiments/outputs/h1/<ejecución>_unions
+```
+
+Escribe `campaigns.csv`, `summary.csv` y `false_alarms.csv` con el formato de `h1`.
+
+## `window_fidelity`
+
+Piloto de un complemento del núcleo sin certificado. Los flujos de una entidad en su
+última ventana se comparan, como una tabla, con el tráfico benigno de la misma red en
+otros días; una ventana que se distribuye distinto del tráfico benigno levanta una
+alerta. Los umbrales salen solo de ventanas benignas.
+
+```bash
+python -m proteus.evaluation.window_fidelity --test cicids2017 --window 300 \
+    --with-alerts experiments/outputs/h1/<ejecución con alertas> \
+    --out experiments/outputs/h1/<ejecución>_wf
+```
+
+Con `--with-alerts` se evalúa también en unión con los detectores de esa ejecución.
 
 ## `poisoning`
 

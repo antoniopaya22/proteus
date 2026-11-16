@@ -5,6 +5,43 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Query attacker in the traffic space (`proteus query-attack`): a black-box search over
+  the shape and the rate of the attacker's traffic that only observes whether it was
+  alerted.
+- Structured plans for the adaptive attacker: connection reuse, bursts and spreading over
+  sources; damage of a union of detectors from the per-rate ladder.
+- Proteus-cert-R, fitted only on evidence that connection reuse cannot lower, and the
+  certificate against connection reuse in the evaluation.
+- Comparison detectors: threshold random walk and CUSUM on flow records
+  (`proteus classic`), rate thresholds with selected features and on reuse-safe evidence,
+  and Apollon as a per-flow detector across networks.
+- `--export-alerts` in the cross-network evaluation, `proteus.evaluation.unions` to
+  compare candidate systems from per-flow alerts, and one calibrated maximum over several
+  detectors (`a&b`).
+- Pilot of a window-fidelity detector as an uncertified complement of the core
+  (`proteus window-fidelity`).
+- Evidence computed window by window with its state carried over, for traces that do
+  not fit in memory.
+- Website: animated step-by-step walkthroughs, a demo of the query attacker and a
+  glossary.
+
+### Changed
+
+- Detection of a campaign also reported under a strict criterion (at least five alerted
+  flows and 1% of the campaign); false alarms reported per alerted entity as well as
+  per destination and minute.
+- The adaptive attacker no longer scores a monotone detector above two consecutive
+  alerting rates (same results, less time).
+
+### Fixed
+
+- Per-entity baselines: the minutes left out of a day (attacks and the minutes that
+  follow) were not discounted when counting the minutes of that day.
+
 ## [0.1.0] - 2026-11-13
 
 First public release, accompanying the manuscript in preparation.

@@ -112,15 +112,18 @@ flow, that blocked flow becomes evidence against its source: a per-source decaye
 of blocked probes that the attacker cannot take back. A query attack that needs many
 probes against the shell therefore raises an alert on its own source.
 
-## Two detectors, one model family
+## Three detectors, one model family
 
-| Detector | Time scales | Role |
-|---|---|---|
-| **Proteus** | all (10 s to 6 h) | Fast detection; alerts may or may not be certified. |
-| **Proteus-cert** | 10 minutes and more | Certified floor: its alerts survive any combination of free operations. |
+| Detector | Evidence | Time scales | Role |
+|---|---|---|---|
+| **Proteus** | every conserved counter | all (10 s to 6 h) | Fast detection; its alerts are rarely certified, because the slack is large at short scales. |
+| **Proteus-cert** | every conserved counter | 10 minutes and more | Certified floor: its certified alerts survive any combination of free operations. |
+| **Proteus-cert-R** | payload bytes and distinct counts only | 10 minutes and more | Its certified alerts also survive connection reuse, which lowers per-connection counts. |
 
-Both are calibrated maxima of the same four sub-cores. A deployment runs both: the
-all-scale detector for timeliness and Proteus-cert as the guarantee.
+All three are calibrated maxima of four sub-cores of the same kind. A deployment
+combines them: the all-scale detector for timeliness and the other two as the
+guarantee. Because every detector adds its own false alarms, the combination is
+calibrated to an alarm budget rather than each member to its own rate.
 
 ## Relation to Apollon
 

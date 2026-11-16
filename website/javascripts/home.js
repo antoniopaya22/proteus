@@ -228,6 +228,44 @@
     window.ScrollTrigger.create({ trigger: pre, start: "top 85%", once: true, onEnter: () => tl.play() });
   })();
 
+  // ------------------------------------------------------- one slide, one screen
+  // Sizes follow the window height (CSS), but wrapping depends on the width, so a
+  // section can still come out taller than the screen and be cut by the snap. Each
+  // section's content is zoomed out just enough to fit; below a legible floor the
+  // section is marked tall and scrolls normally.
+  (function fit() {
+    const mq = window.matchMedia("(min-width: 900px) and (min-height: 620px)");
+    const secs = Array.prototype.slice.call(document.querySelectorAll(".lp-hero, .lp-sec"));
+    const FLOOR = 0.8;
+    function run() {
+      secs.forEach((s) => {
+        const w = s.querySelector(".lp-wrap");
+        if (w) w.style.zoom = "";
+        s.classList.remove("is-tall");
+      });
+      if (!mq.matches) return;
+      const vh = window.innerHeight;
+      secs.forEach((s) => {
+        const w = s.querySelector(".lp-wrap");
+        if (!w) return;
+        let z = 1;
+        for (let i = 0; i < 5 && s.offsetHeight - vh > 1 && z > FLOOR; i++) {
+          const cs = getComputedStyle(s);
+          const room = vh - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+          z = Math.max(FLOOR, z * (room / w.getBoundingClientRect().height) * 0.995);
+          w.style.zoom = z;
+        }
+        s.classList.toggle("is-tall", s.offsetHeight - vh > 1);
+      });
+      if (window.ScrollTrigger) window.ScrollTrigger.refresh();
+    }
+    let timer = 0;
+    window.addEventListener("resize", () => { clearTimeout(timer); timer = setTimeout(run, 120); });
+    window.addEventListener("load", run);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(run);
+    run();
+  })();
+
   // --------------------------------------------------------- reveals, nav
   if (!reduce && window.ScrollTrigger && gsap) {
     gsap.registerPlugin(window.ScrollTrigger);

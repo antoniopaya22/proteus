@@ -25,6 +25,8 @@ The table summarises the modules; each one is described below.
 | [`frontier_scan`](#frontier_scan) | Harm frontier of horizontal scans (source side) |
 | [`adaptive`](#adaptive) | Damage under an adaptive attacker (rate, free operations, mimicry) |
 | [`query_attack`](#query_attack) | Damage under an attacker that searches with hard-label queries |
+| [`unions`](#unions) | Any union of detectors, from their per-flow alerts |
+| [`window_fidelity`](#window_fidelity) | Pilot: a window-fidelity detector as the uncertified complement |
 | [`poisoning`](#poisoning) | Baseline poisoning and growth of benign baselines |
 | [`packet_check`](#packet_check) | Check of the certificate on real packets |
 | [`smoothing`](#smoothing) | Whether a budget certificate (randomised smoothing) covers free operations |
@@ -52,6 +54,7 @@ PROTEUS_EVIDENCE=v3 python -m proteus.evaluation.h1 \
 |---|---|
 | `--train`, `--test` | Training and test datasets (required) |
 | `--models` | Detectors to train and evaluate (default: all) |
+| `--export-alerts` | Also write the alert of every flow per detector (`alerts/<day>.npz`), for `unions` and `window_fidelity` |
 | `--reuse RUN` | Evaluate the fitted models of an earlier run instead of training; `--models` may then name maxima such as `a+b` |
 | `--tag` | Suffix of the output directory |
 | `--baseline {loo,prior}` | Reference days of the baselines: leave one day out, or previous days only |
@@ -211,6 +214,36 @@ Options: `--targets` (detectors or unions of detectors), `--budget` (queries per
 and scenario), `--grid`, `--rmin`, `--rmax`, `--costly` (also spread over sources),
 `--attacks`, `--days`, `--fpr`, `--seed`, `--tag`. Results: `query_attack_<fpr>.csv` and
 `query_attack_trace_<fpr>.csv` in the run directory.
+
+## `unions`
+
+Evaluates candidate systems without scoring anything again. `h1 --export-alerts`
+writes, per test day, the alert of every flow for each detector at each threshold; a
+union alerts on a flow when any of its members does.
+
+```bash
+python -m proteus.evaluation.unions --test cicids2017 \
+    --alerts experiments/outputs/h1/<run with alerts> \
+    --union sys=proteus,proteus_cert,proteus_cert_r \
+    --out experiments/outputs/h1/<run>_unions
+```
+
+It writes `campaigns.csv`, `summary.csv` and `false_alarms.csv` in the format of `h1`.
+
+## `window_fidelity`
+
+A pilot of an uncertified complement of the core. The flows of an entity in its last
+window are compared, as a table, with the benign traffic of the same network on other
+days; a window that is distributed unlike benign traffic raises an alert. Thresholds
+come from benign windows only.
+
+```bash
+python -m proteus.evaluation.window_fidelity --test cicids2017 --window 300 \
+    --with-alerts experiments/outputs/h1/<run with alerts> \
+    --out experiments/outputs/h1/<run>_wf
+```
+
+With `--with-alerts` it is also evaluated in union with the detectors of that run.
 
 ## `poisoning`
 
