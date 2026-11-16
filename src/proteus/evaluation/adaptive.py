@@ -118,6 +118,7 @@ def main() -> None:
     ap.add_argument("--no-structured", action="store_true",
                     help="skip the structured plans (reuse, bursts, spreading)")
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--tag", default="", help="suffix of the output files")
     args = ap.parse_args()
     rng = np.random.default_rng(args.seed)
     fitted = h1.load_models(args.run)
@@ -229,9 +230,10 @@ def main() -> None:
                              "rmax_flows_per_h": args.rmax * 3600})
                 print(rows[-1], flush=True)
     out = pd.DataFrame(rows)
-    out.to_csv(args.run / f"adaptive_{args.fpr:g}.csv", index=False)
+    tag = f"_{args.tag}" if args.tag else ""
+    out.to_csv(args.run / f"adaptive_{args.fpr:g}{tag}.csv", index=False)
     # Dose ladder (METIS-style): detection at every rate and variant.
-    pd.DataFrame(ladder).to_csv(args.run / f"adaptive_ladder_{args.fpr:g}.csv", index=False)
+    pd.DataFrame(ladder).to_csv(args.run / f"adaptive_ladder_{args.fpr:g}{tag}.csv", index=False)
     print(out.pivot_table(index=["day", "attack"], columns="detector",
                           values="adaptive_flows_per_h").round(0).to_string())
 
