@@ -95,10 +95,14 @@ trabajo es de seguridad de redes (el certificado vale para detectores no aprendi
       de los pliegues r2 (`~/tools/extra2.sh`: `ctuB_nox`, `ctuA_nox`, `ugrJA_nox`, `ugrAJ_nox`; empieza
       al acabar `master.sh` y `extra.sh`). Si a presupuesto dan lo mismo, se quita `--exclude-saturated`
       del paper y de la discusión.
-- [~] Atacante por consultas 18 → 17: `qa_1817` y `qa2_1817` en §6.66–6.67 de docs/06 (la fidelidad
-      no aporta robustez; `proteus2` el más robusto). La búsqueda no convergía: añadida la pasada
-      `transfer` y relanzado todo junto (`qa3_1817`, etiqueta `all`); las cifras del paper saldrán
-      de esa ejecución.
+- [x] Atacante por consultas 18 → 17 con todos los candidatos y pasada de transferencia (`qa3_1817`,
+      §6.69 de docs/06): `proteus2` 0,4 % del ritmo real, P ∪ cR 6,7 %, reglas 11 %, Proteus 19 %,
+      reglas con selección 85 %. Falta 17 → 18 (se encola tras `adapt_1718`).
+- [x] Adaptativo a FPR 10⁻⁴ (`adapteq_1817`, §6.70): a igual nivel de alarmas `proteus2` y P ∪ cR
+      quedan iguales (18 % y 21 %).
+- [x] Complemento de fidelidad en 2018 (`wf300_1718`, §6.71): no se sostiene; **descartado** del sistema.
+- [ ] **Decisión del sistema final**: fuera Proteus-cert (redundante) y fuera la fidelidad; entre
+      P ∪ cR y `proteus2` decide 2018 (`p2_fit_1718`, `p2_all_1718`, `adapt_1718`).
 
 **Computers & Security** (Elsevier), por la vía de suscripción (sin coste); reserva: *Journal of
 Information Security and Applications*. Se buscaron números especiales abiertos y gratuitos y no hay

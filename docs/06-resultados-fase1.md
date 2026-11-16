@@ -1983,3 +1983,95 @@ detector que solo usa escalas de diez minutos o más.
 
 La tabla del paper se regenera con `scripts/paper_tables.sh` cuando estén las fronteras de 2017 → 2018
 (`fr_*_1718`, en cola); de momento solo cambia esa celda.
+
+## 6.69 Atacante por consultas, 2018 → 2017, todos los candidatos en una ejecución (2026-11-16, 23:20)
+
+`qa3_1817` (etiqueta `all`): 180 búsquedas de 150 consultas más la pasada de transferencia (15 filas
+mejoraron con una forma hallada contra otro objetivo, por un factor mediano de 2,8). FPR 10⁻³. Daño en
+flujos/h con formas gratuitas; entre paréntesis, repartiendo además entre orígenes si sube.
+
+| Ataque (real) | Proteus | cert-R | P ∪ cR | Sistema de tres | P ∪ cR ∪ F | `proteus2` | `proteus2` ∪ F | Reglas | Reglas sel. |
+|---|---|---|---|---|---|---|---|---|---|
+| LOIC-HTTP (290 167) | 137 578 | 90 960 | 90 960 | 90 960 | 90 960 | 9 344 | 9 344 | 169 199 | 255 913 |
+| Escaneo vie. (107 850) | 341 | 80 | 80 | 80 | 80 | 4 | 4 | 1 180 | 255 913 |
+| Escaneo jue. (10 418) | 10 | 28 | 10 | 10 | 10 | 80 | 80 | 65 | 11 491 |
+| FTP (3 910) | 48 900 | 32 331 (137 578) | 32 331 | 32 331 | 9 344 | 21 376 | 7 598 (17 381) | 32 331 | 255 913 |
+| SSH (1 541) | 26 288 | 2 196 (7 598) | 2 196 (6 178) | 2 196 (6 178) | 2 196 (6 178) | 99 | 99 | 2 196 | 255 913 |
+| GoldenEye (44 976) | 90 960 | 5 023 (26 288) | 5 023 (26 288) | igual | igual | 23 | 23 | 4 084 | 137 578 |
+| Hulk (518 525) | 137 578 | 6 178 (39 761) | 6 178 (39 761) | igual | igual | 99 | 99 | 5 023 | 137 578 |
+| Slowhttptest (5 107) | 48 900 | 2 196 (11 491) | 2 196 (2 700) | igual | igual | 10 | 10 | 1 785 | 137 578 |
+| Slowloris (10 461) | 48 900 | 2 196 (14 133) | 2 196 | igual | igual | 23 | 23 | 1 785 | 137 578 |
+
+Parte del ritmo real que conserva el atacante (media geométrica, formas gratuitas / con orígenes) y
+ataques que pasan a su ritmo real:
+
+| | Proteus | cert-R | P ∪ cR | Sistema de tres | P ∪ cR ∪ F | `proteus2` | `proteus2` ∪ F | F sola | Reglas | Reglas sel. |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Conserva | 19 % | 7,5 / 15 % | 6,7 / 10 % | 6,7 / 10 % | 6,7 / 10 % | 0,4 % | 0,4 % | 34 / 91 % | 11 % | 85 % |
+| Pasan (de 9) | 5 | 2 / 4 | 2 | 2 | 2 | 1 | 1 | 3 / 7 | 2 | 7 |
+
+- Ya es coherente: ninguna unión sale más evadible que un miembro.
+- **Proteus-cert sobra también en robustez**: el sistema de tres deja exactamente el daño de P ∪ cR.
+- **El complemento de fidelidad no aporta robustez** (solo baja FTP), ni a P ∪ cR ni a `proteus2`.
+- A FPR 10⁻³ `proteus2` es el más robusto con mucha diferencia (0,4 % frente a 6,7 %); solo pasa FTP.
+- Frente a la rejilla de planes fijos (§6.63: Proteus 12 %, sistema 5,8 %, `proteus2` 0,2 %, reglas
+  9,2 %, reglas con selección 56 %) el atacante por consultas saca algo más en todos y no cambia el
+  orden. Para el paper: la rejilla es reproducible y barata; la búsqueda confirma que no se quedaba corta.
+- Queda un detalle del código, arreglado sin relanzar (la tabla toma el máximo de las dos búsquedas):
+  la búsqueda con orígenes podía quedar por debajo de la gratuita con la misma forma.
+
+## 6.70 Atacante adaptativo a FPR 10⁻⁴, 2018 → 2017: la ventaja de `proteus2` es de umbral (2026-11-16, 23:25)
+
+`adapteq_1817` (rejilla de 30, mismos planes que §6.63). Daño (flujos/h) de los cuatro detectores de
+Proteus y de las uniones (de la escalera):
+
+| Ataque (real) | Proteus | Proteus-cert | cert-R | `proteus2` | P ∪ cR |
+|---|---|---|---|---|---|
+| LOIC-HTTP (290 167) | 133 708 | 203 681 | 472 649 | 310 273 | 133 708 |
+| Escaneo vie. (107 850) | 1 987 | ≥ 720 000 | 16 300 | 159 | 1 987 |
+| Escaneo jue. (10 418) | 369 | 16 300 | 16 300 | 562 | 369 |
+| FTP (3 910) | 57 619 | 57 619 | 87 773 | 57 619 | 57 619 |
+| SSH (1 541) | 24 830 | 7 024 | 4 611 | 3 027 | 4 611 |
+| GoldenEye (44 976) | 87 773 | 16 300 | 10 700 | 10 700 | 10 700 |
+| Hulk (518 525) | 133 708 | 24 830 | 16 300 | 10 700 | 16 300 |
+| Slowhttptest (5 107) | 57 619 | 7 024 | 4 611 | 4 611 | 4 611 |
+| Slowloris (10 461) | 57 619 | 10 700 | 4 611 | 4 611 | 4 611 |
+| **Conserva (media geom.)** | 35 % | 61 % | 42 % | **18 %** | **21 %** |
+| Pasan a ritmo real | 5 | 6 | 4 | 3 | 2 |
+
+Comparación de los dos candidatos según el umbral (2018 → 2017; alarmas por entidad/h de §6.64):
+
+| | FPR 10⁻³: conserva / alarmas | FPR 10⁻⁴: conserva / alarmas |
+|---|---|---|
+| P ∪ cR | 5,8 % / 4,10 | 21 % / 0,8 (sistema de tres: 0,83) |
+| `proteus2` | 0,2 % / 5,39 | 18 % / 1,05 |
+
+- **A igual nivel de alarmas los dos candidatos son prácticamente iguales**: la robustez de `proteus2`
+  a 10⁻³ se paga con alarmas (5,39 frente a 4,10), y a 10⁻⁴, con alarmas parecidas, conserva 18 % frente
+  a 21 %. P ∪ cR deja pasar menos ataques a su ritmo real (2 frente a 3). No hay un candidato dominante.
+- En `proteus2` el daño certificado coincide a 10⁻⁴ con el daño simple en casi todo: a ese umbral sus
+  alertas son prácticamente las certificables.
+- El sistema de tres deja de nuevo el mismo daño que P ∪ cR.
+
+## 6.71 El complemento de fidelidad en 2017 → 2018: no se sostiene (2026-11-16, 23:30)
+
+`wf300_1718` (ventana de 300 s y umbral por tamaño elegidos mirando 2017). «13+2» = volumétricas y
+escaneos de 13 + otros de 12; alarmas por entidad/h.
+
+| | FPR 10⁻³ | FPR 10⁻⁴ |
+|---|---|---|
+| Fidelidad sola | 1+2 a 11,04 | 1+2 a 4,47 |
+| Proteus | 13+1 a 1,57 | 9+1 a 0,27 |
+| Proteus ∪ fidelidad | 13+2 a 12,57 | 10+2 a 4,73 |
+| Sistema de tres | 13+2 a 11,88 | 13+2 a 7,86 |
+| Sistema de tres ∪ fidelidad | 13+2 a 22,73 | 13+2 a 12,32 |
+
+- En la red grande el complemento detecta una campaña de volumen y dos de «otros» a 4–11 alarmas por
+  entidad y hora: añade como mucho una campaña a Proteus y multiplica las alarmas. En 2017 daba 9+4 a
+  0,64 (§6.62): era un ajuste a esa red (ventana y umbral se eligieron viendo sus datos de prueba).
+- Con §6.69 (no aporta robustez) queda **descartado como parte del sistema**. Se conserva el código
+  (`window_fidelity`) y el resultado como negativo: una idea razonable que no se transfiere entre redes.
+
+**Estado de la decisión del sistema final:** fuera Proteus-cert (redundante en detección y en daño) y
+fuera el complemento de fidelidad. Quedan P ∪ cR y `proteus2`, equivalentes a igual nivel de alarmas
+en 2017; decide 2018 (`p2_fit_1718`, `p2_all_1718`, `adapt_1718`, en cola).
