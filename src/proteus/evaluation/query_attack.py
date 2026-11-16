@@ -212,6 +212,16 @@ def main() -> None:
     rates = np.geomspace(args.rmin, args.rmax, args.grid)
     baselines = Baselines(args.test)
     rows, traces = [], []
+    tag = f"_{args.tag}" if args.tag else ""
+
+    def save() -> pd.DataFrame:
+        """Results so far (written after every scenario: a long run can be cut short)."""
+        out = pd.DataFrame(rows)
+        out.to_csv(args.run / f"query_attack_{args.fpr:g}{tag}.csv", index=False)
+        pd.DataFrame(traces).to_csv(args.run / f"query_attack_trace_{args.fpr:g}{tag}.csv",
+                                    index=False)
+        return out
+
     for day in h1.days(args.test):
         if args.days and day.stem not in args.days:
             continue
@@ -252,11 +262,8 @@ def main() -> None:
                                 "flows_per_h": (float(rates[t["index"]]) * 3600
                                                 if t["index"] >= 0 else 0.0),
                                 "shape": json.dumps(t["shape"])} for t in res["trace"]]
-    tag = f"_{args.tag}" if args.tag else ""
-    out = pd.DataFrame(rows)
-    out.to_csv(args.run / f"query_attack_{args.fpr:g}{tag}.csv", index=False)
-    pd.DataFrame(traces).to_csv(args.run / f"query_attack_trace_{args.fpr:g}{tag}.csv",
-                                index=False)
+            save()
+    out = save()
     if len(out):
         print(out.pivot_table(index=["day", "attack"], columns=["target", "costly"],
                               values="query_flows_per_h").round(0).to_string())

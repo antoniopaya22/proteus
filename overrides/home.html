@@ -39,18 +39,28 @@
 <div class="lp" id="lp">
 
   <!-- =========================================================== HERO -->
-  <section class="lp-hero" id="top">
-    <div class="lp-wrap">
+  <section class="lp-hero lp-ink lp-hero--v2" id="top">
+    <canvas class="hv" id="hv" aria-hidden="true" data-labels='{{ t.hv_labels | tojson }}'></canvas>
+    <div class="lp-wrap hv-wrap">
       <p class="lp-tag">{{ t.hero_eyebrow }}</p>
-      <div class="lp-hero__head">
-        <h1 class="lp-display">{{ t.hero_title }}</h1>
-        <div class="lp-hero__side">
-          <p class="lp-lead">{{ t.hero_lead }}</p>
-          <div class="lp-row">
-            <a class="lp-btn lp-btn--ink lp-btn--lg" href="{{ (B ~ 'getting-started/quickstart/') | url }}">{{ t.get_started }}</a>
-            <a class="lp-btn lp-btn--ghost lp-btn--lg" href="#how">{{ t.read_docs }} <span aria-hidden="true">↓</span></a>
-          </div>
-        </div>
+      <h1 class="lp-display hv-title">{{ t.hero_title }}</h1>
+      <p class="hv-sub">{{ t.hero_sub }}</p>
+      <p class="lp-lead">{{ t.hero_lead }}</p>
+      <div class="lp-row">
+        <a class="lp-btn lp-btn--paper lp-btn--lg" href="{{ (B ~ 'getting-started/quickstart/') | url }}">{{ t.get_started }}</a>
+        <a class="lp-btn lp-btn--ghost lp-btn--lg" href="#minute">{{ t.read_docs }} <span aria-hidden="true">↓</span></a>
+      </div>
+      <ul class="hv-facts">{% for k, v in t.hv_facts %}<li><b>{{ k }}</b><span>{{ v }}</span></li>{% endfor %}</ul>
+    </div>
+  </section>
+
+  <!-- ===================================================== IN ONE MINUTE -->
+  <section class="lp-sec lp-sand" id="minute">
+    <div class="lp-wrap">
+      <p class="lp-tag">{{ t.m_eyebrow }}</p>
+      <div class="lp-split">
+        <h2 class="lp-h2">{{ t.m_title }}</h2>
+        <p class="lp-text">{{ t.m_text }}</p>
       </div>
 
       <figure class="hd" id="hd" aria-label="{{ t.hero_aria }}">

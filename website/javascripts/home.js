@@ -23,6 +23,74 @@
     stagesHead: "# stages, in order",
   };
 
+  // ------------------------------------------------------------- hero field
+  // Traffic streams towards a gauge of evidence. Disguised packets are bigger and
+  // split in two, and still only add to the gauge: above the threshold the alert
+  // holds. Four phases loop: normal, flood, disguised flood, slowed down.
+  (function field() {
+    const c = document.getElementById("hv");
+    if (!c || !c.getContext) return;
+    const ctx = c.getContext("2d");
+    const L = JSON.parse(c.dataset.labels);
+    const PH = [[3200, 0.05, 0], [4200, 0.95, 0], [5600, 0.95, 1], [3600, 0.12, 0]];  // ms, attack rate, disguised
+    const THR = 0.5, SIG = "#14b86a", ATK = "#e08a2e", PAPER = "244, 243, 239";
+    let W = 0, H = 0, P = [], level = 0.1, phase = 0, t0 = 0, last = 0, raf = 0, on = false;
+    function size() {
+      const d = Math.min(2, window.devicePixelRatio || 1);
+      W = c.clientWidth; H = c.clientHeight; c.width = W * d; c.height = H * d; ctx.setTransform(d, 0, 0, d, 0, 0);
+    }
+    const gx = () => W * 0.86, top = () => H * 0.2, bot = () => H * 0.8;
+    function spawn(atk, dis, y) {
+      P.push({ x: W * 0.3, y: y == null ? H * (0.14 + Math.random() * 0.72) : y, v: 2.4 + Math.random() * 2.6, atk: atk, dis: dis });
+    }
+    function draw(now) {
+      const dt = Math.min(48, now - last || 16) / 16; last = now;
+      if (now - t0 > PH[phase][0]) { phase = (phase + 1) % PH.length; t0 = now; }
+      const rate = PH[phase][1], dis = PH[phase][2];
+      if (Math.random() < 0.09 * dt) spawn(false, false);
+      for (let k = 0; k < 3; k++) if (Math.random() < rate * 0.3 * dt) {
+        const y = H * (0.14 + Math.random() * 0.72);
+        spawn(true, dis, y); if (dis && Math.random() < 0.45) spawn(true, dis, y + 9);   // a split connection
+      }
+      level += (0.08 - level) * 0.006 * dt;                       // evidence fades with time
+      ctx.clearRect(0, 0, W, H);
+      const x1 = gx(), yT = bot() - Math.min(1, level) * (bot() - top());
+      P = P.filter((p) => {
+        p.x += p.v * dt; const k = Math.max(0, (p.x - W * 0.3) / (x1 - W * 0.3));
+        p.y += (yT - p.y) * 0.035 * k * dt;
+        if (p.x >= x1) { level = Math.min(1.02, level + (p.atk ? (p.dis ? 0.0125 : 0.009) : 0.002)); return false; }
+        ctx.beginPath();
+        if (p.atk && p.dis) {                                     // padded: bigger, with a halo
+          ctx.arc(p.x, p.y, 5.4, 0, 6.3); ctx.strokeStyle = "rgba(224, 138, 46, .55)"; ctx.lineWidth = 1.4; ctx.stroke();
+          ctx.beginPath(); ctx.arc(p.x, p.y, 2.6, 0, 6.3); ctx.fillStyle = ATK; ctx.fill();
+        } else { ctx.arc(p.x, p.y, p.atk ? 2.6 : 1.8, 0, 6.3); ctx.fillStyle = p.atk ? ATK : "rgba(" + PAPER + ", .42)"; ctx.fill(); }
+        return true;
+      });
+      const hit = level >= THR, w = 22;
+      ctx.fillStyle = "rgba(" + PAPER + ", .08)"; ctx.fillRect(x1, top(), w, bot() - top());
+      ctx.fillStyle = hit ? SIG : "rgba(" + PAPER + ", .55)"; ctx.fillRect(x1, yT, w, bot() - yT);
+      const yThr = bot() - THR * (bot() - top());
+      ctx.setLineDash([4, 4]); ctx.strokeStyle = "rgba(" + PAPER + ", .7)"; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.moveTo(x1 - 26, yThr); ctx.lineTo(x1 + w + 10, yThr); ctx.stroke(); ctx.setLineDash([]);
+      ctx.font = "500 11px 'JetBrains Mono', ui-monospace, monospace"; ctx.textAlign = "right"; ctx.textBaseline = "middle";
+      ctx.fillStyle = "rgba(" + PAPER + ", .6)"; ctx.fillText(L.thr.toUpperCase(), x1 - 32, yThr);
+      ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+      ctx.fillText(L.evidence.toUpperCase(), x1 + w / 2, bot() + 22);
+      ctx.fillStyle = hit ? SIG : "rgba(" + PAPER + ", .6)";
+      ctx.font = "600 12px 'JetBrains Mono', ui-monospace, monospace";
+      ctx.textAlign = "right"; ctx.fillText(hit ? L.alert : L.quiet.toUpperCase(), x1 + w, top() - 16);
+      ctx.fillStyle = "rgba(" + PAPER + ", .5)"; ctx.font = "500 11px 'JetBrains Mono', ui-monospace, monospace";
+      ctx.textAlign = "right"; ctx.fillText("● " + L.states[phase].toUpperCase(), x1 - 32, bot() + 22);
+      if (on) raf = requestAnimationFrame(draw);
+    }
+    function start() { if (on) return; on = true; last = t0 = performance.now(); raf = requestAnimationFrame(draw); }
+    function stop() { on = false; cancelAnimationFrame(raf); }
+    size(); window.addEventListener("resize", size);
+    if (reduce) { level = 0.82; phase = 2; for (let k = 0; k < 26; k++) { spawn(true, true); P[k].x = W * (0.3 + Math.random() * 0.5); } draw(performance.now()); return; }
+    new IntersectionObserver((es) => es.forEach((e) => (e.isIntersecting && !document.hidden ? start() : stop()))).observe(c);
+    document.addEventListener("visibilitychange", () => (document.hidden ? stop() : start()));
+  })();
+
   // -------------------------------------------------------------- hero duel
   // The same flood, seen by a detector that judges each connection and by
   // Proteus, through five moments: quiet, flood, padding, more disguise, less traffic.
