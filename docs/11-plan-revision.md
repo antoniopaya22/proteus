@@ -162,7 +162,9 @@ tres detectores, se queda el de tres y se cuenta.
   la detección entre redes y en la comparación conjunta.
   - [x] `ApollonFlow` (`--models apollon`, commit 759823d) y texto del paper (commit 4030357 del
         paper: motivación, tabla de ataques por flujo, tabla de detectores).
-  - [ ] Resultados `ap_1817` y `ap_1718` (cola aparte `~/tools/apollon.sh`, mismo cerrojo): columna
+  - [~] `ap_1817` hecho (§6.57 de docs/06: 7/11 a 21,3 alarmas por entidad/h; satura) y en la tabla
+        de detección. Falta `ap_1718`.
+  - [ ] Resultados `ap_1718` (cola aparte `~/tools/apollon.sh`, mismo cerrojo): columna
         en la tabla de detección y fila en la comparación conjunta; medir qué miembro responde.
 - **AML como gancho.** «Adversarial machine learning» es la palabra clave que atrae lectores: debe
   estar en título, resumen, introducción y palabras clave, y los ataques deben contarse como AML en

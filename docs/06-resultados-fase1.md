@@ -1664,3 +1664,22 @@ figura y texto, con las ejecuciones `r2c` (18 → 17) y `r2b` (17 → 18):
   exclusión. Si solo cambia cert-R en 2018, se adopta como regla general y se declara.
 - De paso: `tables curves` archivaba las ejecuciones 17 → 18 en el panel 18 → 17 (corregido, commit
   25763c3); la figura nunca se había compilado, así que no afectó a ninguna cifra publicada.
+
+## 6.57 Apollon entre redes, 2018 → 2017 (2026-11-16, 13:20)
+
+`ap_1817` (etiqueta `r2_apollon`, 17 min en paralelo con el adaptativo, con tope de memoria): Apollon
+(`ApollonFlow`) y el clasificador por flujo sobre las mismas 83 estadísticas por flujo.
+
+| Detector | Campañas volumétricas y escaneos (criterio estricto) | Alarmas por entidad/h | A presupuesto |
+|---|---|---|---|
+| Apollon | 7/11 (los 6 escaneos y Slowloris; recall 0,26 y 0,04) | 21,3 (igual a 10⁻³ y 10⁻⁴) | ninguna alerta |
+| Clasificador por flujo | 10/11 a 10⁻³; 6/11 a 10⁻⁴ | 23,1 y 6,7 | 6/11 a 0,57–2,67 |
+| Proteus | 11/11 | 1,75 | 11/11 a 1,0 |
+
+- La puntuación de Apollon (probabilidad del miembro elegido por el bandit) empata en el 0,6 % de los
+  flujos benignos de la red nueva: el umbral local cae en el empate, da lo mismo a los dos FPR
+  objetivo y a presupuesto de alarmas no queda ninguna alerta. Mismo mecanismo de saturación que en
+  §6.56.
+- Fuera de escaneos y Slowloris no detecta nada (ni Hulk, GoldenEye o LOIC-HTTP).
+- El paper lo cuenta como «se comporta como el clasificador por flujo» (commit del paper). Falta
+  17 → 18 (`ap_1718`, bajo el cerrojo) y su fila en la comparación conjunta.
