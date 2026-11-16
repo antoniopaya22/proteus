@@ -1516,3 +1516,27 @@ entidad/h realizadas):
 
 Con el presupuesto por entidad alertada, Proteus es el único con las 11 campañas a cualquier
 presupuesto. Las reglas no bajan de 5,3 alarmas por entidad/h. 17 → 18 en cola (`r2b.sh`).
+
+## 6.52 `r2b`, 2017 → 2018 a igual presupuesto de alarmas por entidad (2026-11-16, 02:40)
+
+Volumétricos y escaneos detectados con el criterio estricto (de 13) y alarmas por entidad/h
+realizadas, con el presupuesto contado por entidad alertada:
+
+| Presupuesto | `proteus` | `proteus_cert` | `proteus_sys` | reglas | `core_free_dst_b` | `proteus_free` |
+|---|---|---|---|---|---|---|
+| 0,5/h | 8 a 0,20 | 13 a 0,12 | 13 a 0,27 | 13 a 1,31 | 13 a 0,56 | 9 a 0,28 |
+| 1/h | 11 a 0,42 | 13 a 0,15 | 13 a 0,52 | 13 a 1,93 | 13 a 0,85 | 9 a 0,29 |
+| 3/h | 13 a 1,02 | 13 a 0,20 | 13 a 1,09 | 13 a 2,50 | 13 a 1,73 | 9 a 0,30 |
+| 10/h | 13 a 2,18 | 13 a 4,23 | 13 a 5,70 | 13 a 4,97 | 13 a 3,26 | 12 a 5,82 |
+
+- Con las alarmas contadas por entidad alertada, **el resultado mixto de v3 desaparece**: el sistema
+  desplegado (`proteus_sys`) detecta las 13 a 0,27 alarmas por entidad/h; las reglas no bajan de
+  1,31 (5×) y el núcleo sin restricciones necesita 0,56 (2×).
+- `proteus` solo llega a las 13 estrictas a 1,02 (parecido a las reglas); el que rinde con pocas
+  alarmas es el detector de 10 min. Coherente con v3: en esta red las escalas largas cuestan.
+- `proteus_free` (cuatro subnúcleos sin restricciones) es el peor a presupuestos bajos: 9/13.
+- Certificadas de `proteus_cert`: 6/13 a 0,05 alarmas por entidad/h. Resistente a reutilización:
+  6/13 certificadas frente a reutilización a 0,07.
+- Junto con 18 → 17 (§6.51: Proteus 11/11 a 1,0; reglas 9/11 a 5,3): **en los dos sentidos el sistema
+  detecta todas las campañas volumétricas y escaneos con 5× menos alarmas por entidad que las
+  reglas de tasa.** Este pasa a ser el resultado central de detección.
