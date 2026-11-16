@@ -123,11 +123,16 @@ def main() -> None:
     ap.add_argument("--delta", type=float, default=h1.EXPORT_TIMEOUT_S)
     ap.add_argument("--rmax", type=float, default=100.0, help="highest rate tried (flows/s)")
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--extra-runs", type=Path, nargs="*", default=[],
+                    help="more runs of the same pair to take fitted models from")
     ap.add_argument("--busy", action="store_true",
                     help="aim each campaign at the busiest benign service of its port")
     args = ap.parse_args()
     rng = np.random.default_rng(args.seed)
-    cols, model = h1.load_models(args.run)[args.model]
+    fitted = h1.load_models(args.run)
+    for extra in args.extra_runs:  # same train/test pair, other detectors
+        fitted = {**h1.load_models(extra), **fitted}
+    cols, model = fitted[args.model]
     _, specs = h1.evidence_b(args.test, h1.days(args.test)[0], columns=["clean"])
 
     baselines = Baselines(args.test)
