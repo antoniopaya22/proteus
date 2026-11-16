@@ -1683,3 +1683,16 @@ figura y texto, con las ejecuciones `r2c` (18 → 17) y `r2b` (17 → 18):
 - Fuera de escaneos y Slowloris no detecta nada (ni Hulk, GoldenEye o LOIC-HTTP).
 - El paper lo cuenta como «se comporta como el clasificador por flujo» (commit del paper). Falta
   17 → 18 (`ap_1718`, bajo el cerrojo) y su fila en la comparación conjunta.
+
+## 6.58 Exclusión de subnúcleos saturados en 2018 → 2017: no cambia nada (2026-11-16, 13:30)
+
+`sat_1817` (etiqueta `r2_sat`): las mismas puntuaciones de `r2c` para Proteus, Proteus-cert y
+Proteus-cert-R con `--exclude-saturated 1e-3`.
+
+- Con umbrales locales a 10⁻³ y 10⁻⁴, detección y alarmas por entidad son **idénticas** a `r2c` en
+  los tres detectores, en sus alertas certificadas y en las dos uniones: ningún subnúcleo satura en
+  la red pequeña.
+- A presupuesto la detección tampoco cambia; las alarmas realizadas suben algo en los presupuestos
+  altos (Proteus a presupuesto 10: 6,58 → 8,14; sistema de tres: 9,48 → 11,38) y nada en 0,5.
+- Falta `sat_1718`, que es donde Proteus-cert-R satura (§6.56). Si allí la regla arregla cert-R sin
+  tocar lo demás, se adopta para todas las ejecuciones.
