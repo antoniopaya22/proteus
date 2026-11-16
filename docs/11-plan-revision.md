@@ -34,6 +34,17 @@ La ronda 1 son las fases A–E de abajo.
 > existentes» y pide una visión de seguridad novedosa. Pendiente: revisar el alcance de cada
 > candidata (JISA, Computer Networks, JNCA, IEEE TIFS/TDSC/TNSM, IJIS) y decidir con Antonio.
 
+**Decisión de Antonio (2026-11-16, tarde):** intentar primero Computers & Security, reduciendo al
+mínimo el vocabulario de IA/ML en todo el texto, sin faltar a la verdad. Esto sustituye, para esta
+versión, a «AML como gancho»: el gancho pasa a ser la evasión adversaria y la robustez certificada.
+Reglas: el método sigue diciendo qué modelo es (árboles de gradiente monótonos, entrenados con
+etiquetas) en diseño y apéndice; no se oculta ningún hecho; la carta al editor explica por qué el
+trabajo es de seguridad de redes (el certificado vale para detectores no aprendidos).
+- [x] Resumen, palabras clave, introducción, conclusión y *highlights* (commit 4c05c27 del paper).
+- [ ] Evaluación (tras la pasada de estilo), trabajo relacionado y discusión: repasar «machine
+      learning», «learned», «trained», «classifier».
+- [ ] Carta al editor. Reserva si hay rechazo sin revisión: JISA.
+
 **Computers & Security** (Elsevier), por la vía de suscripción (sin coste); reserva: *Journal of
 Information Security and Applications*. Se buscaron números especiales abiertos y gratuitos y no hay
 ninguno que encaje (el de C&S sobre detección robusta cerró en dic. 2024). El paper ya usa `elsarticle`
