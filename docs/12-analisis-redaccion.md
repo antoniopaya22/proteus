@@ -79,7 +79,8 @@ Donde los congresos y la revista chocan, se sigue a la revista.
 - **A comprobar en la guía viva** (la copia leída es de 2024 y la página actual está tras un
   captcha): título exacto de la declaración de IA («…in the writing process» en 2024; el nuestro dice
   «…in the manuscript preparation process») y si hay límite de palabras del resumen.
-- **Para la versión final:** biografía de 50–100 palabras de cada autor.
+- **Hecho** (commit del paper «author biographies with photos»): biografías de 50–100 palabras con
+  foto, sacadas de las webs de los autores. La foto de Sergio sale de su CV público; que la confirme.
 
 ---
 
