@@ -43,6 +43,10 @@ ejecuta bajo el cerrojo y deja su marca en `~/tools/m/<paso>` solo si termina bi
 ejecutar `master.sh` (salta lo ya hecho). Sustituye a `rev2c`, `adapt2`, `sel`, `adaptsel`,
 `isolated18` y `seeds`.
 
+Desde el 2026-11-16 09:08 UTC la cola corre en la máquina de equipo (`ws-8f74c60c…`, compartida con
+Sergio): se copiaron `~/proteus` (datos, salidas, entorno) y `~/tools` desde la anterior, con tamaños
+idénticos y una comparación en seco de `rsync` sin diferencias. La anterior queda sin uso.
+
 ### Rediseño `proteus2` (decidido con Antonio el 2026-11-16)
 
 Tras ver que la reutilización de conexiones multiplica por ~20 el daño contra Proteus (§6.54 de
