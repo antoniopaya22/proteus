@@ -102,37 +102,50 @@ def split_flows(df: pd.DataFrame, sel: np.ndarray, parts: int,
     ports. Packets, bytes and connection time are conserved; a flow with fewer
     forward packets than ``parts`` is split into as many flows as it has packets."""
     out = _with_ids(df)
-    keep = out[~sel]
-    pieces = [keep]
     src = out[sel]
-    for _, r in src.iterrows():
-        k = int(max(1, min(parts, r["fwd_pkts"])))
-        if k == 1:
-            pieces.append(r.to_frame().T)
-            continue
-        edges = np.linspace(0, r["duration_us"], k + 1).astype(np.int64)
-        fp = np.full(k, r["fwd_pkts"] // k)
-        fp[: r["fwd_pkts"] % k] += 1
-        bp = np.full(k, r["bwd_pkts"] // k)
-        bp[: r["bwd_pkts"] % k] += 1
-        fb = np.floor(r["fwd_bytes"] * fp / max(r["fwd_pkts"], 1)).astype(np.int64)
-        fb[-1] += r["fwd_bytes"] - fb.sum()
-        bb = np.floor(r["bwd_bytes"] * bp / max(r["bwd_pkts"], 1)).astype(np.int64)
-        bb[-1] += r["bwd_bytes"] - bb.sum()
-        t0 = r["t_start"]
-        rows = pd.DataFrame([r] * k).reset_index(drop=True)
-        rows["t_start"] = [t0 + pd.Timedelta(microseconds=int(e)) for e in edges[:-1]]
-        rows["t_end"] = [t0 + pd.Timedelta(microseconds=int(e)) for e in edges[1:]]
-        rows["duration_us"] = np.diff(edges)
-        rows["fwd_pkts"], rows["bwd_pkts"] = fp, bp
-        rows["fwd_bytes"], rows["bwd_bytes"] = fb, bb
-        rows["src_port"] = rng.integers(1024, 65536, k)
-        # A responder RST closes the original connection: keep it on the last piece.
-        rst = r.get("f_bwd_rst_flags", 0)
-        rows["f_bwd_rst_flags"] = [0.0] * (k - 1) + [rst]
-        rows["orig_id"] = [-1] * (k - 1) + [r["orig_id"]]
-        pieces.append(rows)
-    res = pd.concat(pieces, ignore_index=True)
+    k = np.clip(src["fwd_pkts"].to_numpy(np.int64), 1, max(int(parts), 1))
+    if not (k > 1).any():
+        return pd.concat([out[~sel], src], ignore_index=True)
+    first = np.cumsum(k) - k  # row of the first piece of every flow
+    rep = np.repeat(np.arange(len(src)), k)
+    j = np.arange(len(rep)) - first[rep]  # piece number within its flow
+    kk = k[rep]
+    multi, last = kk > 1, j == kk - 1
+    rows = src.iloc[rep].reset_index(drop=True)
+
+    def total(col: str) -> np.ndarray:
+        return src[col].to_numpy(np.int64)[rep]
+
+    def share(col: str) -> np.ndarray:  # equal parts, the remainder to the first pieces
+        return total(col) // kk + (j < total(col) % kk)
+
+    def weighted(col: str, part: np.ndarray, whole: str) -> np.ndarray:
+        """Bytes in proportion to the packets of each piece; the rounding to the last."""
+        b = np.floor(total(col) * part / np.maximum(total(whole), 1)).astype(np.int64)
+        b[first + k - 1] += src[col].to_numpy(np.int64) - np.add.reduceat(b, first)
+        return b
+
+    d = total("duration_us")
+    lo = (j * (d / kk)).astype(np.int64)
+    hi = np.where(last, d, ((j + 1) * (d / kk)).astype(np.int64))
+    t0 = rows["t_start"]
+    rows["t_end"] = (t0 + pd.to_timedelta(hi, unit="us")).where(multi, rows["t_end"])
+    rows["t_start"] = t0 + pd.to_timedelta(np.where(multi, lo, 0), unit="us")
+    rows["duration_us"] = np.where(multi, hi - lo, d)
+    fp, bp = share("fwd_pkts"), share("bwd_pkts")
+    rows["fwd_bytes"] = weighted("fwd_bytes", fp, "fwd_pkts")
+    rows["bwd_bytes"] = weighted("bwd_bytes", bp, "bwd_pkts")
+    rows["fwd_pkts"], rows["bwd_pkts"] = fp, bp
+    port = rows["src_port"].to_numpy().copy()
+    port[multi] = rng.integers(1024, 65536, int(multi.sum()))
+    rows["src_port"] = port
+    # A responder RST closes the original connection: keep it on the last piece.
+    if "f_bwd_rst_flags" in rows.columns:
+        rows["f_bwd_rst_flags"] = rows["f_bwd_rst_flags"].where(~multi | last, 0.0)
+    else:
+        rows["f_bwd_rst_flags"] = np.where(multi, 0.0, np.nan)
+    rows["orig_id"] = rows["orig_id"].where(~multi | last, -1)
+    res = pd.concat([out[~sel], rows], ignore_index=True)
     return res.astype({c: df[c].dtype for c in df.columns if c in res.columns})
 
 

@@ -193,3 +193,59 @@ def test_spread_and_pulse_keep_the_flows():
     phase = (p["t_start"] - p["t_start"].min()).dt.total_seconds() % 60
     assert phase.max() <= 6.0                              # bursts in the first tenth
     assert (p["t_end"] - p["t_start"]).equals(df["t_end"] - df["t_start"])
+
+
+def _split_reference(df: pd.DataFrame, sel: np.ndarray, parts: int,
+                rng: np.random.Generator) -> pd.DataFrame:
+    """``split_flows`` one flow at a time: slow, kept as the reference of the fast one."""
+    out = op._with_ids(df)
+    keep = out[~sel]
+    pieces = [keep]
+    src = out[sel]
+    for _, r in src.iterrows():
+        k = int(max(1, min(parts, r["fwd_pkts"])))
+        if k == 1:
+            pieces.append(r.to_frame().T)
+            continue
+        edges = np.linspace(0, r["duration_us"], k + 1).astype(np.int64)
+        fp = np.full(k, r["fwd_pkts"] // k)
+        fp[: r["fwd_pkts"] % k] += 1
+        bp = np.full(k, r["bwd_pkts"] // k)
+        bp[: r["bwd_pkts"] % k] += 1
+        fb = np.floor(r["fwd_bytes"] * fp / max(r["fwd_pkts"], 1)).astype(np.int64)
+        fb[-1] += r["fwd_bytes"] - fb.sum()
+        bb = np.floor(r["bwd_bytes"] * bp / max(r["bwd_pkts"], 1)).astype(np.int64)
+        bb[-1] += r["bwd_bytes"] - bb.sum()
+        t0 = r["t_start"]
+        rows = pd.DataFrame([r] * k).reset_index(drop=True)
+        rows["t_start"] = [t0 + pd.Timedelta(microseconds=int(e)) for e in edges[:-1]]
+        rows["t_end"] = [t0 + pd.Timedelta(microseconds=int(e)) for e in edges[1:]]
+        rows["duration_us"] = np.diff(edges)
+        rows["fwd_pkts"], rows["bwd_pkts"] = fp, bp
+        rows["fwd_bytes"], rows["bwd_bytes"] = fb, bb
+        rows["src_port"] = rng.integers(1024, 65536, k)
+        # A responder RST closes the original connection: keep it on the last piece.
+        rst = r.get("f_bwd_rst_flags", 0)
+        rows["f_bwd_rst_flags"] = [0.0] * (k - 1) + [rst]
+        rows["orig_id"] = [-1] * (k - 1) + [r["orig_id"]]
+        pieces.append(rows)
+    res = pd.concat(pieces, ignore_index=True)
+    return res.astype({c: df[c].dtype for c in df.columns if c in res.columns})
+
+
+@pytest.mark.parametrize("parts", [1, 2, 4, 9])
+@pytest.mark.parametrize("seed", range(3))
+def test_split_matches_the_flow_by_flow_reference(parts, seed):
+    x = flows(np.random.default_rng(seed))
+    x.loc[x.index[:5], "duration_us"] = 0
+    sel = attacker(x) & (np.random.default_rng(seed + 10).random(len(x)) < 0.7)
+    got = op.split_flows(x, sel, parts, np.random.default_rng(7))
+    want = _split_reference(x, sel, parts, np.random.default_rng(7))
+    pd.testing.assert_frame_equal(got, want.astype({"orig_id": np.int64}))
+
+
+def test_split_without_the_reset_column_matches_the_reference():
+    x = flows(np.random.default_rng(0)).drop(columns=["f_bwd_rst_flags"], errors="ignore")
+    got = op.split_flows(x, attacker(x), 3, np.random.default_rng(7))
+    want = _split_reference(x, attacker(x), 3, np.random.default_rng(7))
+    pd.testing.assert_frame_equal(got, want, check_dtype=False)
