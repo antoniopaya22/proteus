@@ -83,14 +83,15 @@ def world(tmp_path_factory) -> Path:
 
 
 def test_cross_network_run_end_to_end(world):
-    models = ["proteus", "proteus_cert", "rate_rules_local", "rate_rules_sel"]
+    models = ["proteus", "proteus_cert", "proteus2", "proteus_cert_r", "rate_rules_local",
+              "rate_rules_sel"]
     r = _run(world, "--train", "net1", "--test", "net2", "--models", *models,
              "--entity-budgets", "1", "--alert-variants", "--tag", "e2e")
     assert r.returncode == 0, r.stderr[-2000:]
     out = world / "experiments/outputs/h1/net1__net2__loo_labels__e2e"
     c = pd.read_csv(out / "campaigns.csv")
     local = c[(c["threshold"] == "local") & (c["target_fpr"] == 1e-3)]
-    for m in [*models, "proteus_cert@cert", "proteus_sys"]:
+    for m in [*models, "proteus_cert@cert", "proteus_sys", "proteus2_sys", "proteus2@cert"]:
         assert set(local.loc[local["model"] == m, "day"]) == {"day0", "day1", "day2"}, m
     benign_day = local[local["day"] == "day0"]
     assert (benign_day["attack"] == "(none)").all() and benign_day["alarms_per_hour"].notna().all()

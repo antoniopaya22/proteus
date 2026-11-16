@@ -546,6 +546,9 @@ def proteus_detectors(specs, rules, src_rules, raw, raw_of, cst) -> dict:
         # lower (payload bytes and distinct counts), at scales of 10 minutes and more.
         "proteus_cert_r": calmax(parts, keep=lambda c: _tau(c) >= 600
                                  and c.split("__")[1] in REUSE_SAFE),
+        # The same restriction on every time scale: no sub-core uses evidence that a
+        # free operation or connection reuse can lower.
+        "proteus2": calmax(parts, keep=lambda c: c.split("__")[1] in REUSE_SAFE),
         # The same four sub-cores without monotonicity constraints (price of
         # monotonicity for the combination itself, not only for one model).
         "proteus_free": calmax(parts, mono=False),
@@ -601,7 +604,8 @@ NO_CAMPAIGN = "(none)"  # row of a day without campaigns in campaigns.csv
 STRICT_MIN_FLOWS, STRICT_MIN_RECALL = 5, 0.01
 # Deployed configurations evaluated as one detector when every member is in the run.
 UNIONS = {"proteus_sys": ("proteus", "proteus_cert"),
-          "proteus_sys_r": ("proteus", "proteus_cert", "proteus_cert_r")}
+          "proteus_sys_r": ("proteus", "proteus_cert", "proteus_cert_r"),
+          "proteus2_sys": ("proteus2", "proteus_cert_r")}
 
 
 def persistent(alert: np.ndarray, test: pd.DataFrame, k: int = 2, n: int = 5) -> np.ndarray:
@@ -773,6 +777,8 @@ def main() -> None:
                     help="restrict testing to these capture days (file stems)")
     ap.add_argument("--balance", choices=["cap", "type", "type_entity", "none"], default="cap",
                     help="class balance of the training set (see BALANCE)")
+    ap.add_argument("--extra-runs", type=Path, nargs="*", default=[],
+                    help="with --reuse: more runs of the same pair to take fitted models from")
     ap.add_argument("--alert-variants", action="store_true",
                     help="local detectors (needs --entity-budgets): also evaluate a "
                          "per-destination floor (+ent) and persistence (+k2n5)")
@@ -802,6 +808,8 @@ def main() -> None:
         from proteus.evaluation.poisoning import combined
 
         fitted = load_models(args.reuse)
+        for extra in args.extra_runs:  # same train/test pair, other detectors
+            fitted = {**load_models(extra), **fitted}
         _, specs = evidence_b(args.test, days(args.test)[0], columns=["clean"])
         fresh = detectors(specs, [])  # local detectors are fitted per test day anyway
         if "rate_rules_sel" in (args.models or []) and "rate_rules_sel" not in fitted:
