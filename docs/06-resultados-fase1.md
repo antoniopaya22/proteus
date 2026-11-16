@@ -1636,3 +1636,31 @@ escala corta.
   reglas con selección no pasan de 9 a ningún presupuesto).
 - Sus rasgos son conteos por conexión de escala corta, justo lo que la reutilización baja: hay que
   medir su daño frente al atacante adaptativo (`adaptsel.sh`, en cola) antes de concluir.
+
+## 6.56 El sistema de tres detectores a FPR fija y a presupuesto; saturación de Proteus-cert-R en 2018 (2026-11-16, 11:40)
+
+Al unificar «el sistema» como Proteus ∪ Proteus-cert ∪ Proteus-cert-R (`proteus_sys_r`) en tablas,
+figura y texto, con las ejecuciones `r2c` (18 → 17) y `r2b` (17 → 18):
+
+| Punto de operación | 18 → 17 | 17 → 18 |
+|---|---|---|
+| Sistema, cada miembro a FPR 10⁻³ | 11/11 a 4,17 alarmas por entidad/h | 13/13 a 11,88 |
+| Sistema, cada miembro a FPR 10⁻⁴ | 9/11 a 0,83 | 13/13 a 7,86 |
+| Sistema, presupuesto 0,5 por miembro | 11/11 a 1,40 | 13/13 a 0,30 |
+| Sistema de dos (sin cert-R), presupuesto 0,5 | 11/11 a 1,08 | 13/13 a 0,27 |
+| Proteus solo, presupuesto | 11/11 a 1,01 | 13/13 a 1,02 |
+| Reglas de tasa, presupuesto | 9/11, mínimo 5,28 | 13/13 a 1,31 |
+
+- A FPR fija la unión suma las alarmas de sus miembros; el paper pasa a decir que el sistema se opera
+  a presupuesto. En 18 → 17 Proteus solo es más barato que cualquier unión; el tercer detector cuesta
+  0,3 alarmas por entidad/h y solo se justifica por la reutilización de conexiones (§6.54).
+- **Proteus-cert-R satura en 2018.** En 17 → 18 da exactamente lo mismo con el umbral local a 10⁻³ y
+  a 10⁻⁴: FPR benigno realizado 0,29 %, 7,28 alarmas por entidad/h (6,13 las certificadas), y 0,076 a
+  cualquier presupuesto. Más del 0,1 % de los flujos benignos empata en la puntuación máxima de algún
+  subnúcleo, así que el cuantil no puede bajar de ahí y el umbral cae en el empate. Es el mismo
+  mecanismo que en CTU-13, donde se usa `--exclude-saturated 1e-3`. Aplicar esa regla solo en CTU-13
+  es ajustar por dataset; lo coherente es aplicarla en todas las ejecuciones o en ninguna.
+  Diagnóstico en cola (`sat_1817`, `sat_1718`, etiqueta `r2_sat`): mismas ejecuciones con la
+  exclusión. Si solo cambia cert-R en 2018, se adopta como regla general y se declara.
+- De paso: `tables curves` archivaba las ejecuciones 17 → 18 en el panel 18 → 17 (corregido, commit
+  25763c3); la figura nunca se había compilado, así que no afectó a ninguna cifra publicada.
