@@ -107,3 +107,23 @@ def test_query_table_takes_the_best_of_the_free_and_costly_searches(tmp_path):
     assert cells[4] == "--" and cells[5] == "--"   # Cert.-R and Rules were not attacked
     assert cells[6] == r"\textbf{50k}$^c$"
     assert r"2018$\to$2017" in tex
+
+
+def test_ladder_damage_of_a_union_needs_every_member_quiet_on_the_same_plan():
+    import pandas as pd
+
+    from proteus.evaluation.tables import ladder_damage
+
+    rows = []
+    quiet = {("a", "plain"): {10, 100}, ("a", "reuse"): {10, 100, 1000}, ("a", "spread"): {10, 100, 1000, 10000},
+             ("b", "plain"): {10, 100, 1000}, ("b", "reuse"): {10}, ("b", "spread"): {10, 100, 1000, 10000}}
+    for (det, plan), ok in quiet.items():
+        for r in (10, 100, 1000, 10000):
+            rows.append({"day": "wed", "attack": "dos_hulk", "detector": det, "plan": plan,
+                         "flows_per_h": float(r), "detected": r not in ok})
+    L = pd.DataFrame(rows)
+    assert ladder_damage(L, ["a"]).iloc[0] == 1000        # reuse passes detector a
+    assert ladder_damage(L, ["b"]).iloc[0] == 1000        # the plain attack passes detector b
+    assert ladder_damage(L, ["a", "b"]).iloc[0] == 100    # no single plan passes both above 100
+    assert ladder_damage(L, ["a", "b"], costly=True).iloc[0] == 10000
+    assert ladder_damage(L[L["flows_per_h"] > 5000], ["a", "b"]).iloc[0] == 0  # nothing quiet: 0

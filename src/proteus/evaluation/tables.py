@@ -331,6 +331,20 @@ def adaptive_table(csvs: list[Path]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def ladder_damage(ladder: pd.DataFrame, members: list[str], costly: bool = False) -> pd.Series:
+    """Damage of a union of detectors from the ladder of ``evaluation.adaptive``: the
+    highest rate (flows/h) of each (day, attack) at which some plan leaves every member
+    quiet. ``costly``: plans that spread the attack over sources count too."""
+    d = ladder[ladder["detector"].isin(members)]
+    q = (d.groupby(["day", "attack", "plan", "flows_per_h"])
+         .agg(det=("detected", "max"), n=("detector", "nunique")).reset_index())
+    q = q[(q["n"] == len(set(members))) & ~q["det"].astype(bool)]
+    if not costly:
+        q = q[~q["plan"].str.startswith("spread")]
+    every = ladder.drop_duplicates(["day", "attack"]).set_index(["day", "attack"]).index
+    return q.groupby(["day", "attack"])["flows_per_h"].max().reindex(every).fillna(0.0)
+
+
 QUERY = [("proteus", "Proteus"), ("proteus_sys_r", "System"), ("proteus_cert_r", "Cert.-R"),
          ("rate_rules_local", "Rules"), ("rate_rules_sel", "Sel. rules")]
 
