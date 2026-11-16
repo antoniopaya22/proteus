@@ -1,6 +1,8 @@
 """Pilot: a window-fidelity detector as the uncertified complement of the core.
 
-    python -m proteus.evaluation.window_fidelity --test cicids2017
+    python -m proteus.evaluation.window_fidelity --test cicids2017 \
+        --with-alerts experiments/outputs/h1/<run of h1 --export-alerts> \
+        --out experiments/outputs/h1/<run>_wf
 
 The idea comes from METIS, which measures how far a synthetic table is from a real
 one. Here the "table under test" is what an entity (a destination service or a source
@@ -18,8 +20,10 @@ traffic raises an alert on its entity.
   benign windows of the other days (as the local thresholds of ``h1``).
 
 No guarantee is claimed: the shape of its flows is under the attacker's control.
-The module reports, per attack, the campaigns it detects and its false alarms per
-alerted entity and hour, so that it can be compared with the per-flow shell.
+A flow is alerted when the window of its destination service or of its source host
+is, and the metrics are those of ``h1`` (campaigns, strict criterion, alarms per
+alerted entity), alone and in union with the detectors of a run of ``h1``
+(``proteus_w``, ``proteus_sys_rw``).
 """
 
 from __future__ import annotations
@@ -32,8 +36,6 @@ import pandas as pd
 
 from proteus.evaluation import h1
 
-COLS = ["t_start", "t_end", "duration_us", "src_ip", "dst_ip", "dst_port", "proto",
-        "fwd_pkts", "bwd_pkts", "fwd_bytes", "bwd_bytes", "attack", "is_attack"]
 STATS = ["fwd_pkts", "bwd_pkts", "fwd_bytes", "bwd_bytes", "duration", "fwd_bpp", "ratio"]
 BINS = 10
 OTHER = -1  # reference shared by the ports without enough benign flows
@@ -116,10 +118,10 @@ def window_statistic(bins: np.ndarray, group: np.ndarray, n_groups: int) -> np.n
 
 
 def windows(df: pd.DataFrame, bins: np.ndarray, entity: str, window_s: float,
-            min_flows: int) -> pd.DataFrame:
-    """One row per (entity, window) with at least ``min_flows`` flows: its statistic,
-    how many of its flows are attack flows and of which attack, and whether its host is
-    clean (not involved in any attack of the day)."""
+            min_flows: int) -> tuple[pd.DataFrame, np.ndarray]:
+    """One row per (entity, window): its statistic, its size, how many of its flows are
+    attack flows and of which attack, and whether any of its flows is not clean benign
+    traffic. Also returns, for every flow, the row of its window."""
     ent = (df["dst_ip"].astype(str) + ":" + df["dst_port"].astype(str) if entity == "service"
            else df["src_ip"].astype(str))
     w = df["t_end"].astype("int64").to_numpy() // int(window_s * 1e6)
@@ -138,77 +140,95 @@ def windows(df: pd.DataFrame, bins: np.ndarray, entity: str, window_s: float,
     out["attack"] = name[atk].groupby(codes[atk]).agg(lambda s: s.mode().iloc[0]).reindex(
         range(n), fill_value="").to_numpy()
     out["kind"] = entity
-    return out[out["flows"] >= min_flows].reset_index(drop=True)
+    out["ok"] = out["flows"] >= min_flows  # smaller windows are never scored
+    return out, codes
 
 
-def load_day(day: Path) -> pd.DataFrame:
-    df = pd.read_parquet(day, columns=COLS).sort_values("t_end", kind="stable").reset_index(drop=True)
-    hosts = set(df.loc[df["is_attack"], "src_ip"].astype(str)) | set(
-        df.loc[df["is_attack"], "dst_ip"].astype(str))
-    df["_dirty"] = df["src_ip"].astype(str).isin(hosts) | df["dst_ip"].astype(str).isin(hosts)
+def frame(test: str, day: Path) -> pd.DataFrame:
+    """Flows of a test day in the row order of ``h1`` (so that alerts align by
+    position), with the metadata and the clean-benign mark of ``h1``."""
+    ev, _ = h1.evidence_b(test, day, columns=sorted(set(h1.META) | {"clean"}))
+    fl = pd.read_parquet(day, columns=["duration_us", "fwd_pkts", "bwd_pkts", "fwd_bytes",
+                                       "bwd_bytes"])
+    if len(fl) != len(ev):
+        raise SystemExit(f"{day.stem}: the evidence cache and the day file differ in rows")
+    df = pd.concat([ev.reset_index(drop=True), fl.reset_index(drop=True)], axis=1)
+    df["_dirty"] = ~df["clean"].to_numpy(bool)
     return df
 
 
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--test", required=True)
-    ap.add_argument("--window", type=float, nargs="+", default=[30.0, 300.0])
+    ap.add_argument("--window", type=float, default=300.0)
     ap.add_argument("--min-flows", type=int, default=10)
-    ap.add_argument("--fpr", type=float, nargs="+", default=[1e-3, 1e-4],
-                    help="target rate of alerting windows among clean benign windows")
-    ap.add_argument("--out", type=Path, default=Path("experiments/outputs/window_fidelity"))
+    ap.add_argument("--sample", type=int, default=300_000, help="benign flows per day in the reference")
+    ap.add_argument("--with-alerts", type=Path, default=None,
+                    help="run of h1 --export-alerts on the same test network: its detectors "
+                         "are evaluated in union with this one")
+    ap.add_argument("--out", type=Path, required=True, help="run directory to write")
+    ap.add_argument("--seed", type=int, default=0)
     args = ap.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
+    rng = np.random.default_rng(args.seed)
     days = h1.days(args.test)
-    data = {d: load_day(d) for d in days}
-    stats = {d: statistics(df) for d, df in data.items()}
-    rows, alarms = [], []
-    for window_s in args.window:
-        # Windows of every day, scored against the benign traffic of the other days.
-        scored = {}
-        for day in days:
-            others = [d for d in days if d != day]
-            benign = [~data[d]["is_attack"].to_numpy() & ~data[d]["_dirty"].to_numpy() for d in others]
-            ref = reference(pd.concat([stats[d][m] for d, m in zip(others, benign, strict=True)]),
-                            np.concatenate([data[d]["dst_port"].to_numpy()[m]
-                                            for d, m in zip(others, benign, strict=True)]))
-            bins = bin_flows(stats[day], data[day]["dst_port"].to_numpy(), ref)
-            scored[day] = pd.concat([windows(data[day], bins, e, window_s, args.min_flows)
-                                     for e in ("service", "source")], ignore_index=True)
-            print(f"  scored {day.stem} at {window_s:g}s: {len(scored[day]):,} windows", flush=True)
-        for day in days:
-            w = scored[day]
-            calib = pd.concat([scored[d] for d in days if d != day])
-            hours = (data[day]["t_end"].max() - data[day]["t_start"].min()).total_seconds() / 3600
-            for fpr in args.fpr:
-                thr = thresholds(calib, fpr)
-                for kind in ("service", "source", "any"):
-                    sel = w if kind == "any" else w[w["kind"] == kind]
-                    alert = alerts(sel, thr)
-                    clean = ~sel["dirty"].to_numpy()
-                    bucket = sel["window"].to_numpy() * int(window_s) // 600
-                    fa = len(set(zip(sel["entity"][alert & clean], bucket[alert & clean], strict=True)))
-                    alarms.append({"day": day.stem, "window_s": window_s, "fpr": fpr, "kind": kind,
-                                   "entity_alarms_per_hour": fa / max(hours, 1e-9),
-                                   "clean_windows": int(clean.sum()),
-                                   "alerting_clean_windows": int((alert & clean).sum())})
-                    hit = sel[sel["attack_flows"] > 0].assign(alert=alert[sel["attack_flows"].to_numpy() > 0])
-                    for attack, g in hit.groupby("attack"):
-                        rows.append({"day": day.stem, "attack": attack, "window_s": window_s, "fpr": fpr,
-                                     "kind": kind, "windows": len(g), "alerted_windows": int(g["alert"].sum()),
-                                     "detected": bool(g["alert"].any()),
-                                     "flow_recall": float(g.loc[g["alert"], "attack_flows"].sum()
-                                                          / max(g["attack_flows"].sum(), 1))})
-    c = pd.DataFrame(rows)
-    a = pd.DataFrame(alarms)
-    c.to_csv(args.out / f"campaigns_{args.test}.csv", index=False)
-    a.to_csv(args.out / f"false_alarms_{args.test}.csv", index=False)
-    summary = (c.groupby(["window_s", "fpr", "kind", "attack"])
-               .agg(campaigns=("detected", "size"), detected=("detected", "sum"),
-                    flow_recall=("flow_recall", "mean")).reset_index())
-    summary.to_csv(args.out / f"summary_{args.test}.csv", index=False)
-    print(summary.round(3).to_string())
-    print(a.groupby(["window_s", "fpr", "kind"])["entity_alarms_per_hour"].mean().round(2).to_string())
+    # Pass 1: a sample of the clean benign flows of every day (the reference tables).
+    sample = {}
+    for day in days:
+        df = frame(args.test, day)
+        idx = np.flatnonzero(df["clean"].to_numpy(bool))
+        idx = np.sort(rng.choice(idx, min(len(idx), args.sample), replace=False))
+        sample[day] = (statistics(df.iloc[idx]), df["dst_port"].to_numpy()[idx])
+        print(f"  sampled {day.stem}: {len(idx):,} of {len(df):,} flows", flush=True)
+        del df
+    # Pass 2: the windows of every day against the benign traffic of the other days.
+    tables, codes = {}, {}
+    for day in days:
+        others = [d for d in days if d != day]
+        ref = reference(pd.concat([sample[d][0] for d in others]),
+                        np.concatenate([sample[d][1] for d in others]))
+        df = frame(args.test, day)
+        bins = bin_flows(statistics(df), df["dst_port"].to_numpy(), ref)
+        got = [windows(df, bins, e, args.window, args.min_flows) for e in ("service", "source")]
+        tables[day] = {e: t for e, (t, _) in zip(("service", "source"), got, strict=True)}
+        codes[day] = {e: c.astype(np.int32) for e, (_, c) in zip(("service", "source"), got, strict=True)}
+        n = sum(int(t["ok"].sum()) for t in tables[day].values())
+        print(f"  scored {day.stem}: {n:,} windows of {args.window:g}s", flush=True)
+        del df, bins
+    # Pass 3: thresholds from the clean benign windows of the other days; per-flow alerts;
+    # the metrics of h1, alone and in union with its detectors.
+    results = []
+    for day in days:
+        calib = pd.concat([t[t["ok"]] for d in days if d != day for t in tables[d].values()])
+        n_rows = len(codes[day]["service"])
+        score = np.zeros(n_rows, dtype=np.int8)      # 0, 1 (alert at 1e-3), 2 (also at 1e-4)
+        side = np.zeros(n_rows, dtype=bool)
+        for fpr in h1.FPRS:                          # 1e-3, then 1e-4
+            thr = thresholds(calib, fpr)
+            flow = {}
+            for e in ("service", "source"):
+                t = tables[day][e]
+                flow[e] = (alerts(t, thr) & t["ok"].to_numpy())[codes[day][e]]
+            score += (flow["service"] | flow["source"]).astype(np.int8)
+            if fpr == h1.FPRS[0]:
+                side = flow["source"] & ~flow["service"]
+        ev, _ = h1.evidence_b(args.test, day, columns=sorted(set(h1.META) | {"clean"}))
+        scores, sides = {"window_fidelity": score.astype(np.float64)}, {"window_fidelity": side}
+        if args.with_alerts is not None:
+            al = h1.load_alerts(args.with_alerts / "alerts" / f"{day.stem}.npz")
+            for key in [k for k in al if k.endswith(f"__local{h1.FPRS[0]:g}")]:
+                m = key.split("__local")[0]
+                if m in h1.UNIONS:
+                    continue  # unions are formed again here
+                scores[m] = (al[key].astype(np.float64)
+                             + al[f"{m}__local{h1.FPRS[1]:g}"].astype(np.float64))
+                if f"{m}__side" in al:
+                    sides[m] = al[f"{m}__side"]
+        th = {(m, fpr, "local"): 0.5 + i for m in scores for i, fpr in enumerate(h1.FPRS)}
+        results.append(h1.evaluate(ev, scores, th, sides))
+        print(f"  evaluated {day.stem}", flush=True)
+        del ev
+    h1.write_results(pd.concat(results, ignore_index=True), args.out)
 
 
 if __name__ == "__main__":

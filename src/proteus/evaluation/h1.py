@@ -742,6 +742,32 @@ def load_alerts(path: Path) -> dict[str, np.ndarray]:
         return {k.replace("__AT__", "@"): z[k] for k in z.files}
 
 
+def write_results(res: pd.DataFrame, out: Path) -> None:
+    """``campaigns.csv``, ``summary.csv`` and ``false_alarms.csv`` of a run, from the
+    rows of ``evaluate`` over its test days."""
+    res.to_csv(out / "campaigns.csv", index=False)
+    summary = (
+        res[res["attack"] != NO_CAMPAIGN]
+        .groupby(["model", "target_fpr", "threshold", "attack"], observed=True)
+        .agg(campaigns=("detected", "size"), detected=("detected", "sum"),
+             detected_strict=("detected_strict", "sum"),
+             flow_recall=("flow_recall", "mean"), median_ttd_s=("ttd_s", "median"))
+        .reset_index()
+    )
+    summary.to_csv(out / "summary.csv", index=False)
+    fa = (res.groupby(["model", "target_fpr", "threshold", "day"], observed=True)
+          [["benign_fpr", "alarms_per_hour", "entity_alarms_per_hour", "suspect_sources",
+            "suspect_detected"]]
+          .first().groupby(level=[0, 1, 2]).agg({"benign_fpr": "mean", "alarms_per_hour": "mean",
+                                                  "entity_alarms_per_hour": "mean",
+                                                  "suspect_sources": "sum",
+                                                  "suspect_detected": "sum"}))
+    fa.to_csv(out / "false_alarms.csv")
+    print(summary.to_string())
+    print(fa.to_string())
+
+
+
 def entity_threshold(tops: list[tuple], hours: float, budget: float) -> float:
     """Lowest threshold giving at most ``budget`` alarms per hour, an alarm being a
     (day, entity, minute) group with a clean flow at or above it. The entity is the
@@ -1155,26 +1181,7 @@ def main() -> None:
     missing = [n for n in want if got.get(n, 0) < len(test_days)]
     if missing:
         raise SystemExit(f"incomplete run: {missing} lack results on some test day")
-    res.to_csv(out / "campaigns.csv", index=False)
-    summary = (
-        res[res["attack"] != NO_CAMPAIGN]
-        .groupby(["model", "target_fpr", "threshold", "attack"], observed=True)
-        .agg(campaigns=("detected", "size"), detected=("detected", "sum"),
-             detected_strict=("detected_strict", "sum"),
-             flow_recall=("flow_recall", "mean"), median_ttd_s=("ttd_s", "median"))
-        .reset_index()
-    )
-    summary.to_csv(out / "summary.csv", index=False)
-    fa = (res.groupby(["model", "target_fpr", "threshold", "day"], observed=True)
-          [["benign_fpr", "alarms_per_hour", "entity_alarms_per_hour", "suspect_sources",
-            "suspect_detected"]]
-          .first().groupby(level=[0, 1, 2]).agg({"benign_fpr": "mean", "alarms_per_hour": "mean",
-                                                  "entity_alarms_per_hour": "mean",
-                                                  "suspect_sources": "sum",
-                                                  "suspect_detected": "sum"}))
-    fa.to_csv(out / "false_alarms.csv")
-    print(summary.to_string())
-    print(fa.to_string())
+    write_results(res, out)
 
 
 if __name__ == "__main__":

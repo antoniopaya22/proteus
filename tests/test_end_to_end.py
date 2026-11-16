@@ -108,6 +108,22 @@ def test_cross_network_run_end_to_end(world):
     info = json.loads((out / "run.json").read_text())
     assert info["env"] == {"PROTEUS_EVIDENCE": "v3"} and "--alert-variants" in info["argv"]
 
+    # The window-fidelity complement, with the metrics of h1 and in union with Proteus.
+    wf = world / "experiments/outputs/h1/net1__net2__loo_labels__e2e_wf"
+    env = {**os.environ, "PROTEUS_EVIDENCE": "v3", "PYTHONPATH": SRC}
+    r = subprocess.run([sys.executable, "-m", "proteus.evaluation.window_fidelity", "--test", "net2",
+                        "--with-alerts", str(out), "--out", str(wf), "--window", "300"],
+                       cwd=world, env=env, capture_output=True, text=True, check=False)
+    assert r.returncode == 0, r.stderr[-2000:]
+    cw = pd.read_csv(wf / "campaigns.csv")
+    lw = cw[(cw["threshold"] == "local") & (cw["target_fpr"] == 1e-3)]
+    for m in ["window_fidelity", "proteus", "proteus_w", "proteus_sys_rw"]:
+        assert set(lw.loc[lw["model"] == m, "day"]) == {"day0", "day1", "day2"}, m
+    same = lw[lw["model"] == "proteus"].sort_values(["day", "attack"])["detected_strict"].tolist()
+    assert same == local[local["model"] == "proteus"].sort_values(["day", "attack"])["detected_strict"].tolist()
+    both = lw[(lw["model"] == "proteus_w") & (lw["attack"] == "dos_hulk")]
+    assert both["detected_strict"].all()  # the union detects at least what Proteus does
+
     again = _run(world, "--train", "net1", "--test", "net2", "--reuse", str(out),
                  "--models", "proteus", "--tag", "e2e_reuse")
     assert again.returncode == 0, again.stderr[-2000:]

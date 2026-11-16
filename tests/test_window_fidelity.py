@@ -45,14 +45,17 @@ def test_windows_group_by_entity_and_time_and_count_attack_flows():
     df = pd.concat([_flows(200, rng, 0), _flows(300, rng, 60, attack=True), _flows(5, rng, 120)],
                    ignore_index=True).sort_values("t_end", kind="stable").reset_index(drop=True)
     bins = bin_flows(statistics(df), df["dst_port"].to_numpy(), ref)
-    w = windows(df, bins, "service", 30.0, min_flows=10)
-    assert len(w) == 2 and set(w["entity"]) == {"10.0.1.1:22"}  # the window of 5 flows is dropped
+    w, codes = windows(df, bins, "service", 30.0, min_flows=10)
+    assert len(codes) == len(df) and len(w) == 3
+    assert int(w["ok"].sum()) == 2 and set(w["entity"]) == {"10.0.1.1:22"}  # 5 flows: not scored
+    assert (w.loc[codes, "flows"].to_numpy() >= 5).all()
+    w = w[w["ok"]]
     a = w[w["attack_flows"] > 0].iloc[0]
     assert a["attack_flows"] == 300 and a["attack"] == "bf_ssh" and bool(a["dirty"])
     b = w[w["attack_flows"] == 0].iloc[0]
     assert a["stat"] > 3 * b["stat"] and not bool(b["dirty"])
-    src = windows(df, bins, "source", 30.0, min_flows=10)
-    assert set(src["entity"]) == {"10.0.0.5", "172.16.0.9"}
+    src, _ = windows(df, bins, "source", 30.0, min_flows=10)
+    assert set(src.loc[src["ok"], "entity"]) == {"10.0.0.5", "172.16.0.9"}
 
 
 def test_thresholds_are_set_per_size_class_and_fall_back_to_the_smaller_one():
