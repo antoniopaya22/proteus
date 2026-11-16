@@ -25,6 +25,16 @@ Antonio pide iterar hasta la máxima nota posible. Protocolo:
 
 La ronda 1 son las fases A–E de abajo.
 
+### Revista destino (decidido con Antonio el 2026-11-16)
+
+**Computers & Security** (Elsevier), por la vía de suscripción (sin coste); reserva: *Journal of
+Information Security and Applications*. Se buscaron números especiales abiertos y gratuitos y no hay
+ninguno que encaje (el de C&S sobre detección robusta cerró en dic. 2024). El paper ya usa `elsarticle`
+con las declaraciones de Elsevier (CRediT, intereses, IA, datos) y `highlights.txt` aparte. El revisor
+de cada ronda sigue calibrado para esa revista. Antes de enviar: mirar la página de convocatorias de
+C&S por si hubiera número especial nuevo, comprobar cuartil en el JCR y preguntar en biblioteca por el
+acuerdo CRUE-CSIC (acceso abierto sin coste).
+
 ### Cola de la VM (desde 2026-11-16 07:43 UTC)
 
 Una sola cola ordenada, `~/tools/master.sh` (copia en el scratchpad, `q/master.sh`). Cada paso se
