@@ -1604,3 +1604,35 @@ Sistema de 2 = Proteus ∪ Proteus-cert; de 3 = además `proteus_cert_r` (resist
 3. Decisión de método: no se añaden más detectores a la vista de estos resultados (p. ej. subnúcleos
    resistentes a reutilización en todas las escalas), para no ajustar el diseño sobre los datos de
    prueba.
+
+## 6.55 Comprobación del certificado con los detectores r2 y reglas con selección (2026-11-16, 07:45)
+
+**`free_ops` sobre r2 (18 → 17)**, ventana de 10 min por campaña, 20 combinaciones aleatorias de
+operaciones gratuitas y reutilización con 5, 20 y 100 peticiones por conexión, para `proteus`,
+`proteus_cert` y `proteus_cert_r`:
+- 0 violaciones exactas (ninguna puntuación original baja sin re-temporizar) y 0 alertas
+  certificadas perdidas, en los tres.
+- 0 violaciones del certificado de reutilización: las alertas de `proteus_cert_r` certificadas
+  frente a reutilización (GoldenEye, Hulk, Slowhttptest, Slowloris, un escaneo) sobreviven a las tres
+  intensidades de reutilización; la víctima sigue alertada en el 100 % de las variantes.
+- `proteus_cert` certifica en esa ventana los cinco DoS/DDoS y un escaneo; `proteus` (todas las
+  escalas) solo Hulk.
+
+**Reglas de tasa con selección (`rate_rules_sel`), 18 → 17.** Rasgos elegidos en 2018: los 10 son
+excesos de flujos y paquetes hacia el destino (`dhost`/`dsvc` `flows`/`fpkts` `__x`), casi todos de
+escala corta.
+
+| | Vol./escaneo | Alarmas por entidad/h |
+|---|---|---|
+| FPR 10⁻³ | 9/11 | 1,93 |
+| FPR 10⁻⁴ | 9/11 | 0,44 |
+| Presupuesto 0,5 | 9/11 | 0,24 |
+| Presupuesto 10 | 9/11 | 8,50 |
+| Certificadas, 10⁻³ | 6/11 | 0,21 |
+
+- Es una línea base fuerte: con diez rasgos elegidos con etiquetas baja las alarmas de las reglas de
+  8,97 a 1,93 por entidad/h, al nivel de Proteus (1,75). **La ventaja de Proteus en alarmas frente a
+  unas reglas bien elegidas desaparece**; lo que conserva es la cobertura: 11/11 frente a 9/11 (las
+  reglas con selección no pasan de 9 a ningún presupuesto).
+- Sus rasgos son conteos por conexión de escala corta, justo lo que la reutilización baja: hay que
+  medir su daño frente al atacante adaptativo (`adaptsel.sh`, en cola) antes de concluir.
