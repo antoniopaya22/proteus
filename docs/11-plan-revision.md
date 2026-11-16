@@ -74,6 +74,17 @@ trabajo es de seguridad de redes (el certificado vale para detectores no aprendi
       calibración del contador de realimentación; commit c4d9570 del paper). Presupuesto objetivo al
       reescribir: introducción 950, contexto 900, motivación 400, amenaza 550, diseño 2 100,
       evaluación 4 300, discusión 800, conclusión 250.
+- [~] **Acelerar el adaptativo** (pedido por Antonio el 2026-11-16). Paralelizar por planes o por
+      días no cabe en 30 GB: una sola campaña con los nueve detectores pasó de 11 GB (la mató el tope
+      de su unidad; el recuento de `dmesg` incluye esas muertes). El coste está en los ritmos altos.
+      Hecho (commit 60af145): un detector monótono que alertó en dos ritmos seguidos ya no se puntúa
+      en los superiores (el ataque es anidado: más flujos solo añaden evidencia); los detectores sin
+      restricciones se siguen puntuando en todos, porque en la escalera r2 tres series de
+      `proteus_free`/`core_free_dst_b` vuelven a callar a ritmos altos. `--days` permite repartir
+      por días cuando haya más memoria. En marcha: regresión código anterior ↔ nuevo
+      (`reg_old`/`reg_full`/`reg_stop`) y medida de tiempo (`prof2`/`prof3`).
+- [x] Temporizador δ = 10 y 60 s repetido en r2 (`timer10_1817`, `timer60_1817`); falta llevarlo al
+      apéndice.
 - [ ] Repeticiones encoladas tras `master.sh` (`~/tools/extra.sh`): temporizador δ = 10 y 60 s
       (`timer*_1817`) y balance de clases en ambos sentidos (`bal_*`).
 
@@ -182,7 +193,13 @@ tres detectores, se queda el de tres y se cuenta.
         Detection». Quedan sin cifras, hasta que salgan sus ejecuciones r2: frontera, daño
         adaptativo, envenenamiento, suavizado y tráfico real. El resumen tiene ~275 palabras:
         recortar a 250 antes de enviar.
-  - [ ] **Atacante que usa AML para generar mejores ataques**: búsqueda por consultas con etiqueta
+  - [~] **Atacante por consultas implementado** (`proteus query-attack`, commit 289a4ed): búsqueda
+        (1+1) con etiqueta dura sobre la forma del tráfico (relleno, paquetes insertados, partición,
+        señuelos, puertos, peticiones por conexión, ráfagas y, como opción costosa, número de
+        orígenes) con carrera de ritmos; objetivo = un detector o una unión. `adaptive.py` expone
+        `day_models` y `Oracle`, que comparten los dos atacantes. Falta ejecutarlo (prueba de humo en
+        marcha) y compararlo con la rejilla.
+  - [ ] (texto original) **Atacante que usa AML para generar mejores ataques**: búsqueda por consultas con etiqueta
         dura (sin conocer el modelo) sobre los parámetros de las operaciones (ritmo, relleno,
         partición, reutilización, reparto entre orígenes, pulsos), que maximiza el daño sin ser
         detectado, contra Proteus y contra cada línea base; comparar con la rejilla actual y contar
