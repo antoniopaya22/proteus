@@ -141,7 +141,7 @@ def main() -> None:
         models, thr = {}, {}
         for n, (cols, m) in dets.items():
             ref = local_benign(args.test, day, cols, rng)
-            if n in args.local or getattr(m, "local", False):
+            if n in args.local or n in h1.LOCAL or getattr(m, "local", False):
                 m = copy.deepcopy(m).fit(ref)
             if not hasattr(m, "predict_proba"):
                 m = Scored(m)
