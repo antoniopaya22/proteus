@@ -78,6 +78,9 @@ La ronda 1 son las fases A–E de abajo.
 
 - [~] (en curso) Configuración, métricas, tabla de detección, reutilización, presupuestos y precio de
       la monotonía ya reescritos con r2 (commit del paper); quedan RQ3–RQ6 y el apéndice.
+- [ ] **Sistema = Proteus ∪ Proteus-cert ∪ Proteus-cert-R** (decidido tras §6.54 de docs/06): tabla
+      de detección, presupuestos, fronteras, daño y banco para esa unión (`proteus_sys_r`; daño con la
+      escalera de `adaptive`). Añadir a `adaptive`/`tables` el cálculo de uniones.
 - [ ] Evaluación en torno a un solo sistema; detectores superados y "we tried" a material
       suplementario; prosa numérica a tablas y figuras; frontera en ambos sentidos.
 - [ ] Nomenclatura única (rate thresholds; unconstrained; Proteus-cert frente a alertas certificadas).

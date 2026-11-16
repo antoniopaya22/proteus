@@ -1555,3 +1555,52 @@ los flujos de ningún otro ataque (objeción del revisor: evidencia arrastrada e
 - La detección no depende del arrastre. Sí el tiempo de detección de las campañas que siguen a
   otra en el mismo servidor: GoldenEye 5 → 64 s, Slowhttptest 10 → 74 s, LOIC-HTTP 10 → 15 s.
 - En el paper (párrafo "Carry-over between campaigns"). 2018 en cola (`isolated18.sh`).
+
+## 6.54 Atacante adaptativo con reutilización, ráfagas y reparto, 2018 → 2017 (2026-11-16, 06:50)
+
+`adaptive` con los planes estructurados (20 peticiones por conexión, ráfagas, ambas; aparte, lo mismo
+repartido entre 100 orígenes) sobre los modelos r2. Daño = ritmo más alto (peticiones/h) sin alerta
+propia, FPR 10⁻³. Las uniones se calculan con la escalera (mismo plan y ritmo para todos sus miembros).
+
+| Ataque (real) | Proteus | Sistema de 2 | **Sistema de 3** | Reglas | Sin restr. (4 subnúcleos) | Sin restr. (destino) | KitNET |
+|---|---|---|---|---|---|---|---|
+| LOIC-HTTP (290.167) | 28.995 | 28.995 | **28.995** | 55.122 | 4.220 | 199.218 | 199.218 |
+| Escaneo vie. (107.850) | 323 | 323 | **170** | 1.168 | 4.220 | 15.252 | 2.220 |
+| Escaneo jue. (10.418) | 7 | 7 | **7** | 47 | 323 | 170 | 1.168 |
+| FTP (3.910) | 8.023 | 8.023 | **8.023** | 15.252 | 15.252 | 720.000 | 28.995 |
+| SSH (1.541) | 15.252 | 4.220 | **2.220** | 1.168 | 2.220 | 720.000 | 199.218 |
+| GoldenEye (44.976) | 15.252 | 15.252 | **4.220** | 2.220 | 2.220 | 199.218 | 104.792 |
+| Hulk (518.525) | 28.995 | 28.995 | **4.220** | 4.220 | 2.220 | 199.218 | 720.000 |
+| Slowhttptest (5.107) | 15.252 | 8.023 | **2.220** | 1.168 | 2.220 | 199.218 | 55.122 |
+| Slowloris (10.461) | 15.252 | 8.023 | **2.220** | 1.168 | 1.168 | 199.218 | 55.122 |
+
+Sistema de 2 = Proteus ∪ Proteus-cert; de 3 = además `proteus_cert_r` (resistente a reutilización).
+
+- **La reutilización de conexiones rompe a Proteus solo**: su daño sube de 0,6–1,2 k a 15–29 k
+  peticiones/h (el mejor plan contra él es siempre `reuse`); Slowloris, Slowhttptest, FTP y SSH pasan a
+  su ritmo real. El revisor tenía razón: el titular "el menor daño en los nueve ataques" dependía de
+  un atacante que no reutilizaba conexiones.
+- **El detector resistente a reutilización lo arregla**: contra `proteus_cert_r` el mejor plan es el
+  ataque simple, y el sistema de tres baja a 2–4 k en los DoS.
+- **Frente a las reglas de tasa el resultado es parejo**: el sistema gana en LOIC-HTTP, los dos
+  escaneos y FTP (1,9–7×); empata en Hulk; las reglas ganan en SSH, GoldenEye, Slowhttptest y
+  Slowloris por un escalón de la rejilla (1,9×). Las reglas son las únicas que alertan el SSH a su
+  ritmo real.
+- Frente a los modelos sin garantía: el núcleo de destino sin restricciones y KitNET dejan pasar
+  50–350× más. Los cuatro subnúcleos sin restricciones aguantan la reutilización, pero con reparto
+  entre 100 orígenes caen (escaneo del jueves 104.792; DoS 29 k), y el sistema no se mueve.
+- Certificado también frente a reutilización (`proteus_cert_r`, frontera certificada): Hulk 8.023,
+  GoldenEye 4.220, Slowloris y Slowhttptest 2.220 (todas bajo su campaña real), LOIC-HTTP 199.218,
+  escaneos 323; SSH 2.220 y FTP 28.995 quedan por encima de la campaña real.
+- Alarmas del sistema de 3: 4,17 por entidad/h a FPR 10⁻³ (reglas 8,97); a presupuesto 0,5, 11/11 a
+  1,40 (reglas 9/11 a 5,3). En 17 → 18: 13/13 a 0,30 por entidad/h a presupuesto 0,5.
+
+**Consecuencias para el paper** (fase D):
+1. El sistema desplegado pasa a ser de tres detectores, y las tablas y fronteras se dan para él.
+2. El resumen ya no puede decir "el menor daño en los nueve ataques, hasta 7× menos que las reglas".
+   Lo que se sostiene: daño parejo al de las reglas de tasa con 2–4× menos falsas alarmas por entidad
+   (5× a igual presupuesto), 50–350× menos daño que los modelos sin garantía, y un certificado que
+   cubre también la reutilización.
+3. Decisión de método: no se añaden más detectores a la vista de estos resultados (p. ej. subnúcleos
+   resistentes a reutilización en todas las escalas), para no ajustar el diseño sobre los datos de
+   prueba.
