@@ -84,7 +84,7 @@ def world(tmp_path_factory) -> Path:
 
 def test_cross_network_run_end_to_end(world):
     models = ["proteus", "proteus_cert", "proteus2", "proteus_cert_r", "rate_rules_local",
-              "rate_rules_sel"]
+              "rate_rules_sel", "flow_clf", "apollon"]
     r = _run(world, "--train", "net1", "--test", "net2", "--models", *models,
              "--entity-budgets", "1", "--alert-variants", "--tag", "e2e")
     assert r.returncode == 0, r.stderr[-2000:]

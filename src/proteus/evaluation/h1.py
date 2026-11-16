@@ -21,6 +21,7 @@ import numpy as np
 import pandas as pd
 from sklearn.ensemble import HistGradientBoostingClassifier
 
+from proteus.baselines.apollon import ApollonFlow
 from proteus.baselines.kitnet import KitNET
 from proteus.baselines.rate_rules import RateRules
 from proteus.core.certify import reuse_worst_case, slack, worst_case_features
@@ -505,6 +506,9 @@ def detectors(specs: dict[str, str], flow_cols: list[str]) -> dict[str, tuple[li
         # counterpart): every evidence feature of both sides, no baselines.
         "kitnet_local": (raw_all, KitNET()),
         "flow_clf": (flow_cols, hgb(None)),
+        # Apollon (Paya et al., 2024) on the same per-flow statistics: a bandit over a
+        # pool of classifiers per traffic cluster.
+        "apollon": (flow_cols, ApollonFlow(random_state=0)),
         **proteus_detectors(specs, rules, src_rules, raw, raw_of, cst),
     }
 

@@ -31,7 +31,8 @@ DETECTOR_SETS = {
     # and the unconstrained counterpart of the same sub-cores.
     "r2": [("proteus", "Proteus"), ("proteus_sys", "System"), ("proteus_cert@cert", "Cert."),
            ("proteus_cert_r@certr", "Cert.-R"), ("proteus_free", "Unc."),
-           ("rate_rules_local", "Rules"), ("kitnet_local", "KitNET"), ("flow_clf", "Flow")],
+           ("rate_rules_local", "Rules"), ("kitnet_local", "KitNET"), ("flow_clf", "Flow"),
+           ("apollon", "Apollon")],
 }
 DETECTORS = [  # (model in summary.csv, column header)
     ("core_mono_dst_x", "Fast"),

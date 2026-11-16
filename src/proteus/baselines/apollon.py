@@ -11,6 +11,8 @@
 
 from __future__ import annotations
 
+import warnings
+
 import numpy as np
 from sklearn.base import clone
 from sklearn.cluster import KMeans
@@ -167,6 +169,53 @@ class ApollonMAB:
             counts += np.bincount(self.select_arms(X)[1], minlength=self.n_arms)
         return counts / counts.sum()
 
+
+
+class Scaled:
+    """log1p + min-max scaling to [0, 1] fitted on training data."""
+
+    def fit(self, X):
+        Z = np.log1p(np.clip(np.where(np.isfinite(X), X, np.nan), 0, None))
+        with np.errstate(all="ignore"), warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)  # columns without a finite value
+            self.lo = np.nan_to_num(np.nanmin(Z, axis=0))
+            self.hi = np.nan_to_num(np.nanmax(Z, axis=0))
+        return self
+
+    def transform(self, X):
+        Z = np.log1p(np.clip(np.nan_to_num(X), 0, None))
+        return np.clip((Z - self.lo) / np.where(self.hi > self.lo, self.hi - self.lo, 1), 0, 1)
+
+
+class ApollonFlow:
+    """Apollon as a per-flow detector on raw flow statistics.
+
+    Its pool has members that need bounded inputs (logistic regression, the MLP,
+    K-Means), so the statistics are log1p + min-max scaled on the training data, as in
+    the feature-space attacks. ``predict_proba`` answers every flow with the arm that
+    Thompson sampling selects for it, in batches of rows.
+    """
+
+    monotonic_cst = None
+
+    def __init__(self, random_state=0, batch: int = 500_000, **kwargs):
+        self.mab = ApollonMAB(random_state=random_state, **kwargs)
+        self.batch = batch
+
+    def fit(self, X, y, sample_weight=None):
+        if sample_weight is not None:
+            raise ValueError("ApollonFlow does not take sample weights")
+        X = np.asarray(X, dtype=np.float64)
+        self.scaler_ = Scaled().fit(X)
+        self.mab.fit(self.scaler_.transform(X), y)
+        return self
+
+    def predict_proba(self, X):
+        out = np.empty((len(X), 2))
+        for i in range(0, len(X), self.batch):
+            Z = self.scaler_.transform(np.asarray(X[i:i + self.batch], dtype=np.float64))
+            out[i:i + self.batch] = self.mab.predict_proba(Z)
+        return out
 
 
 class ApollonV1Code:

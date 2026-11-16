@@ -29,6 +29,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from proteus.baselines.apollon import Scaled
+
 # Functional features of Apollon v1 (attacks/attack_utils.py) in our column names.
 # " Destination Port" is not a model input here.
 FUNCTIONAL = [
@@ -56,19 +58,6 @@ class _Timeout(Exception):
 
 def _alarm(signum, frame):
     raise _Timeout
-
-
-class Scaled:
-    """log1p + min-max scaling to [0, 1] fitted on training data."""
-
-    def fit(self, X):
-        Z = np.log1p(np.clip(X, 0, None))
-        self.lo, self.hi = np.nanmin(Z, axis=0), np.nanmax(Z, axis=0)
-        return self
-
-    def transform(self, X):
-        Z = np.log1p(np.clip(np.nan_to_num(X), 0, None))
-        return np.clip((Z - self.lo) / np.where(self.hi > self.lo, self.hi - self.lo, 1), 0, 1)
 
 
 def prepare(ds: str, seed: int, cap_attack: int, cap_benign: int):

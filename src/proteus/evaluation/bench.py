@@ -43,7 +43,8 @@ NAMES = {
     "proteus": "Proteus", "proteus_cert@cert": "Proteus (cert.\\ alerts)",
     "proteus_cert": "Proteus certified core", "core_free_dst_b": "Unconstrained core",
     "rate_rules_local": "Rate thresholds", "kitnet_local": "KitNET",
-    "flow_clf": "Per-flow classifier", "core_mono_dst_x": "Monotone core (single)",
+    "flow_clf": "Per-flow classifier", "apollon": "Apollon",
+    "core_mono_dst_x": "Monotone core (single)",
 }
 
 
