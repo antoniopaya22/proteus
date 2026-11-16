@@ -125,7 +125,12 @@ tres detectores, se queda el de tres y se cuenta.
   estar en título, resumen, introducción y palabras clave, y los ataques deben contarse como AML en
   el espacio de tráfico, no solo como «atacante adaptativo».
   - [x] Palabras clave: Adversarial Machine Learning, Evasion Attacks, … (en `main.tex`, sin subir).
-  - [ ] Título con AML (propuesta a Antonio) y reescritura de resumen e introducción con ese marco.
+  - [x] Resumen, introducción, conclusión y *highlights* reescritos con ese marco y solo cifras r2
+        (commit 621bb3b del paper). Título propuesto en `main.tex` (pendiente de confirmar por
+        Antonio): «Proteus: Certified Robustness to Adversarial Evasion in Network Intrusion
+        Detection». Quedan sin cifras, hasta que salgan sus ejecuciones r2: frontera, daño
+        adaptativo, envenenamiento, suavizado y tráfico real. El resumen tiene ~275 palabras:
+        recortar a 250 antes de enviar.
   - [ ] **Atacante que usa AML para generar mejores ataques**: búsqueda por consultas con etiqueta
         dura (sin conocer el modelo) sobre los parámetros de las operaciones (ritmo, relleno,
         partición, reutilización, reparto entre orígenes, pulsos), que maximiza el daño sin ser
