@@ -92,7 +92,7 @@ def test_cross_network_run_end_to_end(world):
     out = world / "experiments/outputs/h1/net1__net2__loo_labels__e2e"
     c = pd.read_csv(out / "campaigns.csv")
     local = c[(c["threshold"] == "local") & (c["target_fpr"] == 1e-3)]
-    for m in [*models, "proteus_cert@cert", "proteus_sys", "proteus2_sys", "proteus2@cert"]:
+    for m in [*models, "proteus_cert@cert", "proteus_sys", "proteus_pcr", "proteus2_sys", "proteus2@cert"]:
         assert set(local.loc[local["model"] == m, "day"]) == {"day0", "day1", "day2"}, m
     benign_day = local[local["day"] == "day0"]
     assert (benign_day["attack"] == "(none)").all() and benign_day["alarms_per_hour"].notna().all()

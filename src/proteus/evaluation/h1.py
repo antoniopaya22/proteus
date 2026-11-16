@@ -614,6 +614,8 @@ STRICT_MIN_FLOWS, STRICT_MIN_RECALL = 5, 0.01
 # Deployed configurations evaluated as one detector when every member is in the run.
 UNIONS = {"proteus_sys": ("proteus", "proteus_cert"),
           "proteus_sys_r": ("proteus", "proteus_cert", "proteus_cert_r"),
+          # the two detectors that carry the detection and the damage of the three
+          "proteus_pcr": ("proteus", "proteus_cert_r"),
           # with the uncertified window-fidelity complement (evaluation.window_fidelity)
           "proteus_w": ("proteus", "window_fidelity"),
           "proteus_sys_rw": ("proteus", "proteus_cert", "proteus_cert_r", "window_fidelity"),
