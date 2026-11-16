@@ -331,8 +331,11 @@ def adaptive_table(csvs: list[Path]) -> str:
 CURVE_STYLE = {  # detector -> (legend, pgfplots style)
     "proteus": (r"\sysname", "color=pblue, mark=*, line width=1.1pt"),
     "proteus_sys": (r"\sysname{} $\cup$ \sysname-cert", "color=pnavy, mark=square*"),
+    "proteus_sys_r": ("system of three", "color=pnavy, mark=square, densely dashed"),
     "proteus_cert_r": ("reuse-safe sub-cores", "color=pgreen, mark=triangle*"),
+    "proteus2_sys": (r"\sysname-2 system", "color=pgreen, mark=triangle, densely dashed"),
     "rate_rules_local": ("rate thresholds", "color=porange, mark=o"),
+    "rate_rules_sel": ("selected rate thresholds", "color=porange, mark=square, densely dashed"),
     "proteus_free": ("unconstrained sub-cores", "color=pgrey, mark=x, densely dashed"),
     "kitnet_local": ("KitNET", "color=porange, mark=diamond, densely dotted"),
     "syn_cusum": ("failed-flow CUSUM", "color=pgrey, mark=+, densely dotted"),
@@ -347,7 +350,7 @@ def curve_points(runs: list[Path], detected: str = "detected_strict") -> pd.Data
     rows = []
     for run in runs:
         name = run.name.removeprefix("classic__")
-        key = next((k for k in DIRECTION if k in name or name.startswith(k.split("__")[1])), None)
+        key = next((k for k in DIRECTION if name.startswith(k)), None)
         if key is None:  # classic baselines are named after the test network only
             key = next(k for k in DIRECTION if k.endswith("__" + name.split("__")[0]))
         s = pd.read_csv(run / "summary.csv")
@@ -366,13 +369,20 @@ def curve_points(runs: list[Path], detected: str = "detected_strict") -> pd.Data
     return out.drop_duplicates(["direction", "model", "target_fpr", "threshold"])
 
 
-def curves_figure(points: pd.DataFrame, x: str = "entity_alarms_per_hour") -> str:
+def curves_figure(points: pd.DataFrame, x: str = "entity_alarms_per_hour",
+                  detectors: list[str] | None = None) -> str:
     """pgfplots figure: campaigns detected against alarms per hour, one panel per
-    direction. Each curve is the best detection reached at or below each alarm rate."""
+    direction. Each curve is the best detection reached at or below each alarm rate.
+    ``detectors`` restricts and orders the curves (default: every known detector)."""
+    unknown = sorted(set(detectors or ()) - set(CURVE_STYLE))
+    if unknown:
+        raise ValueError(f"no curve style for {unknown}")
+    styles = {m: CURVE_STYLE[m] for m in (detectors or CURVE_STYLE)}
     lines = ["% Detection against alarms per alerted entity and hour (tables.py curves).",
              r"\begin{tikzpicture}",
              r"\begin{groupplot}[group style={group size=2 by 1, horizontal sep=1.4cm},",
-             r"  width=0.5\textwidth, height=5.6cm, font=\sffamily\scriptsize, xmode=log,",
+             r"  width=0.5\textwidth, height=5.6cm, xmode=log,",
+             r"  every axis/.append style={font=\sffamily\scriptsize},",
              r"  xlabel={alarms per alerted entity and hour}, grid=major,",
              r"  grid style={draw=pgreyL}, axis line style={draw=pgrey}, tick style={draw=pgrey},",
              r"  every axis plot/.append style={line width=0.8pt, mark size=1.5pt},",
@@ -388,9 +398,11 @@ def curves_figure(points: pd.DataFrame, x: str = "entity_alarms_per_hour") -> st
         if last:  # one legend for both panels
             opts += ", legend to name=curveslegend, legend columns=4"
         lines.append(rf"\nextgroupplot[{opts}]")
-        for m, (label, style) in CURVE_STYLE.items():
+        for m, (label, style) in styles.items():
             c = d[(d["model"] == m) & (d[x] > 0)].sort_values([x, "detected"])
-            if c.empty:
+            if c.empty:  # keep the legend complete when a detector lacks one direction
+                if last:
+                    lines += [rf"\addlegendimage{{{style}}}", rf"\addlegendentry{{{label}}}"]
                 continue
             c = c.assign(best=c["detected"].cummax()).drop_duplicates(x, keep="last")
             coords = " ".join(f"({r[x]:.3g},{int(r['best'])})" for _, r in c.iterrows())
@@ -427,7 +439,7 @@ def main() -> None:
         pts = curve_points(args.runs + args.extra)
         if args.data_out:
             pts.to_csv(args.data_out, index=False)
-        args.out.write_text(curves_figure(pts))
+        args.out.write_text(curves_figure(pts, detectors=args.detectors))
         print(pts.round(3).to_string())
         return
     if args.table == "frontier":

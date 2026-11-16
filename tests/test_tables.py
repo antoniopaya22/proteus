@@ -39,3 +39,43 @@ def test_curves_keep_the_best_detection_at_or_below_each_alarm_rate(tmp_path):
     assert len(pts) == 3  # the alert-rule variant is left out
     tex = curves_figure(pts)
     assert "(0.5,1) (1,2) (3,2)" in tex and r"\sysname" in tex
+
+
+def test_curve_points_tell_the_two_directions_and_the_classic_runs_apart(tmp_path):
+    import pandas as pd
+
+    from proteus.evaluation.tables import curve_points
+
+    names = {"csecicids2018__cicids2017__loo_labels__r2": "csecicids2018__cicids2017",
+             "cicids2017__csecicids2018__loo_labels__r2b": "cicids2017__csecicids2018",
+             "classic__cicids2017__r2": "csecicids2018__cicids2017",
+             "classic__csecicids2018__r2": "cicids2017__csecicids2018"}
+    runs = []
+    for i, name in enumerate(names):
+        run = tmp_path / name
+        run.mkdir()
+        pd.DataFrame([{"model": f"m{i}", "target_fpr": 1e-3, "threshold": "local",
+                       "attack": "dos_hulk", "campaigns": 1, "detected": 1,
+                       "flow_recall": 0.5}]).to_csv(run / "summary.csv", index=False)
+        pd.DataFrame([{"model": f"m{i}", "target_fpr": 1e-3, "threshold": "local",
+                       "alarms_per_hour": 2.0, "entity_alarms_per_hour": 1.0}]
+                     ).to_csv(run / "false_alarms.csv", index=False)
+        runs.append(run)
+    pts = curve_points(runs).set_index("model")["direction"]
+    assert pts.to_dict() == {f"m{i}": d for i, d in enumerate(names.values())}
+
+
+def test_curves_figure_restricts_detectors_and_rejects_unknown_ones():
+    import pandas as pd
+    import pytest
+
+    from proteus.evaluation.tables import curves_figure
+
+    pts = pd.DataFrame([{"direction": "csecicids2018__cicids2017", "model": m,
+                         "detected": 1, "campaigns": 2, "entity_alarms_per_hour": 1.0}
+                        for m in ("proteus", "rate_rules_local")])
+    tex = curves_figure(pts, detectors=["rate_rules_local", "kitnet_local"])
+    assert "rate thresholds" in tex and r"\sysname" not in tex
+    assert r"\addlegendimage" in tex and "KitNET" in tex  # absent here, still in the legend
+    with pytest.raises(ValueError):
+        curves_figure(pts, detectors=["nope"])
