@@ -57,7 +57,8 @@ abajo. Estado al final de este documento.
 6. **Pendiente**, junto con la reescritura de las secciones que esperan resultados: evaluación en
    cuatro partes (detección; ¿se cumple el certificado?; qué conserva el adversario; tráfico real),
    con frase de conclusión por parte.
-7. **Pendiente** (mismo momento): sacar de la discusión el envenenamiento y el coste.
+7. **Hecho** (commit e9c34b3 del paper): el envenenamiento y el coste pasan de la discusión a la
+   evaluación (subsecciones «Poisoning the baselines» y «Cost»).
 8. **Se queda como está**: en los artículos de revista el trabajo relacionado va pronto.
 
 ### Lo que añade el bloque de revistas (manda la guía de Computers & Security)
