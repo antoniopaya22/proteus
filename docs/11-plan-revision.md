@@ -43,7 +43,27 @@ trabajo es de seguridad de redes (el certificado vale para detectores no aprendi
 - [x] Resumen, palabras clave, introducción, conclusión y *highlights* (commit 4c05c27 del paper).
 - [ ] Evaluación (tras la pasada de estilo), trabajo relacionado y discusión: repasar «machine
       learning», «learned», «trained», «classifier».
-- [ ] Carta al editor. Reserva si hay rechazo sin revisión: JISA.
+- [x] Evaluación, trabajo relacionado y discusión repasados: solo quedan términos factuales.
+- Antonio decide (2026-11-16): no se redacta carta al editor por ahora y la sección de ataques por
+  flujo se queda en el cuerpo (es donde el revisor ve la comparación con Apollon). Reserva si hay
+  rechazo sin revisión: JISA.
+
+### Pasada de redacción (2026-11-16)
+
+- [x] Estilo en contexto, motivación, modelo de amenaza, diseño, discusión y la parte al día de la
+      evaluación (tres revisores de estilo; comprobación mecánica de que no cambió ninguna cifra,
+      cita ni etiqueta: `guard.py` en el scratchpad). Commits 4c05c27, c38e3a2 y 8d3ab4e del paper.
+- [x] **«El sistema» = Proteus ∪ Proteus-cert ∪ Proteus-cert-R** en tablas (`tables h1 --set r2`),
+      figura y texto. A FPR 10⁻³ la unión suma las alarmas de sus miembros (4,17 y 11,88 por entidad
+      y hora), así que se opera a presupuesto: 11/11 a 1,4 y 13/13 a 0,30. En 18 → 17 Proteus solo
+      es más barato (1,0). Proteus-cert-R en 2018 da la misma tasa a 10⁻³ y 10⁻⁴ (7,28): mirar por qué.
+- [x] Resumen a 250 palabras; quitado de la discusión el experimento de línea base por pares (cifras
+      antiguas, no se repite).
+- [x] Marcas `\todo` en todo pasaje con cifras anteriores a r2 (certificados de presupuesto,
+      frontera, adaptativo, comparación conjunta, tráfico real, envenenamiento, temporizador,
+      balance de clases, ablación).
+- [ ] Repeticiones encoladas tras `master.sh` (`~/tools/extra.sh`): temporizador δ = 10 y 60 s
+      (`timer*_1817`) y balance de clases en ambos sentidos (`bal_*`).
 
 **Computers & Security** (Elsevier), por la vía de suscripción (sin coste); reserva: *Journal of
 Information Security and Applications*. Se buscaron números especiales abiertos y gratuitos y no hay
