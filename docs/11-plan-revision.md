@@ -183,7 +183,8 @@ tres detectores, se queda el de tres y se cuenta.
         paper: motivación, tabla de ataques por flujo, tabla de detectores).
   - [~] `ap_1817` hecho (§6.57 de docs/06: 7/11 a 21,3 alarmas por entidad/h; satura) y en la tabla
         de detección. Falta `ap_1718`.
-  - [ ] Resultados `ap_1718` (cola aparte `~/tools/apollon.sh`, mismo cerrojo): columna
+  - [x] `ap_1718` hecho (§6.64): 7/13 a 266 alarmas por entidad/h; en la tabla de detección.
+  - [ ] (queda) Apollon en la comparación conjunta; resultados `ap_1718` (cola aparte `~/tools/apollon.sh`, mismo cerrojo): columna
         en la tabla de detección y fila en la comparación conjunta; medir qué miembro responde.
 - **AML como gancho.** «Adversarial machine learning» es la palabra clave que atrae lectores: debe
   estar en título, resumen, introducción y palabras clave, y los ataques deben contarse como AML en
@@ -224,8 +225,12 @@ tres detectores, se queda el de tres y se cuenta.
         tasa sobre evidencia que la reutilización no baja (`rate_rules_r`). C: complemento de
         fidelidad por ventana. Trece candidatos en 2017 con las métricas del paper
         (`h1 --export-alerts` + `proteus.evaluation.unions`; ejecución `r2_opt`/`r2_unions`).
+  - [x] Resultado en 2017 (§6.64 de docs/06): A y B descartadas; Proteus-cert sobra (Proteus ∪
+        cert-R da lo mismo); la fidelidad por ventana sube la cobertura de 11+3 a 11+5 por 0,6
+        alarmas. Finalistas: Proteus ∪ cert-R ∪ fidelidad, y `proteus2` ∪ fidelidad.
   - [ ] D: alertas con memoria (persistencia, suelo por entidad). Atacante por consultas contra los
-        mejores. Repetir en 2018.
+        finalistas (incluye adaptar el oráculo a la fidelidad por ventana). Repetir en 2018
+        (`alerts_1718`, `wf300_1718` en cola). Daño a umbral estricto (`adapteq_1817`).
   - [ ] E (entrenar con ataques disfrazados) y F (marcadores por subred): solo si A–D no bastan.
 - **La GPU no es un límite.** No se escribe que algo «necesita GPU»; la máquina se ampliará.
   - [x] Quitadas las menciones del paper (BARS, entorno).

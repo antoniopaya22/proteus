@@ -1842,3 +1842,48 @@ Lectura:
   en cola `adapteq_1817` (mismos planes a FPR 10⁻⁴ para Proteus, cert, cert-R y `proteus2`).
 - Frente a la rejilla de 20 (§6.54): Proteus sube de 15–29 k a 16–38 k (rejilla más fina); el resto
   no cambia de orden.
+
+## 6.64 Sistemas candidatos en 2017 y Apollon en 2018 (2026-11-16, 17:35)
+
+**Apollon 2017 → 2018** (`ap_1718`): 7/13 campañas volumétricas y escaneos (los seis escaneos y
+Slowloris, con recall 0,80 y 0,05), 0/12 del resto, a 266 alarmas por entidad/h (FPR benigno 1,8 %,
+igual a los dos umbrales: satura como en 2017). El clasificador por flujo: 8/13 a 140. En la tabla
+de detección del paper, en ambos sentidos.
+
+**Candidatos** (`r2_opt` + `r2_wf300` + `r2_unions`; métricas de `h1`; «11+3» = 11 volumétricas y
+escaneos de 11, 3 del resto de 10; alarmas por entidad/h):
+
+| Sistema | FPR 10⁻³ | Presupuesto 0,5 | Presupuesto 3 |
+|---|---|---|---|
+| Proteus | 11+1 a 1,75 | 11+1 a 1,01 | 11+2 a 2,64 |
+| Sistema de tres (Proteus ∪ cert ∪ cert-R) | 11+3 a 4,17 | 11+3 a 1,40 | 11+4 a 4,23 |
+| **Proteus ∪ cert-R** | 11+3 a 4,10 | 11+3 a 1,35 | 11+4 a 4,08 |
+| Un solo máximo calibrado (opción A) | 9+2 a 0,97 | 9+2 a 0,78 | 9+3 a 2,50 |
+| `proteus2` | 11+3 a 5,39 | 8+2 a 0,90 | 9+3 a 3,33 |
+| Fidelidad por ventana | 9+4 a 0,64 | — | — |
+| Proteus ∪ fidelidad | 11+4 a 2,39 | 11+4 a 1,65 | 11+4 a 3,28 |
+| **Proteus ∪ cert-R ∪ fidelidad** | 11+5 a 4,72 | 11+5 a 1,99 | 11+5 a 4,73 |
+| `proteus2` ∪ fidelidad | 11+5 a 5,98 | 10+5 a 1,54 | 10+5 a 3,93 |
+| cert-R ∪ fidelidad | 10+5 a 3,62 | 10+5 a 1,05 | 10+5 a 2,53 |
+| Reglas de tasa | 9+5 a 8,97 | 9+4 a 5,28 | 9+4 a 5,90 |
+| Reglas con selección | 9+0 a 1,88 | 9+0 a 0,27 | 9+0 a 1,69 |
+| Reglas sobre evidencia sin reutilización (opción B) | 11+9 a 242 | 11+9 a 204 | 11+9 a 205 |
+
+Daño adaptativo (de la escalera `g30`, umbrales a FPR 10⁻³): Proteus ∪ cert-R deja exactamente el
+mismo que el sistema de tres en los nueve ataques (5,8 % del ritmo real en media geométrica);
+cert-R solo, 7,3 %; `proteus2`, 0,2 %.
+
+Lectura:
+
+- **Proteus-cert sobra en el sistema.** Sin él la detección y el daño no cambian y bajan algo las
+  alarmas. Sus alertas certificadas (8/11) las cubre también cert-R, que además resiste la
+  reutilización. El sistema puede ser de dos detectores certificables en vez de tres.
+- **Opción A (un solo umbral para todos los subnúcleos): descartada como sistema.** Da muchas menos
+  alarmas (0,97), pero pierde dos campañas volumétricas: un único umbral silencia subnúcleos.
+- **Opción B (reglas de tasa sobre evidencia sin reutilización): descartada.** Más de 200 alarmas
+  por entidad/h; con todas las escalas y los dos lados, satura.
+- **Opción C (fidelidad por ventana): la que más aporta.** Con Proteus ∪ cert-R sube de 3 a 5 las
+  campañas no volumétricas por 0,6 alarmas más.
+- Candidatos finales: (1) **Proteus ∪ cert-R ∪ fidelidad**: máxima cobertura (11+5) a 2,0 alarmas a
+  presupuesto, robustez media; (2) **`proteus2` ∪ fidelidad**: robustez muy alta pero 10+5 y dudas
+  sobre su umbral (`adapteq_1817` en cola). Faltan 2018 y el atacante por consultas.
