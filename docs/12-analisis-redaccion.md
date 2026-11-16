@@ -44,16 +44,22 @@ conservados y certificación en tráfico) y por eso se analizan.
 Los detalles (qué hace cada modelo, línea del nuestro y cambio concreto) están en las dos notas de
 abajo. Estado al final de este documento.
 
-1. Contribuciones más cortas, con puntero a sección, un párrafo de cifras titulares y hoja de ruta.
-2. El certificado en cuatro tiempos, con el teorema de la alerta certificada en el cuerpo.
-3. Supuestos (A1)–(A4) con nombre y en una tabla: cuándo fallan y qué pasa entonces.
-4. Figura conceptual del certificado en la página 2.
-5. Tabla de variantes del sistema en el diseño y métricas definidas una vez.
-6. Evaluación en cuatro partes (detección; ¿se cumple el certificado?; qué conserva el adversario;
-   tráfico real), con frase de conclusión por parte.
-7. Sacar de la discusión los resultados (envenenamiento, coste) y dejarla en limitaciones breves.
-8. Modelo de amenaza antes y trabajo relacionado más corto o más tarde (a decidir con el bloque de
-   revistas: en Computers & Security lo habitual puede ser otro orden).
+1. **Hecho** (commit a345ff9 del paper). Contribuciones: de seis viñetas con cifras a cuatro cortas
+   con puntero a sección; párrafo «Results in brief» con las cifras titulares; hoja de ruta; la idea
+   en una frase («an attacker can always send more, but it cannot send less without weakening the
+   attack»).
+2. **Hecho.** El certificado en cuatro tiempos: enunciado en palabras, lema de conservación, teorema
+   de la alerta certificada en el cuerpo, «cómo leerlo» en viñetas y esbozo de prueba.
+3. **Hecho.** Tabla de supuestos (A1)–(A4): quién lo controla, cuándo falla y qué pasa entonces.
+4. **Hecho** (commit siguiente). Figura conceptual del certificado en la página 2.
+5. **Hecho a medias.** Tabla de variantes de Proteus en el diseño (Proteus, -cert, -cert-R, sistema).
+   Falta el glosario de métricas en la configuración.
+6. **Pendiente**, junto con la reescritura de las secciones que esperan resultados: evaluación en
+   cuatro partes (detección; ¿se cumple el certificado?; qué conserva el adversario; tráfico real),
+   con frase de conclusión por parte.
+7. **Pendiente** (mismo momento): sacar de la discusión el envenenamiento y el coste.
+8. **A decidir** con el bloque de revistas: modelo de amenaza antes y trabajo relacionado más corto
+   o más tarde.
 
 ---
 

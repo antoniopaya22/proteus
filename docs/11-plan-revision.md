@@ -64,6 +64,10 @@ trabajo es de seguridad de redes (el certificado vale para detectores no aprendi
 - [x] Marcas `\todo` en todo pasaje con cifras anteriores a r2 (certificados de presupuesto,
       frontera, adaptativo, comparación conjunta, tráfico real, envenenamiento, temporizador,
       balance de clases, ablación).
+- [~] Redacción según los papers de referencia (`docs/12-analisis-redaccion.md`): hechos los
+      cambios 1–5 (contribuciones, certificado como lema y teorema, tabla de supuestos, figura
+      conceptual, tabla de variantes); pendientes la evaluación en cuatro partes con conclusiones, el
+      traslado de resultados fuera de la discusión y el bloque de revistas.
 - [ ] Repeticiones encoladas tras `master.sh` (`~/tools/extra.sh`): temporizador δ = 10 y 60 s
       (`timer*_1817`) y balance de clases en ambos sentidos (`bal_*`).
 
