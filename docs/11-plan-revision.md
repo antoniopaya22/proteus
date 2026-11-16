@@ -44,6 +44,8 @@ trabajo es de seguridad de redes (el certificado vale para detectores no aprendi
 - [ ] Evaluación (tras la pasada de estilo), trabajo relacionado y discusión: repasar «machine
       learning», «learned», «trained», «classifier».
 - [x] Evaluación, trabajo relacionado y discusión repasados: solo quedan términos factuales.
+- Antonio (2026-11-16): «Adversarial Machine Learning» vuelve como primera palabra clave, pese a la
+  moratoria; el resto del texto sigue sin el término.
 - Antonio decide (2026-11-16): no se redacta carta al editor por ahora y la sección de ataques por
   flujo se queda en el cuerpo (es donde el revisor ve la comparación con Apollon). Reserva si hay
   rechazo sin revisión: JISA.
