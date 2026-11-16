@@ -62,7 +62,8 @@ La ronda 1 son las fases A–E de abajo.
       (probada con 18 → 17). Falta: generarla con los dos sentidos y meterla en el paper (fase D).
 - [x] Líneas base clásicas: TRW (por host y por servicio) y CUSUM de flujos fallidos
       (`proteus classic`, commit 0541084). 2017 hecho (`classic__cicids2017__r2`); 2018 en cola.
-- [ ] Línea base: reglas de tasa con selección de rasgos.
+- [x] Línea base `rate_rules_sel`: reglas sobre los 10 rasgos que mejor separan en la red de
+      entrenamiento (commit del código). En cola en los dos sentidos (`sel.sh`).
 - [ ] `proteus_free` (homólogo justo sin restricciones) en las tablas de detección, daño y banco.
 - [ ] Líneas base causales y sin etiquetas (`--baseline prior --mask none`) en 18 → 17, en
       `seeds.sh`. Los umbrales siguen usando las etiquetas para elegir el benigno limpio: decirlo.
