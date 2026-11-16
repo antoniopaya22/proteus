@@ -312,10 +312,81 @@ def adaptive_table(csvs: list[Path]) -> str:
     return "\n".join(lines) + "\n"
 
 
+CURVE_STYLE = {  # detector -> (legend, pgfplots style)
+    "proteus": (r"\sysname", "color=pblue, mark=*, line width=1.1pt"),
+    "proteus_sys": (r"\sysname{} $\cup$ \sysname-cert", "color=pnavy, mark=square*"),
+    "proteus_cert_r": ("reuse-safe sub-cores", "color=pgreen, mark=triangle*"),
+    "rate_rules_local": ("rate thresholds", "color=porange, mark=o"),
+    "proteus_free": ("unconstrained sub-cores", "color=pgrey, mark=x, densely dashed"),
+    "kitnet_local": ("KitNET", "color=porange, mark=diamond, densely dotted"),
+    "syn_cusum": ("failed-flow CUSUM", "color=pgrey, mark=+, densely dotted"),
+    "trw_svc": ("TRW (services)", "color=pgrey, mark=asterisk, densely dotted"),
+}
+
+
+def curve_points(runs: list[Path], detected: str = "detected_strict") -> pd.DataFrame:
+    """Operating points of every detector of the runs: realised alarms per alerted
+    entity and hour against volumetric and scan campaigns detected, at every local
+    FPR and alarm budget evaluated."""
+    rows = []
+    for run in runs:
+        name = run.name.removeprefix("classic__")
+        key = next((k for k in DIRECTION if k in name or name.startswith(k.split("__")[1])), None)
+        if key is None:  # classic baselines are named after the test network only
+            key = next(k for k in DIRECTION if k.endswith("__" + name.split("__")[0]))
+        s = pd.read_csv(run / "summary.csv")
+        fa = pd.read_csv(run / "false_alarms.csv")
+        col = detected if detected in s else "detected"
+        s = s[s["attack"].str.startswith(VOLUMETRIC)
+              & ~s["threshold"].str.contains("+", regex=False)]
+        g = (s.groupby(["model", "target_fpr", "threshold"])
+             .agg(detected=(col, "sum"), campaigns=("campaigns", "sum"),
+                  recall=("flow_recall", "mean")).reset_index())
+        g = g.merge(fa[["model", "target_fpr", "threshold", "alarms_per_hour",
+                        "entity_alarms_per_hour"]], on=["model", "target_fpr", "threshold"])
+        g.insert(0, "direction", key)
+        rows.append(g)
+    out = pd.concat(rows, ignore_index=True)
+    return out.drop_duplicates(["direction", "model", "target_fpr", "threshold"])
+
+
+def curves_figure(points: pd.DataFrame, x: str = "entity_alarms_per_hour") -> str:
+    """pgfplots figure: campaigns detected against alarms per hour, one panel per
+    direction. Each curve is the best detection reached at or below each alarm rate."""
+    lines = ["% Detection against alarms per alerted entity and hour (tables.py curves).",
+             r"\begin{tikzpicture}",
+             r"\begin{groupplot}[group style={group size=2 by 1, horizontal sep=1.4cm},",
+             r"  width=0.5\textwidth, height=5.6cm, font=\sffamily\scriptsize, xmode=log,",
+             r"  xlabel={alarms per alerted entity and hour}, grid=major,",
+             r"  grid style={draw=pgreyL}, axis line style={draw=pgrey}, tick style={draw=pgrey},",
+             r"  every axis plot/.append style={line width=0.8pt, mark size=1.5pt},",
+             r"  legend style={draw=none, fill=none, font=\sffamily\tiny, cells={anchor=west}}]"]
+    for i, (key, title) in enumerate(DIRECTION.items()):
+        d = points[points["direction"] == key]
+        if d.empty:
+            continue
+        n = int(d["campaigns"].max())
+        opts = f"title={{{title}}}, ymin=0, ymax={n + 0.5}, ylabel={{campaigns detected (of {n})}}"
+        if i == len(DIRECTION) - 1:
+            opts += ", legend to name=curveslegend, legend columns=4"
+        lines.append(rf"\nextgroupplot[{opts}]")
+        for m, (label, style) in CURVE_STYLE.items():
+            c = d[(d["model"] == m) & (d[x] > 0)].sort_values([x, "detected"])
+            if c.empty:
+                continue
+            c = c.assign(best=c["detected"].cummax()).drop_duplicates(x, keep="last")
+            coords = " ".join(f"({r[x]:.3g},{int(r['best'])})" for _, r in c.iterrows())
+            lines.append(rf"\addplot[{style}] coordinates {{{coords}}};")
+            if i == len(DIRECTION) - 1:
+                lines.append(rf"\addlegendentry{{{label}}}")
+    lines += [r"\end{groupplot}", r"\end{tikzpicture}", "", r"\ref{curveslegend}"]
+    return "\n".join(lines) + "\n"
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("table", choices=["h1", "summary", "ablation", "frontier", "frontier_system",
-                                       "adaptive"])
+                                       "adaptive", "curves"])
     ap.add_argument("--csv", type=Path, nargs="*", default=[], help="frontier or adaptive CSVs")
     ap.add_argument("--data-out", type=Path, default=None)
     ap.add_argument("--detectors", nargs="*", default=None)
@@ -333,6 +404,13 @@ def main() -> None:
         t = summary_table(args.runs, args.extra, args.fpr, args.detectors)
         t.to_csv(args.out, index=False)
         print(t.round(3).to_string())
+        return
+    if args.table == "curves":
+        pts = curve_points(args.runs + args.extra)
+        if args.data_out:
+            pts.to_csv(args.data_out, index=False)
+        args.out.write_text(curves_figure(pts))
+        print(pts.round(3).to_string())
         return
     if args.table == "frontier":
         args.out.write_text(frontier_table(args.csv, args.data_out))
