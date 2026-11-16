@@ -159,13 +159,19 @@ def search(quiet: Callable[[Shape, int], bool], n_rates: int, budget: int,
 
 
 def submit(full: pd.DataFrame, sc, oracle: Oracle, rates: np.ndarray, rmax: float,
-           members: list[str], sent: dict[int, int]) -> Callable[[Shape, int], bool]:
+           members: list[str], sent: dict[int, int],
+           max_flows: int | None = None) -> Callable[[Shape, int], bool]:
     """The attacker's query for one scenario and target: send the nested attack
     ``full`` at the ``i``-th rate with a shape and read whether every member detector
-    stays quiet. ``sent`` records how many attack flows each rate index carries."""
+    stays quiet. ``sent`` records how many attack flows each rate index carries. A rate
+    that needs more than ``max_flows`` flows is not tried and counts as alerted, so the
+    damage reported stays a lower bound (``sent[-1]`` marks that the cap was reached)."""
 
     def quiet(shape: Shape, i: int) -> bool:
         a = full[full["u"] < rates[i] / rmax].drop(columns=["u"])
+        if max_flows is not None and len(a) > max_flows:
+            sent[-1] = 1
+            return False
         sent[i] = len(a)
         if a.empty:
             return True  # nothing sent: quiet, and worth nothing
@@ -195,6 +201,8 @@ def main() -> None:
     ap.add_argument("--rmax", type=float, default=200.0)
     ap.add_argument("--attacks", nargs="*", default=None)
     ap.add_argument("--days", nargs="*", default=None, help="test days (file stems)")
+    ap.add_argument("--max-flows", type=int, default=None,
+                    help="largest attack tried, in flows (higher rates count as alerted)")
     ap.add_argument("--costly", action="store_true",
                     help="also let the attacker spread over sources (reported apart)")
     ap.add_argument("--seed", type=int, default=0)
@@ -240,7 +248,8 @@ def main() -> None:
                 free_shape = None
                 for costly in ([False, True] if args.costly else [False]):
                     sent: dict[int, int] = {}
-                    quiet = submit(full, sc, oracle, rates, args.rmax, list(ms), sent)
+                    quiet = submit(full, sc, oracle, rates, args.rmax, list(ms), sent,
+                                   args.max_flows)
                     # The search with sources starts from the best free shape, so that
                     # what it reports is never below the free result.
                     res = search(quiet, len(rates), args.budget,
@@ -253,7 +262,7 @@ def main() -> None:
                                  "costly": costly, "threshold_fpr": args.fpr,
                                  "real_flows_per_h": len(A) / span * 3600,
                                  "query_flows_per_h": rate * 3600,
-                                 "queries": res["queries"],
+                                 "queries": res["queries"], "capped": bool(sent.get(-1)),
                                  "shape": json.dumps(asdict(res["shape"])),
                                  "rmax_flows_per_h": args.rmax * 3600})
                     print(rows[-1], flush=True)
@@ -262,7 +271,7 @@ def main() -> None:
                                 "flows_per_h": (float(rates[t["index"]]) * 3600
                                                 if t["index"] >= 0 else 0.0),
                                 "shape": json.dumps(t["shape"])} for t in res["trace"]]
-            save()
+                save()
     out = save()
     if len(out):
         print(out.pivot_table(index=["day", "attack"], columns=["target", "costly"],

@@ -77,3 +77,12 @@ def test_apply_never_removes_payload_and_leaves_the_background_alone():
     assert v["_atk"].sum() < 200  # fewer records, same payload
     v = apply(df, Shape(sources=10), "10.0.1.1", 80, np.random.default_rng(1))
     assert v.loc[v["_atk"], "src_ip"].nunique() > 1
+
+
+def test_submit_does_not_try_rates_above_the_flow_cap():
+    from proteus.evaluation.query_attack import submit
+
+    full = pd.DataFrame({"u": np.linspace(0, 0.999, 1000)})
+    sent: dict[int, int] = {}
+    quiet = submit(full, None, None, np.array([1.0, 50.0, 100.0]), 100.0, [], sent, max_flows=400)
+    assert quiet(Shape(), 2) is False and sent == {-1: 1}  # 1000 flows: over the cap, not sent
