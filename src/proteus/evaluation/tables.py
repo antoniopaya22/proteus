@@ -29,7 +29,7 @@ DETECTOR_SETS = {
            ("kitnet_local", "KitNET"), ("flow_clf", "Flow")],
     # Revision 2: the deployed system, alerts certified also against connection reuse,
     # and the unconstrained counterpart of the same sub-cores.
-    "r2": [("proteus", "Proteus"), ("proteus_sys", "System"), ("proteus_cert@cert", "Cert."),
+    "r2": [("proteus", "Proteus"), ("proteus_sys_r", "System"), ("proteus_cert@cert", "Cert."),
            ("proteus_cert_r@certr", "Cert.-R"), ("proteus_free", "Unc."),
            ("rate_rules_local", "Rules"), ("kitnet_local", "KitNET"), ("flow_clf", "Flow"),
            ("apollon", "Apollon")],
@@ -84,19 +84,21 @@ def h1_table(runs: list[Path], extra: list[Path], fpr: float,
     alarms per alerted entity and ten-minute window first, then per (destination,
     minute)."""
     data = _load(runs, extra)
-    lines = [r"\begin{tabular}{l" + "r" * len(DETECTORS) + "}", r"\toprule",
-             "Attack & " + " & ".join(h for _, h in DETECTORS) + r" \\"]
+    present = set().union(*(set(s["model"]) for s, _ in data.values()))
+    dets = [d for d in DETECTORS if d[0] in present]  # detectors without a run: no column
+    lines = [r"\begin{tabular}{l" + "r" * len(dets) + "}", r"\toprule",
+             "Attack & " + " & ".join(h for _, h in dets) + r" \\"]
     for key, (s, f) in data.items():
         lines += [r"\midrule",
-                  rf"\multicolumn{{{1 + len(DETECTORS)}}}{{l}}{{\emph{{{DIRECTION.get(key, key)}}}}} \\"]
+                  rf"\multicolumn{{{1 + len(dets)}}}{{l}}{{\emph{{{DIRECTION.get(key, key)}}}}} \\"]
         for a in [a for a in ATTACK_NAMES if a in s["attack"].values]:
             cells = []
-            for m, _ in DETECTORS:
+            for m, _ in dets:
                 r = s[(s["model"] == m) & (s["target_fpr"] == fpr) & (s["attack"] == a)]
                 cells.append(_cell(r.iloc[0] if len(r) else None))
             lines.append(f"{ATTACK_NAMES[a]} & " + " & ".join(cells) + r" \\")
         alarms, entity, ttd = [], [], []
-        for m, _ in DETECTORS:
+        for m, _ in dets:
             r = f[(f["model"] == m) & (f["target_fpr"] == fpr)]
             alarms.append(f"{r['alarms_per_hour'].iloc[0]:.1f}" if len(r) else "--")
             entity.append(f"{r['entity_alarms_per_hour'].iloc[0]:.2f}"
@@ -332,7 +334,7 @@ def adaptive_table(csvs: list[Path]) -> str:
 CURVE_STYLE = {  # detector -> (legend, pgfplots style)
     "proteus": (r"\sysname", "color=pblue, mark=*, line width=1.1pt"),
     "proteus_sys": (r"\sysname{} $\cup$ \sysname-cert", "color=pnavy, mark=square*"),
-    "proteus_sys_r": ("system of three", "color=pnavy, mark=square, densely dashed"),
+    "proteus_sys_r": ("system", "color=pnavy, mark=square, densely dashed"),
     "proteus_cert_r": ("reuse-safe sub-cores", "color=pgreen, mark=triangle*"),
     "proteus2_sys": (r"\sysname-2 system", "color=pgreen, mark=triangle, densely dashed"),
     "rate_rules_local": ("rate thresholds", "color=porange, mark=o"),
