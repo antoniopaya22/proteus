@@ -42,6 +42,8 @@ from proteus.evaluation.adaptive import Oracle, day_models
 from proteus.evaluation.frontier_exp import ATTACKS, FLOW_COLS, Baselines, scenarios
 from proteus.evaluation.poisoning import combined
 
+WF = "window_fidelity"
+
 
 @dataclass(frozen=True)
 class Shape:
@@ -189,7 +191,7 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--run", type=Path, required=True)
     ap.add_argument("--test", required=True)
-    ap.add_argument("--targets", nargs="+", required=True,
+    ap.add_argument("--targets", nargs="*", default=[],
                     help="fitted or local detectors, or unions of them (h1.UNIONS)")
     ap.add_argument("--extra-runs", type=Path, nargs="*", default=[])
     ap.add_argument("--local", nargs="*", default=["rate_rules_local", "kitnet_local"],
@@ -201,6 +203,10 @@ def main() -> None:
     ap.add_argument("--rmax", type=float, default=200.0)
     ap.add_argument("--attacks", nargs="*", default=None)
     ap.add_argument("--days", nargs="*", default=None, help="test days (file stems)")
+    ap.add_argument("--union", action="append", default=[], metavar="NAME=A,B,...",
+                    help="a target that is quiet only when every member is")
+    ap.add_argument("--wf-window", type=float, default=300.0,
+                    help="window of the window-fidelity detector, when it is a target or a member")
     ap.add_argument("--max-flows", type=int, default=None,
                     help="largest attack tried, in flows (higher rates count as alerted)")
     ap.add_argument("--costly", action="store_true",
@@ -212,11 +218,16 @@ def main() -> None:
     fitted = h1.load_models(args.run)
     for extra in args.extra_runs:
         fitted = {**h1.load_models(extra), **fitted}
-    members = {t: h1.UNIONS.get(t, (t,)) for t in args.targets}
+    unions = {**h1.UNIONS, **{u.split("=")[0]: tuple(u.split("=")[1].split(",")) for u in args.union}}
+    members = {t: unions.get(t, (t,)) for t in [*args.targets, *[u.split("=")[0] for u in args.union]]}
     names = list(dict.fromkeys(n for ms in members.values() for n in ms))
     _, specs = h1.evidence_b(args.test, h1.days(args.test)[0], columns=["clean"])
     fresh = h1.detectors(specs, [])
-    dets = {n: fresh[n] if n in args.local else combined(fitted, n) for n in names}
+    wf = None
+    if WF in names:  # scores raw flows: fitted per day apart from the evidence detectors
+        from proteus.evaluation.window_fidelity import fit_days
+        wf, _, _ = fit_days(args.test, args.wf_window, 10, 300_000, np.random.default_rng(args.seed))
+    dets = {n: fresh[n] if n in args.local else combined(fitted, n) for n in names if n != WF}
     rates = np.geomspace(args.rmin, args.rmax, args.grid)
     baselines = Baselines(args.test)
     rows, traces = [], []
@@ -240,6 +251,8 @@ def main() -> None:
             continue
         base = baselines.for_day(day)
         models, thr = day_models(args.test, day, dets, args.local, args.fpr, rng)
+        if wf is not None:
+            models[WF], thr[WF] = ([], wf[day]), float("nan")
         for attack, sc, A in scenarios(flows, present):
             span = max((A["t_end"].max() - A["t_start"].min()).total_seconds(), 1.0)
             full = nested_attack(sc, args.rmax, np.random.default_rng(args.seed))

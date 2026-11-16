@@ -55,3 +55,26 @@ def test_structured_plans_touch_only_the_attack_flows():
         assert (len(atk) < 200) == (k > 1), plan
         assert (atk["src_ip"].nunique() > 1) == (srcs > 1), plan
         assert v["t_end"].is_monotonic_increasing, plan
+
+
+def test_oracle_asks_detectors_of_raw_flows_through_flow_alerts():
+    from types import SimpleNamespace
+
+    from proteus.evaluation.adaptive import Oracle
+
+    class FlowDet:  # alerts the flows of port 22 that carry more than 5 packets
+        def flow_alerts(self, df):
+            return ((df["dst_port"] == 22) & (df["fwd_pkts"] > 5)).to_numpy()
+
+    t0 = pd.Timestamp("2021-01-01 10:00")
+    def frame(pk):
+        n = len(pk)
+        return pd.DataFrame({"t_end": (t0 + pd.to_timedelta(np.arange(n) * 30, unit="s")).astype("datetime64[us]"),
+                             "dst_port": 22, "fwd_pkts": pk})
+    sc = SimpleNamespace(background=frame([1, 1, 9, 1]))  # the background alone alerts in minute 1
+    o = Oracle(sc, {"wf": ([], FlowDet())}, {"wf": float("nan")}, base={}, specs={})
+    assert len(o.noisy["wf"]) == 1
+    quiet, _ = o.query(frame([1, 1, 9, 1, 1, 1]))
+    assert quiet["wf"] and o.queries == 1                 # only the noisy minute alerts
+    quiet, _ = o.query(frame([1, 1, 9, 1, 1, 9]))
+    assert not quiet["wf"]                                 # an alert in a clean minute counts

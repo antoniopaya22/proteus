@@ -157,6 +157,65 @@ def frame(test: str, day: Path) -> pd.DataFrame:
     return df
 
 
+class WindowFidelity:
+    """The detector as deployed on one test day: the reference of the other days and
+    the thresholds, per kind of entity and size class, at each target rate. It scores
+    raw flow records (not evidence features), so the attackers of ``adaptive`` and
+    ``query_attack`` call ``flow_alerts`` on the traffic they send."""
+
+    def __init__(self, ref: dict[int, np.ndarray], thr: dict[float, dict], window_s: float,
+                 min_flows: int, fpr: float) -> None:
+        self.ref, self.thr, self.window_s, self.min_flows, self.fpr = ref, thr, window_s, min_flows, fpr
+
+    def flow_alerts(self, df: pd.DataFrame, fpr: float | None = None) -> np.ndarray:
+        """Alert of every flow of ``df``: its service window or its source window is
+        distributed unlike the benign reference."""
+        work = df.assign(is_attack=False, attack="", _dirty=False)
+        bins = bin_flows(statistics(work), work["dst_port"].to_numpy(), self.ref)
+        thr = self.thr[self.fpr if fpr is None else fpr]
+        out = np.zeros(len(df), dtype=bool)
+        for e in ("service", "source"):
+            t, codes = windows(work, bins, e, self.window_s, self.min_flows)
+            out |= (alerts(t, thr) & t["ok"].to_numpy())[codes]
+        return out
+
+
+def fit_days(test: str, window_s: float, min_flows: int, sample_n: int,
+             rng: np.random.Generator) -> tuple[dict, dict, dict]:
+    """For every test day: the detector fitted on the other days, and that day's own
+    windows and flow-to-window codes (scored against the other days' reference)."""
+    days = h1.days(test)
+    # Pass 1: a sample of the clean benign flows of every day (the reference tables).
+    sample = {}
+    for day in days:
+        df = frame(test, day)
+        idx = np.flatnonzero(df["clean"].to_numpy(bool))
+        idx = np.sort(rng.choice(idx, min(len(idx), sample_n), replace=False))
+        sample[day] = (statistics(df.iloc[idx]), df["dst_port"].to_numpy()[idx])
+        print(f"  sampled {day.stem}: {len(idx):,} of {len(df):,} flows", flush=True)
+        del df
+    # Pass 2: the windows of every day against the benign traffic of the other days.
+    refs, tables, codes = {}, {}, {}
+    for day in days:
+        others = [d for d in days if d != day]
+        refs[day] = reference(pd.concat([sample[d][0] for d in others]),
+                              np.concatenate([sample[d][1] for d in others]))
+        df = frame(test, day)
+        bins = bin_flows(statistics(df), df["dst_port"].to_numpy(), refs[day])
+        got = [windows(df, bins, e, window_s, min_flows) for e in ("service", "source")]
+        tables[day] = {e: t for e, (t, _) in zip(("service", "source"), got, strict=True)}
+        codes[day] = {e: c.astype(np.int32) for e, (_, c) in zip(("service", "source"), got, strict=True)}
+        n = sum(int(t["ok"].sum()) for t in tables[day].values())
+        print(f"  scored {day.stem}: {n:,} windows of {window_s:g}s", flush=True)
+        del df, bins
+    fitted = {}
+    for day in days:
+        calib = pd.concat([t[t["ok"]] for d in days if d != day for t in tables[d].values()])
+        fitted[day] = WindowFidelity(refs[day], {fpr: thresholds(calib, fpr) for fpr in h1.FPRS},
+                                     window_s, min_flows, h1.FPRS[0])
+    return fitted, tables, codes
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--test", required=True)
@@ -170,41 +229,18 @@ def main() -> None:
     ap.add_argument("--seed", type=int, default=0)
     args = ap.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
-    rng = np.random.default_rng(args.seed)
     days = h1.days(args.test)
-    # Pass 1: a sample of the clean benign flows of every day (the reference tables).
-    sample = {}
-    for day in days:
-        df = frame(args.test, day)
-        idx = np.flatnonzero(df["clean"].to_numpy(bool))
-        idx = np.sort(rng.choice(idx, min(len(idx), args.sample), replace=False))
-        sample[day] = (statistics(df.iloc[idx]), df["dst_port"].to_numpy()[idx])
-        print(f"  sampled {day.stem}: {len(idx):,} of {len(df):,} flows", flush=True)
-        del df
-    # Pass 2: the windows of every day against the benign traffic of the other days.
-    tables, codes = {}, {}
-    for day in days:
-        others = [d for d in days if d != day]
-        ref = reference(pd.concat([sample[d][0] for d in others]),
-                        np.concatenate([sample[d][1] for d in others]))
-        df = frame(args.test, day)
-        bins = bin_flows(statistics(df), df["dst_port"].to_numpy(), ref)
-        got = [windows(df, bins, e, args.window, args.min_flows) for e in ("service", "source")]
-        tables[day] = {e: t for e, (t, _) in zip(("service", "source"), got, strict=True)}
-        codes[day] = {e: c.astype(np.int32) for e, (_, c) in zip(("service", "source"), got, strict=True)}
-        n = sum(int(t["ok"].sum()) for t in tables[day].values())
-        print(f"  scored {day.stem}: {n:,} windows of {args.window:g}s", flush=True)
-        del df, bins
+    fitted, tables, codes = fit_days(args.test, args.window, args.min_flows, args.sample,
+                                     np.random.default_rng(args.seed))
     # Pass 3: thresholds from the clean benign windows of the other days; per-flow alerts;
     # the metrics of h1, alone and in union with its detectors.
     results = []
     for day in days:
-        calib = pd.concat([t[t["ok"]] for d in days if d != day for t in tables[d].values()])
         n_rows = len(codes[day]["service"])
         score = np.zeros(n_rows, dtype=np.int8)      # 0, 1 (alert at 1e-3), 2 (also at 1e-4)
         side = np.zeros(n_rows, dtype=bool)
         for fpr in h1.FPRS:                          # 1e-3, then 1e-4
-            thr = thresholds(calib, fpr)
+            thr = fitted[day].thr[fpr]
             flow = {}
             for e in ("service", "source"):
                 t = tables[day][e]

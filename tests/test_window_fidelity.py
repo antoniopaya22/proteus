@@ -69,3 +69,21 @@ def test_thresholds_are_set_per_size_class_and_fall_back_to_the_smaller_one():
     assert thr[("service", 4)] == thr[("service", 3)]  # no benign window that large
     w = pd.DataFrame({"kind": "service", "flows": [12, 500, 5000], "stat": [0.5, 0.3, 0.3]})
     assert alerts(w, thr).tolist() == [False, True, True]
+
+
+def test_fitted_detector_alerts_the_flows_of_a_uniform_window_and_not_the_benign_ones():
+    from proteus.evaluation.window_fidelity import WindowFidelity, thresholds
+
+    rng = np.random.default_rng(2)
+    ref_df = _flows(5000, rng, 0)
+    ref = reference(statistics(ref_df), ref_df["dst_port"].to_numpy(), min_flows=100)
+    # calibration windows: benign traffic in several windows of the same service and source
+    cal = pd.concat([_flows(200, rng, 30 * k) for k in range(40)], ignore_index=True)
+    bins = bin_flows(statistics(cal), cal["dst_port"].to_numpy(), ref)
+    tabs = [windows(cal, bins, e, 30.0, 10)[0] for e in ("service", "source")]
+    calib = pd.concat([t[t["ok"]] for t in tabs])
+    det = WindowFidelity(ref, {1e-3: thresholds(calib, 1e-3)}, 30.0, 10, 1e-3)
+    df = pd.concat([_flows(200, rng, 3000), _flows(300, rng, 3060, attack=True)], ignore_index=True)
+    hit = det.flow_alerts(df.drop(columns=["is_attack", "attack", "_dirty"]))
+    atk = df["is_attack"].to_numpy()
+    assert hit[atk].mean() > 0.9 and hit[~atk].mean() < 0.05

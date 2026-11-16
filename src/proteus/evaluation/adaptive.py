@@ -130,10 +130,13 @@ class Oracle:
         self.delta = delta
         self.cols = list(dict.fromkeys(c for cols, _ in models.values() for c in cols))
         self.queries = 0
-        bg_feats = _features(sc.background, self.cols, base)
+        bg_feats = _features(sc.background, self.cols, base) if self.cols else None
         bg_min = sc.background["t_end"].astype("int64").to_numpy() // 60_000_000
         self.noisy, self.noisy_cert = {}, {}
         for n, (cols, m) in models.items():
+            if hasattr(m, "flow_alerts"):  # scores raw flow records, not evidence features
+                self.noisy[n] = np.unique(bg_min[m.flow_alerts(sc.background)])
+                continue
             X = bg_feats[cols].to_numpy(np.float64)
             self.noisy[n] = np.unique(bg_min[m.predict_proba(X)[:, 1] >= thr[n]])
             if n in self.certify:
@@ -151,12 +154,15 @@ class Oracle:
         whether the certified alerts of the ``certify`` detectors stay quiet."""
         names = list(self.models) if names is None else names
         cols = list(dict.fromkeys(c for n in names for c in self.models[n][0]))
-        feats = _features(v, cols, self.base)
+        feats = _features(v, cols, self.base) if cols else None
         minute = v["t_end"].astype("int64").to_numpy() // 60_000_000
         self.queries += 1
         quiet, cert = {}, {}
         for n in names:
             mcols, m = self.models[n]
+            if hasattr(m, "flow_alerts"):
+                quiet[n] = not (m.flow_alerts(v) & ~np.isin(minute, self.noisy[n])).any()
+                continue
             X = feats[mcols].to_numpy(np.float64)
             hit = m.predict_proba(X)[:, 1] >= self.thr[n]
             quiet[n] = not (hit & ~np.isin(minute, self.noisy[n])).any()
