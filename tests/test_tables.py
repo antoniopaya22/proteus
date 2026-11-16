@@ -127,3 +127,24 @@ def test_ladder_damage_of_a_union_needs_every_member_quiet_on_the_same_plan():
     assert ladder_damage(L, ["a", "b"]).iloc[0] == 100    # no single plan passes both above 100
     assert ladder_damage(L, ["a", "b"], costly=True).iloc[0] == 10000
     assert ladder_damage(L[L["flows_per_h"] > 5000], ["a", "b"]).iloc[0] == 0  # nothing quiet: 0
+
+
+def test_ablation_table_reports_alarms_per_alerted_entity(tmp_path):
+    import pandas as pd
+
+    from proteus.evaluation.tables import ablation_table
+
+    run = tmp_path / "csecicids2018__cicids2017__loo_labels__r2_ablation"
+    run.mkdir()
+    rows, fa = [], []
+    for model, hulk, ent in (("proteus", 1, 1.75), ("proteus-3", 0, 1.82)):
+        for attack, det in (("dos_hulk", hulk), ("web_xss", 0)):
+            rows.append({"model": model, "threshold": "local", "target_fpr": 1e-3, "day": "wed",
+                         "attack": attack, "flows": 100, "detected": det, "alarms_per_hour": 60.0})
+        fa.append({"model": model, "threshold": "local", "target_fpr": 1e-3,
+                   "alarms_per_hour": 60.0, "entity_alarms_per_hour": ent})
+    pd.DataFrame(rows).to_csv(run / "campaigns.csv", index=False)
+    pd.DataFrame(fa).to_csv(run / "false_alarms.csv", index=False)
+    table = ablation_table([run], 1e-3)
+    assert r"All sub-cores & 1.00 & 0.00 & 1.75 \\" in table
+    assert r"without raw destination & 0.00 & 0.00 & 1.82 \\" in table and "60.0" not in table

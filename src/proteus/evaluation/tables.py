@@ -176,7 +176,8 @@ SUBCORES = ["destination", "source", "pair", "raw destination"]
 
 def ablation_table(runs: list[Path], fpr: float, base: str = "proteus") -> str:
     """Full calibrated maximum against the same without each sub-core: campaigns
-    detected (volumetric and scans / other) and alarms per hour, per direction."""
+    detected (volumetric and scans / other) and false alarms per alerted entity and
+    hour (per destination and minute in runs that lack them), per direction."""
     from proteus.evaluation.bench import detection_alarms
 
     lines = [r"\begin{tabular}{lrrr}", r"\toprule",
@@ -184,6 +185,11 @@ def ablation_table(runs: list[Path], fpr: float, base: str = "proteus") -> str:
     for run in runs:
         key = "__".join(run.name.split("__")[:2])
         d = detection_alarms([run], fpr)
+        fa = pd.read_csv(run / "false_alarms.csv")
+        fa = fa[(fa["threshold"] == "local") & (fa["target_fpr"] == fpr)]
+        if "entity_alarms_per_hour" in fa:
+            ent = fa.drop_duplicates("model").set_index("model")["entity_alarms_per_hour"]
+            d["alarms_per_hour"] = ent.reindex(d.index).fillna(d["alarms_per_hour"])
         lines += [r"\midrule", rf"\multicolumn{{4}}{{l}}{{\emph{{{DIRECTION.get(key, key)}}}}} \\"]
         names = [(base, "All sub-cores")] + [(f"{base}-{k}", f"without {s}")
                                              for k, s in enumerate(SUBCORES)]
@@ -192,7 +198,7 @@ def ablation_table(runs: list[Path], fpr: float, base: str = "proteus") -> str:
                 continue
             r = d.loc[m]
             lines.append(f"{label} & {r['det_volumetric']:.2f} & {r['det_other']:.2f} & "
-                         f"{r['alarms_per_hour']:.1f} \\\\")
+                         f"{r['alarms_per_hour']:.2f} \\\\")
     lines += [r"\bottomrule", r"\end{tabular}"]
     return "\n".join(lines) + "\n"
 
