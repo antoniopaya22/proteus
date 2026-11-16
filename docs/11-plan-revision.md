@@ -89,6 +89,13 @@ trabajo es de seguridad de redes (el certificado vale para detectores no aprendi
       apéndice.
 - [ ] Repeticiones encoladas tras `master.sh` (`~/tools/extra.sh`): temporizador δ = 10 y 60 s
       (`timer*_1817`) y balance de clases en ambos sentidos (`bal_*`).
+- [x] Exclusión de subnúcleos saturados en 2017 → 2018 (`sat_1718`, §6.65 de docs/06): **no se
+      adopta como regla general** (rompe Proteus-cert-R); el sistema se opera a presupuesto de alarmas.
+- [ ] Una sola regla para todos los datasets: CTU-13 y UGR'16 sin exclusión, reutilizando los modelos
+      de los pliegues r2 (`~/tools/extra2.sh`: `ctuB_nox`, `ctuA_nox`, `ugrJA_nox`, `ugrAJ_nox`; empieza
+      al acabar `master.sh` y `extra.sh`). Si a presupuesto dan lo mismo, se quita `--exclude-saturated`
+      del paper y de la discusión.
+- [~] Atacante por consultas 18 → 17 (`qa_1817`, `qa2_1817`): parciales en §6.66 de docs/06.
 
 **Computers & Security** (Elsevier), por la vía de suscripción (sin coste); reserva: *Journal of
 Information Security and Applications*. Se buscaron números especiales abiertos y gratuitos y no hay
