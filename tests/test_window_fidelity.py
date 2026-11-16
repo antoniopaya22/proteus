@@ -53,3 +53,16 @@ def test_windows_group_by_entity_and_time_and_count_attack_flows():
     assert a["stat"] > 3 * b["stat"] and not bool(b["dirty"])
     src = windows(df, bins, "source", 30.0, min_flows=10)
     assert set(src["entity"]) == {"10.0.0.5", "172.16.0.9"}
+
+
+def test_thresholds_are_set_per_size_class_and_fall_back_to_the_smaller_one():
+    from proteus.evaluation.window_fidelity import alerts, thresholds
+
+    calib = pd.DataFrame({"kind": "service", "dirty": False,
+                          "flows": [12] * 50 + [500] * 50,
+                          "stat": list(np.linspace(0.2, 0.6, 50)) + list(np.linspace(0.02, 0.1, 50))})
+    thr = thresholds(calib, 0.02)
+    assert thr[("service", 0)] > 0.55 and thr[("service", 3)] < 0.11
+    assert thr[("service", 4)] == thr[("service", 3)]  # no benign window that large
+    w = pd.DataFrame({"kind": "service", "flows": [12, 500, 5000], "stat": [0.5, 0.3, 0.3]})
+    assert alerts(w, thr).tolist() == [False, True, True]

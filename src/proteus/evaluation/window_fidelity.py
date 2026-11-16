@@ -37,6 +37,30 @@ COLS = ["t_start", "t_end", "duration_us", "src_ip", "dst_ip", "dst_port", "prot
 STATS = ["fwd_pkts", "bwd_pkts", "fwd_bytes", "bwd_bytes", "duration", "fwd_bpp", "ratio"]
 BINS = 10
 OTHER = -1  # reference shared by the ports without enough benign flows
+SIZES = np.array([30, 100, 300, 1000])  # window sizes are calibrated apart (see thresholds)
+
+
+def thresholds(calib: pd.DataFrame, fpr: float) -> dict[tuple[str, int], float]:
+    """Threshold of the statistic per kind of entity and size class of the window. A
+    window of ten flows is far from any reference by chance and one of a thousand is
+    not, so each size class is calibrated on clean benign windows of its own size. A
+    class with no such window takes the threshold of the next smaller one."""
+    out: dict[tuple[str, int], float] = {}
+    c = calib[~calib["dirty"]]
+    size = np.searchsorted(SIZES, c["flows"].to_numpy(), side="right")
+    for kind in c["kind"].unique():
+        last = np.inf
+        for b in range(len(SIZES) + 1):
+            v = c.loc[(c["kind"] == kind).to_numpy() & (size == b), "stat"]
+            last = float(np.quantile(v, 1 - fpr, method="higher")) if len(v) else last
+            out[(kind, b)] = last
+    return out
+
+
+def alerts(w: pd.DataFrame, thr: dict[tuple[str, int], float]) -> np.ndarray:
+    size = np.searchsorted(SIZES, w["flows"].to_numpy(), side="right")
+    t = np.array([thr.get((k, int(b)), np.inf) for k, b in zip(w["kind"], size, strict=True)])
+    return w["stat"].to_numpy() > t
 
 
 def statistics(df: pd.DataFrame) -> pd.DataFrame:
@@ -157,11 +181,10 @@ def main() -> None:
             calib = pd.concat([scored[d] for d in days if d != day])
             hours = (data[day]["t_end"].max() - data[day]["t_start"].min()).total_seconds() / 3600
             for fpr in args.fpr:
+                thr = thresholds(calib, fpr)
                 for kind in ("service", "source", "any"):
                     sel = w if kind == "any" else w[w["kind"] == kind]
-                    thr = {k: np.quantile(c.loc[~c["dirty"], "stat"], 1 - fpr, method="higher")
-                           for k, c in calib.groupby("kind")}
-                    alert = sel["stat"].to_numpy() > sel["kind"].map(thr).to_numpy()
+                    alert = alerts(sel, thr)
                     clean = ~sel["dirty"].to_numpy()
                     bucket = sel["window"].to_numpy() * int(window_s) // 600
                     fa = len(set(zip(sel["entity"][alert & clean], bucket[alert & clean], strict=True)))
