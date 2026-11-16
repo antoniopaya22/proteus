@@ -26,6 +26,7 @@ COMMANDS: dict[str, tuple[str, str]] = {
     "free-ops": ("proteus.evaluation.free_ops", "free operations against real campaigns (empirical check)"),
     "packets": ("proteus.evaluation.packet_check", "check the certificate on real attack packets"),
     "budget": ("proteus.evaluation.smoothing", "budget certificate (randomised smoothing) vs free operations"),
+    "isolated": ("proteus.evaluation.isolated", "detection of each campaign without the other attacks"),
     "frontier": ("proteus.evaluation.frontier_exp", "harm frontier per attack type"),
     "frontier-scan": ("proteus.evaluation.frontier_scan", "harm frontier of horizontal scans"),
     "adaptive": ("proteus.evaluation.adaptive", "damage under an adaptive attacker"),
