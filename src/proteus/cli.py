@@ -30,6 +30,8 @@ COMMANDS: dict[str, tuple[str, str]] = {
     "frontier": ("proteus.evaluation.frontier_exp", "harm frontier per attack type"),
     "frontier-scan": ("proteus.evaluation.frontier_scan", "harm frontier of horizontal scans"),
     "adaptive": ("proteus.evaluation.adaptive", "damage under an adaptive attacker"),
+    "window-fidelity": ("proteus.evaluation.window_fidelity",
+                        "pilot: window-fidelity detector as the uncertified complement"),
     "query-attack": ("proteus.evaluation.query_attack",
                      "black-box query attacker in the traffic space"),
     "poisoning": ("proteus.evaluation.poisoning", "poisoning of the per-entity baselines"),
