@@ -1540,3 +1540,18 @@ realizadas, con el presupuesto contado por entidad alertada:
 - Junto con 18 → 17 (§6.51: Proteus 11/11 a 1,0; reglas 9/11 a 5,3): **en los dos sentidos el sistema
   detecta todas las campañas volumétricas y escaneos con 5× menos alarmas por entidad que las
   reglas de tasa.** Este pasa a ser el resultado central de detección.
+
+## 6.53 Detección de cada campaña sin los demás ataques del día (2026-11-16, 06:15)
+
+`proteus isolated` (18 → 17, r2, FPR 10⁻³): cada campaña se puntúa sobre el tráfico de su día sin
+los flujos de ningún otro ataque (objeción del revisor: evidencia arrastrada entre campañas).
+
+| Detector | Vol./escaneo en el día real | Aisladas | Recall medio | TTD mediano |
+|---|---|---|---|---|
+| `proteus` | 11/11 | 11/11 | 0,90 → 0,89 | 5,0 → 7,5 s |
+| `proteus_cert` | 9/11 | 9/11 | 0,81 → 0,80 | 1,1 → 1,1 s |
+| `proteus_cert_r` | 9/11 (12/21) | 9/11 (11/21) | 0,80 → 0,74 | 1,2 → 1,6 s |
+
+- La detección no depende del arrastre. Sí el tiempo de detección de las campañas que siguen a
+  otra en el mismo servidor: GoldenEye 5 → 64 s, Slowhttptest 10 → 74 s, LOIC-HTTP 10 → 15 s.
+- En el paper (párrafo "Carry-over between campaigns"). 2018 en cola (`isolated18.sh`).
