@@ -146,6 +146,23 @@ def test_cross_network_run_end_to_end(world):
     ca = cu[(cu["model"] == "cand") & (cu["threshold"] == "entity")]
     assert len(ca) and ca.loc[ca["attack"] == "dos_hulk", "detected"].all()
 
+    # The query attacker: two detectors and their union, which nothing passes more
+    # easily than a member (the shapes of each search are replayed against the others).
+    r = subprocess.run([sys.executable, "-m", "proteus.evaluation.query_attack", "--run", str(out),
+                        "--test", "net2", "--targets", "proteus", "rate_rules_local",
+                        "--union", "both=proteus,rate_rules_local", "--local", "rate_rules_local",
+                        "--attacks", "dos_hulk", "--days", "day1", "--budget", "12", "--grid", "10",
+                        "--rmax", "2", "--costly", "--tag", "e2e"],
+                       cwd=world, env=env, capture_output=True, text=True, check=False)
+    assert r.returncode == 0, r.stderr[-2000:]
+    q = pd.read_csv(out / "query_attack_0.001_e2e.csv")
+    assert len(q) == 6 and (q["query_flows_per_h"] >= q["search_flows_per_h"]).all()
+    for costly in (False, True):
+        d = q[q["costly"] == costly].set_index("target")["query_flows_per_h"]
+        assert d["both"] <= min(d["proteus"], d["rate_rules_local"])
+    free = q[~q["costly"]].set_index("target")["query_flows_per_h"]
+    assert (q[q["costly"]].set_index("target")["query_flows_per_h"] >= free).all()
+
     again = _run(world, "--train", "net1", "--test", "net2", "--reuse", str(out),
                  "--models", "proteus", "--tag", "e2e_reuse")
     assert again.returncode == 0, again.stderr[-2000:]

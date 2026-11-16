@@ -19,6 +19,13 @@ The search is a (1+1) hill-climb with rate racing:
    the best quiet rate: a quiet answer means the candidate is strictly better, and its
    rate is then pushed up by doubling steps and bisection; an alert costs one query.
 
+A search of this size does not converge, so a third step makes the results of one
+scenario consistent with each other:
+
+3. replay against each target the shapes found against the others, and keep the best
+   (``transfer``). Whatever passes a union passes each of its members, so after this
+   step a union is never reported as easier to evade than a member.
+
 A target may be a detector or a union of detectors (``h1.UNIONS``), which is quiet
 only when every member is. Thresholds, local detectors and the notion of a quiet
 query are those of ``evaluation.adaptive`` (``Oracle``).
@@ -160,6 +167,50 @@ def search(quiet: Callable[[Shape, int], bool], n_rates: int, budget: int,
     return {"index": best_i, "shape": best, "queries": used, "trace": trace}
 
 
+def transfer(quiet: Callable[[Shape, int], bool], n_rates: int, index: int,
+             shapes: list[tuple[Shape, int]]) -> dict:
+    """Replay shapes that other searches found: the highest quiet index over them.
+
+    A search of a few hundred queries does not converge, and a shape found against one
+    target often passes another at a higher rate than its own search reached (any shape
+    that passes a union passes each of its members). ``shapes`` gives every shape with
+    the index it reached elsewhere: it is tried there if that is above the best index
+    so far (else, or if that alerts, one step above the best) and climbed when quiet.
+    Returns the best index, its shape (None when no shape improved on ``index``) and
+    the queries used."""
+    used, best = 0, None
+
+    def ask(shape: Shape, i: int) -> bool:
+        nonlocal used
+        used += 1
+        return bool(quiet(shape, i))
+
+    for shape, hint in shapes:
+        if index >= n_rates - 1:
+            break
+        first, hi = min(max(hint, index + 1), n_rates - 1), n_rates
+        if ask(shape, first):
+            index = first
+        elif first > index + 1 and ask(shape, index + 1):
+            index, hi = index + 1, first
+        else:
+            continue
+        step = 1
+        while index + step < hi:  # doubling steps up, then bisection
+            if not ask(shape, index + step):
+                hi = index + step
+                break
+            index, step = index + step, step * 2
+        while hi - index > 1:
+            mid = (index + hi) // 2
+            if ask(shape, mid):
+                index = mid
+            else:
+                hi = mid
+        best = shape
+    return {"index": index, "shape": best, "queries": used}
+
+
 def submit(full: pd.DataFrame, sc, oracle: Oracle, rates: np.ndarray, rmax: float,
            members: list[str], sent: dict[int, int],
            max_flows: int | None = None) -> Callable[[Shape, int], bool]:
@@ -211,6 +262,8 @@ def main() -> None:
                     help="largest attack tried, in flows (higher rates count as alerted)")
     ap.add_argument("--costly", action="store_true",
                     help="also let the attacker spread over sources (reported apart)")
+    ap.add_argument("--no-transfer", action="store_true",
+                    help="do not replay against each target the shapes found against the others")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--tag", default="")
     args = ap.parse_args()
@@ -257,14 +310,15 @@ def main() -> None:
             span = max((A["t_end"].max() - A["t_start"].min()).total_seconds(), 1.0)
             full = nested_attack(sc, args.rmax, np.random.default_rng(args.seed))
             oracle = Oracle(sc, models, thr, base, specs)
+            found: list[dict] = []  # one per search of this scenario
             for target, ms in members.items():
                 free_shape = None
                 for costly in ([False, True] if args.costly else [False]):
                     sent: dict[int, int] = {}
                     quiet = submit(full, sc, oracle, rates, args.rmax, list(ms), sent,
                                    args.max_flows)
-                    # The search with sources starts from the best free shape, so that
-                    # what it reports is never below the free result.
+                    # The search with sources starts from the best free shape; the
+                    # transfer pass below then keeps it from reporting less than the free one.
                     res = search(quiet, len(rates), args.budget,
                                  np.random.default_rng(args.seed + 1), costly=costly,
                                  start=free_shape)
@@ -278,6 +332,9 @@ def main() -> None:
                                  "queries": res["queries"], "capped": bool(sent.get(-1)),
                                  "shape": json.dumps(asdict(res["shape"])),
                                  "rmax_flows_per_h": args.rmax * 3600})
+                    rows[-1]["search_flows_per_h"], rows[-1]["shape_from"] = rate * 3600, ""
+                    found.append({"row": rows[-1], "index": res["index"] if ok else -1,
+                                  "shape": res["shape"], "members": list(ms)})
                     print(rows[-1], flush=True)
                     traces += [{"day": day.stem, "attack": attack, "target": target,
                                 "costly": costly, "queries": t["queries"],
@@ -285,6 +342,30 @@ def main() -> None:
                                                 if t["index"] >= 0 else 0.0),
                                 "shape": json.dumps(t["shape"])} for t in res["trace"]]
                 save()
+            for f in ([] if args.no_transfer else found):
+                # Shapes of the other searches: the free ones always, those that spread
+                # over sources only for the search that may spread.
+                pool, seen = [], {json.dumps(asdict(f["shape"]))}
+                for g in sorted(found, key=lambda g: -g["index"]):
+                    key = json.dumps(asdict(g["shape"]))
+                    if g["index"] >= 0 and key not in seen and (
+                            f["row"]["costly"] or g["shape"].sources == 1):
+                        seen.add(key)
+                        pool.append((g["row"]["target"], g["shape"], g["index"]))
+                sent: dict[int, int] = {}
+                quiet = submit(full, sc, oracle, rates, args.rmax, f["members"], sent,
+                               args.max_flows)
+                res = transfer(quiet, len(rates), f["index"], [(s, i) for _, s, i in pool])
+                f["row"]["queries"] += res["queries"]
+                f["row"]["capped"] = f["row"]["capped"] or bool(sent.get(-1))
+                if res["shape"] is not None and sent.get(res["index"], 0) > 0:
+                    f["row"]["query_flows_per_h"] = float(rates[res["index"]]) * 3600
+                    f["row"]["shape"] = json.dumps(asdict(res["shape"]))
+                    f["row"]["shape_from"] = next(n for n, s, _ in pool if s == res["shape"])
+                    print("  transfer", {k: f["row"][k] for k in (
+                        "attack", "target", "costly", "search_flows_per_h",
+                        "query_flows_per_h", "shape_from")}, flush=True)
+            save()
     out = save()
     if len(out):
         print(out.pivot_table(index=["day", "attack"], columns=["target", "costly"],

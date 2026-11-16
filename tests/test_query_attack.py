@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from proteus.evaluation.query_attack import CHOICES, Shape, apply, mutate, search
+from proteus.evaluation.query_attack import CHOICES, Shape, apply, mutate, search, transfer
 
 
 def test_mutate_changes_the_shape_and_keeps_sources_unless_costly():
@@ -86,3 +86,31 @@ def test_submit_does_not_try_rates_above_the_flow_cap():
     sent: dict[int, int] = {}
     quiet = submit(full, None, None, np.array([1.0, 50.0, 100.0]), 100.0, [], sent, max_flows=400)
     assert quiet(Shape(), 2) is False and sent == {-1: 1}  # 1000 flows: over the cap, not sent
+
+
+def test_transfer_keeps_the_best_shape_found_elsewhere():
+    limit = {0: 3, 100: 9, 400: 6}  # quiet up to this index, by padding
+
+    def quiet(shape, i):
+        return i <= limit[shape.pad]
+
+    shapes = [(Shape(pad=400), 5), (Shape(pad=100), 2)]
+    res = transfer(quiet, 12, 3, shapes)
+    assert (res["index"], res["shape"]) == (9, Shape(pad=100))
+    # A shape that passes neither where it was found nor one step above the best costs
+    # at most two queries and changes nothing.
+    res = transfer(quiet, 12, 9, [(Shape(pad=400), 11), (Shape(pad=100), 9)])
+    assert (res["index"], res["shape"], res["queries"]) == (9, None, 3)
+
+
+def test_transfer_reaches_what_a_shape_reached_elsewhere_even_if_rates_are_not_monotone():
+    def quiet(shape, i):  # quiet at 8 and below 3, alerted in between
+        return i == 8 or i < 3
+
+    res = transfer(quiet, 12, 2, [(Shape(pad=100), 8)])
+    assert (res["index"], res["shape"]) == (8, Shape(pad=100))
+
+
+def test_transfer_stops_at_the_top_of_the_grid():
+    res = transfer(lambda shape, i: True, 5, 1, [(Shape(pad=100), 0), (Shape(pad=400), 0)])
+    assert (res["index"], res["shape"]) == (4, Shape(pad=100))
