@@ -1771,3 +1771,31 @@ Lectura, con cautelas:
 - Falta 2018 (esta versión carga todos los días en memoria), el criterio de `h1`, la unión con
   Proteus y, sobre todo, atacarlo: la forma del tráfico la controla el atacante, así que se espera
   que el atacante por consultas lo evada; lo que aportaría es cobertura sin garantía.
+
+## 6.62 El complemento de fidelidad por ventana con las métricas del paper, 2017 (2026-11-16, 17:25)
+
+`window_fidelity` reescrito para usar las filas, las campañas, el criterio estricto y el tráfico
+benigno limpio de `h1`, y para evaluarse en unión con las alertas por flujo de Proteus
+(`h1 --export-alerts`, etiqueta `r2_alerts`; salidas `r2_wf300` y `r2_wf30`). Las cifras de Proteus
+y del sistema de tres salen idénticas a las de la tabla del paper (11/11 a 1,75 y a 4,17), lo que
+valida el montaje. El complemento no usa ninguna red de entrenamiento: solo tráfico benigno de 2017.
+
+FPR objetivo 10⁻³, ventana de 300 s:
+
+| Detector | Volumétricas y escaneos | Otros ataques (10 campañas) | Alarmas por entidad/h |
+|---|---|---|---|
+| Fidelidad por ventana | 9/11 (pierde dos escaneos) | 4: FTP (recall 0,99), SSH 1/2 (0,50), infiltración 1/2, XSS (0,78) | 0,64 |
+| Clasificador por flujo (capa actual) | 10/11 | 1 (botnet) | 23,14 |
+| Proteus | 11/11 | 1 (SSH 1/2, recall 0,03) | 1,75 |
+| Proteus ∪ fidelidad | 11/11 | 4 | 2,39 |
+| Sistema de tres | 11/11 | 3 | 4,17 |
+| Sistema de tres ∪ fidelidad | 11/11 | 5 | 4,79 |
+
+- Con ventana de 30 s detecta menos (7/11 y 3/10 a 0,89): las ventanas largas le sientan mejor.
+- **Proteus ∪ fidelidad cubre más que el sistema de tres con casi la mitad de alarmas** (2,39 frente
+  a 4,17), aunque sin el certificado frente a reutilización que aporta Proteus-cert-R.
+- Ninguno detecta Heartbleed, la fuerza bruta web ni la inyección SQL; la botnet solo la ve el
+  clasificador por flujo, con el 6 % de sus flujos.
+- Cautelas: el umbral por tamaño y la ventana de 300 s se eligieron mirando estos datos; falta 2018
+  (`alerts_1718` y `wf300_1718`, en cola bajo el cerrojo) y atacarlo (el oráculo del atacante por
+  consultas trabaja con rasgos de evidencia, no con ventanas de flujos: hay que adaptarlo).
