@@ -84,7 +84,7 @@ def world(tmp_path_factory) -> Path:
 
 def test_cross_network_run_end_to_end(world):
     models = ["proteus", "proteus_cert", "proteus2", "proteus_cert_r", "rate_rules_local",
-              "rate_rules_sel", "flow_clf", "apollon"]
+              "rate_rules_sel", "flow_clf", "apollon", "rate_rules_r"]
     r = _run(world, "--train", "net1", "--test", "net2", "--models", *models,
              "--entity-budgets", "1", "--alert-variants", "--export-alerts", "--tag", "e2e")
     assert r.returncode == 0, r.stderr[-2000:]
@@ -123,6 +123,28 @@ def test_cross_network_run_end_to_end(world):
     assert same == local[local["model"] == "proteus"].sort_values(["day", "attack"])["detected_strict"].tolist()
     both = lw[(lw["model"] == "proteus_w") & (lw["attack"] == "dos_hulk")]
     assert both["detected_strict"].all()  # the union detects at least what Proteus does
+
+    # One calibrated maximum over the sub-cores of two fitted detectors (needs --reuse).
+    uni = _run(world, "--train", "net1", "--test", "net2", "--reuse", str(out), "--models",
+               "proteus&proteus_cert_r", "--entity-budgets", "1", "--export-alerts", "--tag", "e2e_uni")
+    assert uni.returncode == 0, uni.stderr[-2000:]
+    uni_dir = world / "experiments/outputs/h1/net1__net2__loo_labels__e2e_uni"
+    # Candidate systems from the per-flow alerts of the three runs.
+    un = world / "experiments/outputs/h1/net1__net2__loo_labels__e2e_unions"
+    r = subprocess.run([sys.executable, "-m", "proteus.evaluation.unions", "--test", "net2",
+                        "--alerts", str(out), str(wf), str(uni_dir),
+                        "--union", "cand=proteus,rate_rules_r,window_fidelity",
+                        "--out", str(un)], cwd=world, env=env, capture_output=True, text=True, check=False)
+    assert r.returncode == 0, r.stderr[-2000:]
+    cu = pd.read_csv(un / "campaigns.csv")
+    assert {"local", "entity"} <= set(cu["threshold"])
+    for m in ["cand", "proteus", "proteus&proteus_cert_r", "rate_rules_r", "window_fidelity"]:
+        got = cu[(cu["model"] == m) & (cu["threshold"] == "local") & (cu["target_fpr"] == 1e-3)]
+        assert set(got["day"]) == {"day0", "day1", "day2"}, m
+    pu = cu[(cu["model"] == "proteus") & (cu["threshold"] == "local") & (cu["target_fpr"] == 1e-3)]
+    assert pu.sort_values(["day", "attack"])["detected_strict"].tolist() == same
+    ca = cu[(cu["model"] == "cand") & (cu["threshold"] == "entity")]
+    assert len(ca) and ca.loc[ca["attack"] == "dos_hulk", "detected"].all()
 
     again = _run(world, "--train", "net1", "--test", "net2", "--reuse", str(out),
                  "--models", "proteus", "--tag", "e2e_reuse")

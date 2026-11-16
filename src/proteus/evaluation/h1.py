@@ -414,7 +414,8 @@ def training_set(ds: str, rng: np.random.Generator, cap_attack=50_000, cap_benig
 
 # Unsupervised detectors fitted, for each test day, on clean benign traffic of the
 # other days of the test network (no labels), like the local thresholds.
-LOCAL = {"rate_rules_local": RateRules, "rate_rules_sel": RateRules, "kitnet_local": KitNET}
+LOCAL = {"rate_rules_local": RateRules, "rate_rules_sel": RateRules, "rate_rules_r": RateRules,
+         "kitnet_local": KitNET}
 SEL_K = 10  # features kept by rate_rules_sel
 UNSUPERVISED = (RateRules, KitNET, CalibratedMax)
 
@@ -480,6 +481,7 @@ def detectors(specs: dict[str, str], flow_cols: list[str]) -> dict[str, tuple[li
     # unanswered) and packets (handshakes saved) can drop under reuse.
     raw_all = [k for k in specs if not k.endswith(("__b", "__x", "__xp"))]
     reuse_long = [k for k in long_rules if k.split("__")[1] in REUSE_SAFE]
+    reuse_all = [k for k in both if k.split("__")[1] in REUSE_SAFE]
     return {
         "core_mono_dst": (raw, hgb(cst(raw))),
         # Excess over the entity's own baseline, without the baseline itself: rarity
@@ -502,6 +504,9 @@ def detectors(specs: dict[str, str], flow_cols: list[str]) -> dict[str, tuple[li
         # Rate thresholds on the SEL_K features that separate attacks best on the
         # training network (columns chosen in main(); thresholds stay local).
         "rate_rules_sel": (rules, RateRules()),
+        # Rate thresholds on the evidence that connection reuse cannot lower (payload
+        # bytes and distinct counts), destination and source side, every time scale.
+        "rate_rules_r": (reuse_all, RateRules()),
         # Kitsune's detector on our damped per-entity statistics (its AfterImage
         # counterpart): every evidence feature of both sides, no baselines.
         "kitnet_local": (raw_all, KitNET()),

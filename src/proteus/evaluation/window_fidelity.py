@@ -224,6 +224,9 @@ def main() -> None:
                              + al[f"{m}__local{h1.FPRS[1]:g}"].astype(np.float64))
                 if f"{m}__side" in al:
                     sides[m] = al[f"{m}__side"]
+        h1.save_alerts(args.out / "alerts" / f"{day.stem}.npz",
+                       {("window_fidelity", fpr, "local"): (score > i, side)
+                        for i, fpr in enumerate(h1.FPRS)})
         th = {(m, fpr, "local"): 0.5 + i for m in scores for i, fpr in enumerate(h1.FPRS)}
         results.append(h1.evaluate(ev, scores, th, sides))
         print(f"  evaluated {day.stem}", flush=True)
