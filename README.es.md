@@ -47,10 +47,12 @@ El artículo está en preparación. Documentación completa, en inglés y españ
 Python ≥ 3.11 (los experimentos se hicieron con 3.12.3).
 
 ```sh
-uv venv && uv pip install -e ".[dev]"            # núcleo y tests
-uv pip install -e ".[attacks,packets]"            # ART (ataques a la cáscara) y dpkt (pcap)
-uv run pytest                                     # unos 120 tests, < 1 min
+uv sync --frozen --extra dev --extra attacks --extra packets   # versiones exactas del paper (uv.lock)
+uv run pytest                                     # unos 175 tests, tres minutos
 ```
+
+Sin el fichero de bloqueo: `uv venv && uv pip install -e ".[dev,attacks,packets]"` (ART solo hace falta
+para los ataques a la cáscara por flujo, dpkt para las capturas de paquetes).
 
 Versiones usadas en el paper: numpy 2.5.4, pandas 3.1.1, scikit-learn 1.9.1, scipy
 1.18.1, numba 0.68.1, pyarrow 26.0.1, adversarial-robustness-toolbox 1.20.1, dpkt

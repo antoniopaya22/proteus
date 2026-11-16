@@ -46,10 +46,12 @@ The paper is in preparation. Full documentation, in English and Spanish, at
 Python ≥ 3.11 (the experiments used 3.12.3).
 
 ```sh
-uv venv && uv pip install -e ".[dev]"            # core and tests
-uv pip install -e ".[attacks,packets]"            # ART (attacks on the shell) and dpkt (pcap)
-uv run pytest                                     # about 120 tests, under a minute
+uv sync --frozen --extra dev --extra attacks --extra packets   # exact versions of the paper (uv.lock)
+uv run pytest                                     # about 175 tests, three minutes
 ```
+
+Without the lockfile: `uv venv && uv pip install -e ".[dev,attacks,packets]"` (ART is only needed for
+the attacks on the per-flow shell, dpkt for packet captures).
 
 Versions used for the paper: numpy 2.5.4, pandas 3.1.1, scikit-learn 1.9.1, scipy
 1.18.1, numba 0.68.1, pyarrow 26.0.1, adversarial-robustness-toolbox 1.20.1, dpkt 1.9.8.
