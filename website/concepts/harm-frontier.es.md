@@ -116,6 +116,35 @@ procedimiento se aplica a los detectores de comparación (un núcleo sin restric
 umbrales de tasa, KitNET), lo que convierte la comparación en una de daño bajo el mismo
 atacante.
 
+## El atacante por consultas
+
+El atacante adaptativo prueba una lista de planes que escribió el defensor. Un atacante
+real no se limita a esa lista, así que Proteus se evalúa también contra uno que *busca*
+(`proteus.evaluation.query_attack`).
+
+- **Qué sabe.** Nada del detector: ni el modelo, ni los umbrales, ni qué mide.
+- **Qué controla.** La forma de su propio tráfico (relleno, paquetes insertados,
+  partición de flujos, señuelos, puertos de origen, peticiones por conexión, ráfagas y,
+  como opción costosa, el número de orígenes) y su ritmo.
+- **Qué observa.** Un bit por intento: si alguno de sus flujos fue alertado.
+
+Busca el ritmo más alto que pase, porque el ritmo es el daño. Primero tantea por
+bisección el ritmo del ataque sin disfraz. Después cambia uno o dos parámetros de su
+mejor forma y prueba el resultado un escalón por encima de su mejor ritmo. Si el intento
+es alertado, descarta el cambio y le ha costado una consulta. Si pasa, la forma nueva es
+mejor, y sube su ritmo hasta que vuelve a ser alertado. La búsqueda continúa desde la
+mejor forma encontrada hasta agotar el presupuesto de consultas.
+
+<div class="qa"></div>
+
+Cada ritmo que reporta está respaldado por un intento que pasó de verdad, así que es una
+cota inferior del daño que un detector deja pasar: con más consultas, o una búsqueda más
+lista, podría ser mayor. El objetivo puede ser un detector o una unión de detectores,
+que solo calla cuando callan todos sus miembros. La búsqueda no rompe el certificado. Lo
+que encuentra, cuando encuentra algo, es lo que el certificado no cubre: llevar muchas
+peticiones en una misma conexión; por eso el sistema desplegado incluye subnúcleos
+ajustados solo con evidencia que la reutilización de conexiones no puede bajar.
+
 ## Envenenamiento de la línea base
 
 Las operaciones gratuitas no pueden reducir la evidencia del día que se está puntuando,

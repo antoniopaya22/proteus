@@ -4,6 +4,15 @@ A conventional intrusion detector listens to traffic and classifies each connect
 Proteus also listens and classifies, but it classifies something else: the state of the
 machines that a connection touches.
 
+## Two terms first
+
+- **An alert** is Proteus saying *this machine is under attack right now*. It names a
+  service, a host or a source, and it carries the tallies that triggered it, so an
+  analyst can see why.
+- **A certified alert** is an alert that comes with a proof: no amount of padding,
+  decoy traffic or connection splitting could have avoided it. The only thing that
+  could is sending less, which makes the attack weaker.
+
 ## The idea in one minute
 
 - **A conventional detector asks, for every connection: does this connection look like

@@ -110,6 +110,35 @@ reported as well. The same procedure is applied to the comparison detectors
 (an unconstrained core, rate thresholds, KitNET), which makes the comparison one of
 damage under the same attacker.
 
+## The query attacker
+
+The adaptive attacker tries a list of plans that the defender wrote. A real attacker is
+not limited to that list, so Proteus is also evaluated against one that *searches*
+(`proteus.evaluation.query_attack`).
+
+- **What it knows.** Nothing about the detector: no model, no thresholds, no features.
+- **What it controls.** The shape of its own traffic (padding, inserted packets, split
+  flows, decoys, source ports, requests per connection, bursts and, as a costly option,
+  the number of sources) and its rate.
+- **What it observes.** One bit per attempt: whether any of its flows was alerted.
+
+It wants the highest rate that passes, because rate is damage. It first probes the rate
+of the plain attack by bisection. Then it changes one or two parameters of its best
+shape and tries the result one step above its best rate. If the attempt is alerted,
+the change is dropped at the cost of one query. If it passes, the new shape is better,
+and its rate is pushed up until it is alerted again. The search goes on from the best
+shape found until the query budget is spent.
+
+<div class="qa"></div>
+
+Every rate it reports is backed by an attempt that really passed, so it is a lower
+bound on the damage a detector lets through: with more queries, or a smarter search,
+it could be higher. The target can be one detector or a union of detectors, which is
+quiet only when every member is. The search does not break the certificate. What it
+finds, when it finds something, is what the certificate does not cover: carrying many
+requests in one connection, which is why the deployed system includes sub-cores fitted
+only on evidence that connection reuse cannot lower.
+
 ## Baseline poisoning
 
 Free operations cannot lower the evidence of the day being scored, but an attacker who

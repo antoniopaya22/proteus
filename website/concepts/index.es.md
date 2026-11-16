@@ -4,6 +4,15 @@ Un detector de intrusiones convencional escucha el tráfico y clasifica cada con
 Proteus también escucha y clasifica, pero clasifica otra cosa: el estado de las máquinas
 que cada conexión toca.
 
+## Dos términos antes de empezar
+
+- **Una alerta** es Proteus diciendo *esta máquina está siendo atacada ahora mismo*.
+  Señala un servicio, una máquina o un origen, y lleva los marcadores que la han
+  disparado, para que un analista vea por qué.
+- **Una alerta certificada** es una alerta que viene con una prueba: ninguna cantidad
+  de relleno, tráfico señuelo o partición de conexiones la habría evitado. Lo único que
+  podría evitarla es enviar menos, y eso debilita el ataque.
+
 ## La idea en un minuto
 
 - **Un detector convencional pregunta, por cada conexión: ¿esta conexión parece un

@@ -112,3 +112,46 @@
 @media (prefers-reduced-motion: reduce) {
   .wt-bars i b, .wt-str b { transition: none; }
 }
+
+/* ---- Query attacker demo (javascripts/querydemo.js) ---------------------- */
+.qa {
+  --wt-ink: var(--pt-head, #161616); --wt-text: var(--pt-text, #3d3c38); --wt-muted: var(--pt-muted, #6f6d66);
+  --wt-line: var(--pt-line, #e3e0d8); --wt-surface: var(--pt-surface, #fff); --wt-soft: var(--pt-bg-soft, #f2f0eb);
+  --wt-sig: var(--pt-sig, #14b86a); --wt-atk: #d9822b;
+  margin: 1.6rem 0 2rem; border: 1px solid var(--wt-line); border-radius: 16px; background: var(--wt-surface);
+  color: var(--wt-text); font-size: .78rem; line-height: 1.45; overflow: hidden;
+}
+.qa * { box-sizing: border-box; }
+.md-typeset .qa ul, .qa ul { list-style: none; margin: 0; padding: 0; }
+.md-typeset .qa ul li { margin: 0; }
+.md-typeset .qa h4, .qa h4 { margin: 0; font-size: .9rem; color: var(--wt-ink); text-transform: none; letter-spacing: -.01em; }
+.md-typeset .qa p { margin-left: 0; margin-right: 0; }
+.qa-head { display: flex; flex-wrap: wrap; gap: .6rem 1rem; align-items: center; justify-content: space-between; padding: .9rem; background: var(--wt-soft); }
+.qa-seg { display: flex; align-items: center; gap: .3rem; }
+.qa-seg span { font-size: .7rem; color: var(--wt-muted); margin-right: .2rem; }
+.qa button { font: inherit; font-weight: 600; cursor: pointer; padding: .4rem .8rem; border-radius: 8px; border: 1px solid var(--wt-line); background: var(--wt-surface); color: var(--wt-ink); }
+.qa button:focus-visible { outline: 2px solid var(--wt-sig); outline-offset: 2px; }
+.qa-seg button.is-on, .qa .qa-play { background: var(--wt-ink); color: var(--wt-surface); border-color: var(--wt-ink); }
+.qa-axis { padding: 2.4rem .9rem .2rem; }
+.qa-track { position: relative; height: 14px; border-radius: 7px; background: var(--wt-soft); }
+.qa-best { position: absolute; inset: 0 auto 0 0; border-radius: 7px; background: color-mix(in srgb, var(--wt-sig) 45%, transparent); transition: width .3s; }
+.qa-real { position: absolute; top: -8px; bottom: -8px; width: 0; border-left: 2px dashed var(--wt-ink); }
+.qa-real em { position: absolute; bottom: 100%; left: 0; transform: translateX(-50%); white-space: nowrap; font: 600 .62rem var(--pt-mono, ui-monospace, monospace); font-style: normal; color: var(--wt-ink); padding-bottom: 2px; }
+.qa-dot { position: absolute; top: 50%; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; border: 2px solid var(--wt-surface); }
+.qa-dot.is-ok { background: var(--wt-sig); }
+.qa-dot.is-no { background: var(--wt-atk); }
+.qa-dot.is-last { width: 16px; height: 16px; margin: -8px 0 0 -8px; box-shadow: 0 0 0 2px var(--wt-ink); z-index: 1; }
+.qa-axis p { margin: .5rem 0 0; font-size: .66rem; color: var(--wt-muted); text-align: right; }
+.qa-info { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 3fr); gap: .9rem 1.2rem; padding: .7rem .9rem .9rem; align-items: start; }
+.qa-info span { display: block; font-size: .7rem; color: var(--wt-muted); margin-bottom: .15rem; }
+.qa-info > div > b { font: 700 1.05rem var(--pt-mono, ui-monospace, monospace); color: var(--wt-ink); }
+.qa-shape ul { display: flex; flex-wrap: wrap; gap: .3rem; }
+.qa-shape li { padding: .25rem .6rem; border: 1px solid var(--wt-line); border-radius: 999px; font-size: .68rem; color: var(--wt-muted); }
+.qa-shape li b { font-family: var(--pt-mono, ui-monospace, monospace); color: inherit; }
+.qa-shape li.is-on { border-color: var(--wt-atk); color: var(--wt-ink); background: color-mix(in srgb, var(--wt-atk) 14%, transparent); }
+.qa-foot { padding: .9rem; border-top: 1px solid var(--wt-line); background: var(--wt-soft); }
+.qa-msg { margin: 0 0 .7rem; min-height: 1.5em; font-size: .9rem; color: var(--wt-ink); }
+.qa-nav { display: flex; flex-wrap: wrap; gap: .4rem; }
+.qa-note { margin: .7rem 0 0; font-size: .66rem; color: var(--wt-muted); }
+[data-md-color-scheme="slate"] .qa-seg button.is-on, [data-md-color-scheme="slate"] .qa .qa-play { background: #f2f0eb; color: #161616; border-color: #f2f0eb; }
+@media (max-width: 720px) { .qa-info { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .qa-shape { grid-column: 1 / -1; } }

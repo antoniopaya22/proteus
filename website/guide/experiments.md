@@ -24,6 +24,7 @@ The table summarises the modules; each one is described below.
 | [`frontier_exp`](#frontier_exp) | Harm frontier per attack type (destination side) |
 | [`frontier_scan`](#frontier_scan) | Harm frontier of horizontal scans (source side) |
 | [`adaptive`](#adaptive) | Damage under an adaptive attacker (rate, free operations, mimicry) |
+| [`query_attack`](#query_attack) | Damage under an attacker that searches with hard-label queries |
 | [`poisoning`](#poisoning) | Baseline poisoning and growth of benign baselines |
 | [`packet_check`](#packet_check) | Check of the certificate on real packets |
 | [`smoothing`](#smoothing) | Whether a budget certificate (randomised smoothing) covers free operations |
@@ -193,6 +194,23 @@ PROTEUS_EVIDENCE=v3 python -m proteus.evaluation.adaptive \
 | `--attacks` | Restrict to some attack types |
 
 Outputs: `adaptive_<fpr>.csv` and `adaptive_ladder_<fpr>.csv` in the run directory.
+
+## `query_attack`
+
+A black-box attacker that searches the shape and the rate of its traffic and observes
+only whether it was alerted (see [Harm frontier](../concepts/harm-frontier.md#the-query-attacker)).
+
+```bash
+PROTEUS_EVIDENCE=v3 python -m proteus.evaluation.query_attack \
+    --run experiments/outputs/h1/csecicids2018__cicids2017__loo_labels__r2 \
+    --test cicids2017 --targets proteus proteus_sys_r rate_rules_local \
+    --budget 150 --costly
+```
+
+Options: `--targets` (detectors or unions of detectors), `--budget` (queries per target
+and scenario), `--grid`, `--rmin`, `--rmax`, `--costly` (also spread over sources),
+`--attacks`, `--days`, `--fpr`, `--seed`, `--tag`. Results: `query_attack_<fpr>.csv` and
+`query_attack_trace_<fpr>.csv` in the run directory.
 
 ## `poisoning`
 

@@ -53,47 +53,28 @@
         </div>
       </div>
 
-      <figure class="sc" id="sc" aria-label="{{ t.hero_aria }}">
-        <figcaption class="sc-cap"><span>{{ t.hero_card }}</span><span class="sc-cap__r">{{ t.simulation }} · t = <b id="sc-clock">00:00</b></span></figcaption>
-        <div class="sc-net">
-          <div class="sc-node sc-node--atk">
-            <i class="sc-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></i>
-            <b>{{ t.sc_attacker }}</b><span id="sc-src">198.51.100.7 :41022</span>
+      <figure class="hd" id="hd" aria-label="{{ t.hero_aria }}">
+        <div class="hd-net" aria-hidden="true">
+          <span class="hd-node hd-node--atk">{{ t.hd_atk }}</span>
+          <span class="hd-wire"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+          <span class="hd-node">{{ t.hd_srv }}</span>
+        </div>
+        <div class="hd-lanes">
+          <div class="hd-lane">
+            <h3>{{ t.hd_a_title }}</h3><p>{{ t.hd_a_sub }}</p>
+            <b class="hd-v" id="hd-v1"></b>
           </div>
-          <div class="sc-wire" id="sc-w1"></div>
-          <div class="sc-node sc-node--exp">
-            <i class="sc-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="10" rx="2"/><path d="M7 12h.01M11 12h.01M15 12h2"/></svg></i>
-            <b>{{ t.sc_exporter }}</b><span>Δ = 120 s</span>
-          </div>
-          <div class="sc-wire" id="sc-w2"></div>
-          <div class="sc-node sc-node--vic">
-            <i class="sc-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="7" rx="1.5"/><rect x="4" y="14" width="16" height="7" rx="1.5"/><path d="M8 6.5h.01M8 17.5h.01"/></svg></i>
-            <b>{{ t.sc_victim }}</b><span>10.0.4.17 :443</span>
+          <div class="hd-lane hd-lane--p">
+            <h3>{{ t.hd_b_title }}</h3><p>{{ t.hd_b_sub }}</p>
+            <div class="hd-bar"><i class="hd-bar__n" title="{{ t.hd_normal }}"></i><i class="hd-bar__t" title="{{ t.hd_thr }}"></i><b id="hd-bar"></b></div>
+            <b class="hd-v" id="hd-v2"></b>
           </div>
         </div>
-        <div class="sc-read">
-          <div class="sc-col">
-            <h3>{{ t.op_label }}</h3>
-            <ol class="sc-ops" id="sc-ops">{% for o in t.ops %}<li><span>0{{ loop.index }}</span>{{ o }}</li>{% endfor %}</ol>
-          </div>
-          <div class="sc-col">
-            <h3>{{ t.perflow }}</h3>
-            <div class="sc-meter" id="sc-m1"><i class="sc-meter__thr"></i><i class="sc-meter__bar"></i></div>
-            <div class="sc-scale"><span>0</span><span>{{ t.thr }}</span><span>1</span></div>
-            <p class="sc-verdict" id="sc-v1">{{ t.v_alert }}</p>
-            <p class="sc-note">{{ t.sc_flow_note }}</p>
-          </div>
-          <div class="sc-col sc-col--ev">
-            <h3>{{ t.proteus_core }}</h3>
-            <ul class="sc-ctr" id="sc-ctr">{% for c in t.counters %}<li><span>{{ c }}</span><b>0</b><i>↑</i></li>{% endfor %}</ul>
-            <div class="sc-meter sc-meter--ev" id="sc-m2"><i class="sc-meter__thr"></i><i class="sc-meter__bar"></i><i class="sc-meter__worst"></i></div>
-            <div class="sc-scale"><span>0</span><span>{{ t.thr }} · <em>{{ t.worst }}</em></span><span>1</span></div>
-            <p class="sc-verdict is-cert" id="sc-v2">{{ t.v_cert }}</p>
-          </div>
-        </div>
+        <figcaption class="hd-cap"><ol class="hd-dots" id="hd-dots">{% for c in t.hd_caps %}<li></li>{% endfor %}</ol><span id="hd-cap" aria-live="polite"></span></figcaption>
+        <script type="application/json" id="hd-data">{{ {"caps": t.hd_caps, "v": t.hd_v} | tojson }}</script>
       </figure>
 
-      <div class="lp-strip">
+      <div class="lp-strip lp-strip--2">
         {% for k, v in t.strip %}<div><span>{{ k }}</span><b>{{ v }}</b></div>{% endfor %}
       </div>
     </div>

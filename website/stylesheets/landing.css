@@ -326,3 +326,66 @@ body { background: var(--sand); }
   html { scroll-behavior: auto; }
   .lp *, .lp *::before, .lp *::after { transition: none !important; }
 }
+
+/* ---- Hero diagram: the same flood seen by two detectors -------------------- */
+.hd { margin: clamp(1.6rem, 3.4vh, 3rem) 0 0; padding: clamp(1rem, 2.2vh, 1.6rem) clamp(1rem, 2.4vw, 1.9rem); border-radius: 24px; background: var(--paper); }
+.hd-net { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 1rem; }
+.hd-node { padding: .55rem 1rem; border: 1.5px solid var(--line-2); border-radius: 12px; background: var(--sand); font: 500 .78rem/1 var(--mono); letter-spacing: .04em; }
+.hd-node--atk { border-color: #d9822b; }
+.hd-wire { position: relative; height: 2px; background: var(--line-2); overflow: visible; }
+.hd-wire i { position: absolute; top: -4px; left: 0; width: 10px; height: 10px; border-radius: 50%; background: #d9822b; opacity: 0; animation: hd-fly 2.4s linear infinite; }
+.hd-wire i:nth-child(2) { animation-delay: .4s; } .hd-wire i:nth-child(3) { animation-delay: .8s; }
+.hd-wire i:nth-child(4) { animation-delay: 1.2s; } .hd-wire i:nth-child(5) { animation-delay: 1.6s; } .hd-wire i:nth-child(6) { animation-delay: 2s; }
+.hd[data-level="0"] .hd-wire i { animation: none; }
+.hd[data-level="1"] .hd-wire i:nth-child(n+2) { animation: none; }
+.hd[data-level="2"] .hd-wire i:nth-child(n+5) { animation: none; }
+.hd[data-step="2"] .hd-wire i, .hd[data-step="3"] .hd-wire i { width: 15px; height: 15px; top: -6.5px; border: 3px solid #f0c48f; }
+@keyframes hd-fly { 0% { left: 0; opacity: 0; } 8% { opacity: 1; } 92% { opacity: 1; } 100% { left: calc(100% - 10px); opacity: 0; } }
+.hd-lanes { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(.8rem, 2vw, 1.6rem); margin-top: clamp(.9rem, 2vh, 1.5rem); }
+.hd-lane { display: grid; grid-template-rows: auto auto 1fr auto; padding: 1rem 1.1rem; border: 1px solid var(--line); border-radius: 16px; }
+.hd-lane--p { border-color: var(--ink); }
+.hd-lane h3 { font-weight: 500; font-size: 1.05rem; letter-spacing: -.02em; }
+.hd-lane p { margin: .25rem 0 .9rem; font-size: .84rem; line-height: 1.45; color: var(--muted); }
+.hd-bar { position: relative; align-self: end; height: 12px; margin: 0 0 .9rem; border-radius: 6px; background: var(--sand); }
+.hd-bar b { position: absolute; inset: 0 auto 0 0; width: 14%; border-radius: 6px; background: #d9822b; transition: width .9s cubic-bezier(.3, .7, .2, 1); }
+.hd-bar i { position: absolute; top: -4px; bottom: -4px; width: 0; }
+.hd-bar__n { left: 14%; border-left: 2px solid var(--sig); }
+.hd-bar__t { left: 42%; border-left: 2px dashed var(--ink); }
+.hd-v { align-self: end; display: block; padding: .6rem .8rem; border-radius: 10px; text-align: center; font: 600 .78rem/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; background: var(--sand); color: var(--muted); transition: background .3s, color .3s; }
+.hd-v[data-s="alert"] { background: var(--ink); color: var(--paper); }
+.hd-v[data-s="cert"] { background: var(--sig); color: #06240f; }
+.hd-v[data-s="missed"] { background: transparent; color: #c2410c; outline: 1.5px dashed #c2410c; outline-offset: -1.5px; }
+.hd-cap { display: flex; align-items: center; gap: 1rem; margin-top: clamp(.8rem, 1.8vh, 1.2rem); min-height: 2.9em; font-size: .98rem; line-height: 1.45; }
+.hd-dots { display: flex; gap: .35rem; margin: 0; padding: 0; list-style: none; }
+.hd-dots li { width: 1.5rem; height: 5px; border-radius: 3px; background: var(--line-2); cursor: pointer; transition: background .3s; }
+.hd-dots li.is-on { background: var(--ink); }
+.lp-strip--2 { grid-template-columns: repeat(2, 1fr); }
+.lp-strip--2 b { display: block; font-size: 1rem; line-height: 1.45; font-weight: 400; }
+@media (max-width: 720px) { .hd-lanes, .lp-strip--2 { grid-template-columns: 1fr; } .hd-cap { flex-direction: column; align-items: flex-start; } }
+@media (prefers-reduced-motion: reduce) { .hd-wire i { animation: none; opacity: 1; left: 40%; } .hd-bar b { transition: none; } }
+
+/* ---- One slide per scroll stroke -----------------------------------------
+   Every section fills the viewport and the page snaps to its top. A section
+   taller than the viewport still scrolls inside itself before the next snap. */
+@media (min-width: 900px) and (min-height: 620px) {
+  /* Sizes follow the height of the window, so that a slide fits a laptop screen. */
+  html { scroll-snap-type: y mandatory; font-size: clamp(11.5px, 1.62vh, 16px) !important; }
+  .lp-hero, .lp-sec {
+    min-height: 100svh; display: flex; flex-direction: column; justify-content: center;
+    scroll-snap-align: start; scroll-snap-stop: always;
+  }
+  .lp-hero > *, .lp-sec > * { width: 100%; }
+  .lp-sec { padding: clamp(4.6rem, 9vh, 7rem) 0 clamp(1.6rem, 4vh, 3.5rem); scroll-margin-top: 0; }
+  .lp-hero { padding: clamp(4.4rem, 9vh, 7rem) 0 clamp(1.2rem, 2.5vh, 2.5rem); }
+  .lp-hero .lp-strip { margin-top: clamp(1rem, 2.4vh, 2.4rem); }
+  .lp-foot { scroll-snap-align: end; }
+  /* The walkthrough is the tallest block: tighten it on the landing page. */
+  #walkthrough .lp-split { margin-bottom: 1rem; }
+  #walkthrough .wt { margin: .6rem 0 0; }
+  #walkthrough .wt-stage svg { max-height: 108px; }
+  #walkthrough .wt-text { min-height: 3.1em; margin-bottom: .6rem; font-size: .88rem; }
+  #walkthrough .wt-panels { padding-top: .4rem; padding-bottom: .5rem; }
+  #walkthrough .wt-story { padding: .7rem .9rem; }
+  #walkthrough .wt-note { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { html { scroll-snap-type: none; } }

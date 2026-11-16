@@ -25,6 +25,7 @@ La tabla resume los módulos; cada uno se describe más abajo.
 | [`frontier_exp`](#frontier_exp) | Frontera de daño por tipo de ataque (lado del destino) |
 | [`frontier_scan`](#frontier_scan) | Frontera de daño de los escaneos horizontales (lado del origen) |
 | [`adaptive`](#adaptive) | Daño bajo un atacante adaptativo (tasa, operaciones gratuitas, mimetismo) |
+| [`query_attack`](#query_attack) | Daño bajo un atacante que busca con consultas de etiqueta dura |
 | [`poisoning`](#poisoning) | Envenenamiento de la línea base y crecimiento de las líneas base benignas |
 | [`packet_check`](#packet_check) | Comprobación del certificado sobre paquetes reales |
 | [`smoothing`](#smoothing) | Si un certificado de presupuesto (suavizado aleatorizado) cubre las operaciones gratuitas |
@@ -199,6 +200,23 @@ PROTEUS_EVIDENCE=v3 python -m proteus.evaluation.adaptive \
 
 Resultados: `adaptive_<fpr>.csv` y `adaptive_ladder_<fpr>.csv` en el directorio de la
 ejecución.
+
+## `query_attack`
+
+Un atacante de caja negra que busca la forma y el ritmo de su tráfico y solo observa si
+fue alertado (véase [Frontera de daño](../concepts/harm-frontier.md#el-atacante-por-consultas)).
+
+```bash
+PROTEUS_EVIDENCE=v3 python -m proteus.evaluation.query_attack \
+    --run experiments/outputs/h1/csecicids2018__cicids2017__loo_labels__r2 \
+    --test cicids2017 --targets proteus proteus_sys_r rate_rules_local \
+    --budget 150 --costly
+```
+
+Opciones: `--targets` (detectores o uniones de detectores), `--budget` (consultas por
+objetivo y escenario), `--grid`, `--rmin`, `--rmax`, `--costly` (también repartirse entre
+orígenes), `--attacks`, `--days`, `--fpr`, `--seed`, `--tag`. Resultados:
+`query_attack_<fpr>.csv` y `query_attack_trace_<fpr>.csv` en el directorio de la ejecución.
 
 ## `poisoning`
 

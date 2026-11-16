@@ -23,131 +23,36 @@
     stagesHead: "# stages, in order",
   };
 
-  // ------------------------------------------------------------- hero scene
-  // The attacker changes shape step by step (pad, split, decoys, new source
-  // ports). The per-flow score moves both ways and ends below its threshold;
-  // the counters on the victim only grow and the Proteus alert stays certified.
-  (function scene() {
-    const sc = document.getElementById("sc");
-    if (!sc) return;
-    const w1 = document.getElementById("sc-w1"), w2 = document.getElementById("sc-w2");
-    const ops = Array.from(sc.querySelectorAll("#sc-ops li"));
-    const ctr = Array.from(sc.querySelectorAll("#sc-ctr li"));
-    const m1 = document.getElementById("sc-m1"), m2 = document.getElementById("sc-m2");
-    const bar1 = m1.querySelector(".sc-meter__bar"), bar2 = m2.querySelector(".sc-meter__bar"), worst = m2.querySelector(".sc-meter__worst");
-    const v1 = document.getElementById("sc-v1"), src = document.getElementById("sc-src"), clock = document.getElementById("sc-clock");
-    const vic = sc.querySelector(".sc-node--vic");
-    const FLOW = [0.82, 0.58, 0.41, 0.47, 0.31], THR = 0.5, SLACK = 0.1;
-    const val = [1204, 1652310, 1310, 1];          // flows :443, bytes :443, flows host, source ports
-    const fmt = (n) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ES ? "." : ",");
-    let step = 0, ev = 0.66, port = 41022, simT = 0;
-
-    function setStep(k) {
-      step = k;
-      if (k === 0) src.textContent = "198.51.100.7 :41022";
-      ops.forEach((li, i) => { li.classList.toggle("is-done", i < k - 1); li.classList.toggle("is-on", i === k - 1); });
-      const s1 = FLOW[k], caught = s1 >= THR;
-      bar1.style.width = `${s1 * 100}%`;
-      bar1.classList.toggle("is-missed", !caught);
-      v1.textContent = caught ? T.alert : T.missed;
-      v1.className = "sc-verdict" + (caught ? "" : " is-missed");
+  // -------------------------------------------------------------- hero duel
+  // The same flood, seen by a detector that judges each connection and by
+  // Proteus, through five moments: quiet, flood, padding, more disguise, less traffic.
+  (function hero() {
+    const hd = document.getElementById("hd");
+    const data = document.getElementById("hd-data");
+    if (!hd || !data) return;
+    const D = JSON.parse(data.textContent);
+    const v1 = document.getElementById("hd-v1"), v2 = document.getElementById("hd-v2");
+    const bar = document.getElementById("hd-bar"), cap = document.getElementById("hd-cap");
+    const dots = document.getElementById("hd-dots").children;
+    // [verdict of the per-connection detector, verdict of Proteus, tally (% of the bar), attack level 0-3]
+    const STEPS = [["quiet", "quiet", 14, 0], ["alert", "alert", 62, 2], ["missed", "cert", 78, 2],
+                   ["missed", "cert", 94, 3], ["quiet", "quiet", 30, 1]];
+    let i = 0, id = 0;
+    function show(k) {
+      i = k % STEPS.length;
+      const [a, b, w, lvl] = STEPS[i];
+      v1.textContent = D.v[a]; v1.dataset.s = a;
+      v2.textContent = D.v[b]; v2.dataset.s = b;
+      bar.style.width = w + "%";
+      hd.dataset.level = lvl; hd.dataset.step = i;
+      cap.textContent = D.caps[i];
+      Array.prototype.forEach.call(dots, (d, n) => d.classList.toggle("is-on", n === i));
     }
-    function setEvidence() {
-      ev = Math.min(0.9, ev);
-      bar2.style.width = `${ev * 100}%`;
-      worst.style.left = `${(ev - SLACK) * 100}%`;
-    }
-    function bump(i, d) {
-      if (!d) return;
-      val[i] += d;
-      const li = ctr[i];
-      li.querySelector("b").textContent = fmt(val[i]);
-      li.classList.add("is-up");
-      clearTimeout(li._t);
-      li._t = setTimeout(() => li.classList.remove("is-up"), 450);
-    }
-    ctr.forEach((li, i) => { li.querySelector("b").textContent = fmt(val[i]); });
-    setEvidence();
-
-    if (reduce) {
-      setStep(4);
-      [[0.15, "pk pk--frag"], [0.45, "pk pk--decoy"], [0.75, "pk pk--frag"]].forEach(([x, c]) => {
-        [w1, w2].forEach((w) => { const e = document.createElement("i"); e.className = c; e.style.left = `${x * 100}%`; w.appendChild(e); });
-      });
-      return;
-    }
-
-    // packets
-    const live = [];
-    const LEG = 1150;                               // ms per wire
-    function spawn(decoy) {
-      const pad = step >= 1, split = step >= 2, rot = step >= 4;
-      let cls = "pk";
-      if (decoy) cls += " pk--decoy";
-      else if (split) cls += " pk--frag";
-      else if (pad) cls += " pk--pad";
-      const e = document.createElement("i");
-      e.className = cls;
-      if (split && !decoy) e.style.boxShadow = "8px 0 0 var(--ink), 16px 0 0 var(--ink)";
-      if (rot && !decoy) { port = 49152 + Math.floor(Math.random() * 16000); e.dataset.port = ":" + port; src.textContent = "198.51.100.7 :" + port; }
-      w1.appendChild(e);
-      live.push({ e, t0: performance.now(), leg: 0, decoy, pad, split, rot });
-    }
-    function arrive(p) {
-      if (p.decoy) { bump(2, 1); ev += 0.004; }
-      else {
-        const n = p.split ? 3 : 1;
-        bump(0, n);
-        bump(1, (p.pad ? 1460 : 620) * n + Math.floor(Math.random() * 90));
-        bump(2, n);
-        if (p.rot) bump(3, 1);
-        ev += 0.003 * n;
-      }
-      setEvidence();
-      vic.classList.add("is-hit");
-      clearTimeout(vic._t);
-      vic._t = setTimeout(() => vic.classList.remove("is-hit"), 160);
-    }
-
-    let running = false, last = 0, nextSpawn = 0, nextStep = 0, decoyFlip = false, raf = 0;
-    function frame(now) {
-      if (!running) return;
-      const dt = last ? Math.min(100, now - last) : 16;
-      last = now;
-      simT += dt * 6;
-      const sec = Math.floor(simT / 1000);
-      clock.textContent = `${String(Math.floor(sec / 60) % 100).padStart(2, "0")}:${String(sec % 60).padStart(2, "0")}`;
-      if (now >= nextStep) {
-        const k = step >= 4 ? 0 : step + 1;
-        setStep(k);
-        nextStep = now + (k === 4 ? 4600 : 3200);
-      }
-      if (now >= nextSpawn) {
-        spawn(false);
-        if (step >= 3) { decoyFlip = !decoyFlip; if (decoyFlip) setTimeout(() => running && spawn(true), 210); }
-        nextSpawn = now + 430;
-      }
-      for (let i = live.length - 1; i >= 0; i--) {
-        const p = live[i], w = p.leg ? w2 : w1, u = (now - p.t0) / LEG;
-        if (u >= 1) {
-          p.e.remove();
-          if (p.leg) { arrive(p); live.splice(i, 1); continue; }
-          p.leg = 1; p.t0 = now;
-          w2.appendChild(p.e);
-          p.e.style.transform = "translateX(0)";
-          continue;
-        }
-        const span = Math.max(0, w.clientWidth - p.e.offsetWidth - (p.split && !p.decoy ? 16 : 0));
-        p.e.style.transform = `translateX(${(u * span).toFixed(1)}px)`;
-      }
-      raf = requestAnimationFrame(frame);
-    }
-    function start() { if (running) return; running = true; last = 0; const n = performance.now(); nextSpawn = n; if (!nextStep) nextStep = n; else nextStep = Math.max(nextStep, n); raf = requestAnimationFrame(frame); }
-    function stop() { running = false; cancelAnimationFrame(raf); }
-    setStep(0);
-    nextStep = performance.now() + 2600;
-    new IntersectionObserver((es) => es.forEach((e) => (e.isIntersecting && !document.hidden ? start() : stop())), { threshold: 0.05 }).observe(sc);
-    document.addEventListener("visibilitychange", () => { if (document.hidden) stop(); else if (sc.getBoundingClientRect().top < innerHeight) start(); });
+    Array.prototype.forEach.call(dots, (d, n) => d.addEventListener("click", () => { show(n); restart(); }));
+    function restart() { clearInterval(id); if (!reduce) id = setInterval(() => show(i + 1), 4200); }
+    show(reduce ? 3 : 0);
+    restart();
+    document.addEventListener("visibilitychange", () => { if (document.hidden) clearInterval(id); else restart(); });
   })();
 
   // ------------------------------------------------------------ final tally
