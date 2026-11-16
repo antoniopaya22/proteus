@@ -64,7 +64,9 @@ La ronda 1 son las fases A–E de abajo.
       (`proteus classic`, commit 0541084). 2017 hecho (`classic__cicids2017__r2`); 2018 en cola.
 - [x] Línea base `rate_rules_sel`: reglas sobre los 10 rasgos que mejor separan en la red de
       entrenamiento (commit del código). En cola en los dos sentidos (`sel.sh`).
-- [ ] `proteus_free` (homólogo justo sin restricciones) en las tablas de detección, daño y banco.
+- [x] Tabla de detección r2 (`tables h1 --set r2`): Proteus, sistema, certificadas, certificadas
+      frente a reutilización, `proteus_free`, reglas, KitNET, flujo; alarmas por entidad y por
+      destino-minuto; criterio estricto. Falta `proteus_free` en daño y banco (con `adapt2`).
 - [ ] Líneas base causales y sin etiquetas (`--baseline prior --mask none`) en 18 → 17, en
       `seeds.sh`. Los umbrales siguen usando las etiquetas para elegir el benigno limpio: decirlo.
 - [ ] UGR'16: alarmas/h corregidas por el muestreo del 1 % o cota declarada.
