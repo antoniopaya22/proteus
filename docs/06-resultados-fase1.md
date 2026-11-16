@@ -2043,7 +2043,7 @@ Comparación de los dos candidatos según el umbral (2018 → 2017; alarmas por 
 
 | | FPR 10⁻³: conserva / alarmas | FPR 10⁻⁴: conserva / alarmas |
 |---|---|---|
-| P ∪ cR | 5,8 % / 4,10 | 21 % / 0,8 (sistema de tres: 0,83) |
+| P ∪ cR | 5,8 % / 4,10 | 21 % / ≤ 0,83 (la del sistema de tres) |
 | `proteus2` | 0,2 % / 5,39 | 18 % / 1,05 |
 
 - **A igual nivel de alarmas los dos candidatos son prácticamente iguales**: la robustez de `proteus2`
