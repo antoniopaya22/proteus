@@ -25,6 +25,29 @@ Antonio pide iterar hasta la máxima nota posible. Protocolo:
 
 La ronda 1 son las fases A–E de abajo.
 
+### Cola de la VM (desde 2026-11-16 07:43 UTC)
+
+Una sola cola ordenada, `~/tools/master.sh` (copia en el scratchpad, `q/master.sh`). Cada paso se
+ejecuta bajo el cerrojo y deja su marca en `~/tools/m/<paso>` solo si termina bien; el progreso está en
+`~/tools/master.log` (`start`, `done`, `FAIL`). Para relanzar tras un fallo: arreglar y volver a
+ejecutar `master.sh` (salta lo ya hecho). Sustituye a `rev2c`, `adapt2`, `sel`, `adaptsel`,
+`isolated18` y `seeds`.
+
+### Rediseño `proteus2` (decidido con Antonio el 2026-11-16)
+
+Tras ver que la reutilización de conexiones multiplica por ~20 el daño contra Proteus (§6.54 de
+docs/06), se prueba `proteus2`: los mismos cuatro subnúcleos, en todas las escalas, solo con evidencia
+que ninguna operación gratuita ni la reutilización pueden bajar (bytes de carga y conteos distintos).
+`proteus2_sys` = `proteus2` ∪ `proteus_cert_r`. El diseño se cambia a la vista de los datos de prueba:
+se contará así en el paper y se valida la detección en UGR'16 y CTU-13. Si sale peor que el sistema de
+tres detectores, se queda el de tres y se cuenta.
+
+- [ ] `proteus2` 18 → 17: detección, alarmas, presupuestos (`p2_fit_1817`, `p2_all_1817`).
+- [ ] Atacante adaptativo 18 → 17 con rejilla de 30 ritmos y todos los detectores, incluidas las
+      reglas con selección (`adapt_1817`).
+- [ ] Lo mismo en 17 → 18 (`p2_fit_1718`, `p2_all_1718`, `adapt_1718`), CTU-13 y UGR'16.
+- [ ] Decidir el sistema final (Proteus ∪ cert ∪ cert-R frente a `proteus2_sys`) con todo delante.
+
 ## A. Corrección (hecho en código, commit 5c08e7b; cómputo en marcha)
 
 - [x] `baseline.day_table`: los minutos enmascarados no se descontaban (ns frente a µs).
