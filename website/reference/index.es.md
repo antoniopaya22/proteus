@@ -12,7 +12,7 @@ del paquete se describe en la tabla siguiente y en los docstrings de cada módul
 | `proteus.packets` | Lectura de pcap, un exportador de flujos al estilo NetFlow/IPFIX y operaciones gratuitas sobre paquetes |
 | `proteus.shell` | Clasificador por flujo (la capa) |
 | `proteus.attacks` | Operaciones del atacante sobre registros de flujo: operaciones gratuitas y ralentización |
-| `proteus.baselines` | Apollon (código publicado e implementación corregida), umbrales de tasa fijos, KitNET, suavizado aleatorizado |
+| `proteus.baselines` | Apollon, umbrales de tasa fijos, KitNET, suavizado aleatorizado |
 | `proteus.evaluation` | Experimentos y tablas; consulta [Módulos de experimentos](../guide/experiments.md) |
 
 ## Módulos documentados

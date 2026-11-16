@@ -134,7 +134,7 @@ relativas al servicio, experimentales).
 | `src/proteus/packets` | Lectura de pcap, exportador de flujos y operaciones libres sobre paquetes |
 | `src/proteus/shell` | Cáscara por flujo |
 | `src/proteus/attacks` | Operaciones del atacante sobre registros de flujo |
-| `src/proteus/baselines` | Apollon (publicado y corregido), reglas de tasa, KitNET, suavizado aleatorio |
+| `src/proteus/baselines` | Apollon, reglas de tasa, KitNET, suavizado aleatorio |
 | `src/proteus/evaluation` | Experimentos (`h1`, `frontier_exp`, `adaptive`, `poisoning`, `packet_check`, `smoothing`, `aml_feature`, …) y tablas |
 | `examples/` | Ejemplos ejecutables (sin datasets) |
 | `tests/` | Tests, incluidos los de las propiedades que sostienen la garantía |

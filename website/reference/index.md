@@ -12,7 +12,7 @@ the package is described in the table below and in the docstrings of each module
 | `proteus.packets` | pcap reading, a NetFlow/IPFIX-style flow exporter and free operations on packets |
 | `proteus.shell` | Per-flow classifier (the shell) |
 | `proteus.attacks` | Attacker operations on flow records: free operations and slowing down |
-| `proteus.baselines` | Apollon (published code and corrected implementation), fixed rate thresholds, KitNET, randomised smoothing |
+| `proteus.baselines` | Apollon, fixed rate thresholds, KitNET, randomised smoothing |
 | `proteus.evaluation` | Experiments and tables; see [Experiment modules](../guide/experiments.md) |
 
 ## Documented modules

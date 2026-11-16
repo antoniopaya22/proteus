@@ -111,6 +111,31 @@ tres detectores, se queda el de tres y se cuenta.
       `seeds.sh`. Los umbrales siguen usando las etiquetas para elegir el benigno limpio: decirlo.
 - [ ] UGR'16: alarmas/h corregidas por el muestreo del 1 % o cota declarada.
 
+## Indicaciones de Antonio (2026-11-16)
+
+- **Apollon se evalúa como un solo sistema**, sin distinguir «publicado» y «corregido» ni mencionar
+  fallos de implementación: es la versión 2.0.0 de su repositorio. El lector de un sucesor quiere
+  ver la diferencia con el original, así que Apollon entra como detector por flujo en la detección
+  entre redes y en la comparación conjunta.
+  - [x] `ApollonFlow` (`--models apollon`, commit 759823d) y texto del paper sin la distinción
+        (commit 4030357 del paper: motivación, tabla de ataques por flujo, tabla de detectores).
+  - [ ] Resultados `ap_1817` y `ap_1718` (cola aparte `~/tools/apollon.sh`, mismo cerrojo): columna
+        en la tabla de detección y fila en la comparación conjunta; medir qué miembro responde.
+- **AML como gancho.** «Adversarial machine learning» es la palabra clave que atrae lectores: debe
+  estar en título, resumen, introducción y palabras clave, y los ataques deben contarse como AML en
+  el espacio de tráfico, no solo como «atacante adaptativo».
+  - [x] Palabras clave: Adversarial Machine Learning, Evasion Attacks, … (en `main.tex`, sin subir).
+  - [ ] Título con AML (propuesta a Antonio) y reescritura de resumen e introducción con ese marco.
+  - [ ] **Atacante que usa AML para generar mejores ataques**: búsqueda por consultas con etiqueta
+        dura (sin conocer el modelo) sobre los parámetros de las operaciones (ritmo, relleno,
+        partición, reutilización, reparto entre orígenes, pulsos), que maximiza el daño sin ser
+        detectado, contra Proteus y contra cada línea base; comparar con la rejilla actual y contar
+        consultas. Responde también a la objeción del atacante adaptativo débil.
+- **La GPU no es un límite.** No se escribe que algo «necesita GPU»; la máquina se ampliará.
+  - [x] Quitadas las menciones del paper (BARS, entorno).
+  - [ ] Fase con GPU (cuando esté): código original de BARS, PANTS y CertTA sobre los mismos datos,
+        y un atacante con política aprendida al estilo de NetMasquerade.
+
 ## D. Reescritura
 
 - [~] (en curso) Configuración, métricas, tabla de detección, reutilización, presupuestos y precio de
