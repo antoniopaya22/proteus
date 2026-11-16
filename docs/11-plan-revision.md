@@ -56,14 +56,16 @@ La ronda 1 son las fases A–E de abajo.
 - [x] Una configuración desplegada única en `h1` (`proteus_sys` = Proteus ∪ Proteus-cert;
       `proteus_sys_r` añade el resistente a reutilización): detección y alarmas. Falta: reevaluar
       18 → 17 con `--reuse` (el run r2 empezó antes) y la frontera de esa configuración.
-- [ ] 5–10 semillas con dispersión para los detectores principales.
+- [ ] 5 semillas (0 = r2; 1–4 en `seeds.sh`, que espera a `rev2c` y `adapt2`): dispersión de
+      detección y alarmas en ambos sentidos.
 - [x] Curvas campañas detectadas frente a alarmas por entidad/h: `tables curves` genera la figura
       (probada con 18 → 17). Falta: generarla con los dos sentidos y meterla en el paper (fase D).
 - [x] Líneas base clásicas: TRW (por host y por servicio) y CUSUM de flujos fallidos
       (`proteus classic`, commit 0541084). 2017 hecho (`classic__cicids2017__r2`); 2018 en cola.
 - [ ] Línea base: reglas de tasa con selección de rasgos.
 - [ ] `proteus_free` (homólogo justo sin restricciones) en las tablas de detección, daño y banco.
-- [ ] Calibración sin etiquetas y causal (`--baseline prior --mask none`) como comprobación.
+- [ ] Líneas base causales y sin etiquetas (`--baseline prior --mask none`) en 18 → 17, en
+      `seeds.sh`. Los umbrales siguen usando las etiquetas para elegir el benigno limpio: decirlo.
 - [ ] UGR'16: alarmas/h corregidas por el muestreo del 1 % o cota declarada.
 
 ## D. Reescritura
@@ -83,7 +85,7 @@ La ronda 1 son las fases A–E de abajo.
 
 ## E. Artefacto
 
-- [ ] Test de extremo a extremo con un mini-dataset sintético en CI.
+- [x] Test de extremo a extremo con un mini-dataset sintético (commit 7d4aa7d; 78 s).
 - [ ] `reproduce.sh` que funcione en un clon limpio y cubra todas las salidas citadas; `uv.lock`
       versionado; tabla de tiempo, memoria y disco.
 - [ ] API `Detector` (`fit / calibrate / score / explain / save / load`) y `proteus fit | score |
