@@ -101,8 +101,17 @@ trabajo es de seguridad de redes (el certificado vale para detectores no aprendi
 - [x] Adaptativo a FPR 10⁻⁴ (`adapteq_1817`, §6.70): a igual nivel de alarmas `proteus2` y P ∪ cR
       quedan iguales (18 % y 21 %).
 - [x] Complemento de fidelidad en 2018 (`wf300_1718`, §6.71): no se sostiene; **descartado** del sistema.
-- [ ] **Decisión del sistema final**: fuera Proteus-cert (redundante) y fuera la fidelidad; entre
-      P ∪ cR y `proteus2` decide 2018 (`p2_fit_1718`, `p2_all_1718`, `adapt_1718`).
+- [x] **Sistema final = Proteus ∪ Proteus-cert-R, operado a presupuesto de alarmas** (2026-11-17,
+      §6.70–6.72 de docs/06). Fuera Proteus-cert (redundante en detección y en daño), fuera la
+      fidelidad (no se transfiere a 2018, no aporta robustez) y `proteus2` como variante evaluada
+      (empata en 2017 a igual nivel de alarmas y en 2018 detecta 8/13 a presupuesto y 12/13 a 10
+      alarmas). Pendiente de que Antonio lo confirme; se sigue con ello mientras tanto.
+- [ ] Cifras de la unión de dos (`proteus_pcr` en `h1.UNIONS`): `pcr_1817` (en paralelo) y
+      `p2_all_1718` (bajo el cerrojo). Con ellas: tablas de detección (`--set r2` con el sistema de
+      dos), figura de curvas, `tab:variants`, texto de RQ1–RQ2.
+- [ ] Atacante por consultas 17 → 18 (`qa_1718`, `~/tools/extra3.sh`, al final de la cola).
+- [ ] Paper: reglas con selección en 2018 compiten en detección y alarmas (13+2 a 0,61) y no tienen
+      robustez (85 % del ritmo real): decirlo así en RQ2 y en la comparación.
 
 **Computers & Security** (Elsevier), por la vía de suscripción (sin coste); reserva: *Journal of
 Information Security and Applications*. Se buscaron números especiales abiertos y gratuitos y no hay
