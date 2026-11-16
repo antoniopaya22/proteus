@@ -27,6 +27,11 @@ DETECTOR_SETS = {
     "v3": [("proteus", "Proteus"), ("proteus_cert@cert", "Cert."),
            ("core_free_dst_b", "Unc."), ("rate_rules_local", "Rules"),
            ("kitnet_local", "KitNET"), ("flow_clf", "Flow")],
+    # Revision 2: the deployed system, alerts certified also against connection reuse,
+    # and the unconstrained counterpart of the same sub-cores.
+    "r2": [("proteus", "Proteus"), ("proteus_sys", "System"), ("proteus_cert@cert", "Cert."),
+           ("proteus_cert_r@certr", "Cert.-R"), ("proteus_free", "Unc."),
+           ("rate_rules_local", "Rules"), ("kitnet_local", "KitNET"), ("flow_clf", "Flow")],
 }
 DETECTORS = [  # (model in summary.csv, column header)
     ("core_mono_dst_x", "Fast"),
@@ -65,13 +70,18 @@ def _load(runs: list[Path], extra: list[Path]) -> dict[str, tuple[pd.DataFrame, 
 
 
 def _cell(row: pd.Series | None) -> str:
+    """Campaigns detected (strict criterion when the run has it) and mean flow recall."""
     if row is None:
         return "--"
-    return f"{int(row['detected'])}/{int(row['campaigns'])} ({row['flow_recall']:.2f})"
+    det = row["detected_strict"] if pd.notna(row.get("detected_strict", np.nan)) else row["detected"]
+    return f"{int(det)}/{int(row['campaigns'])} ({row['flow_recall']:.2f})"
 
 
-def h1_table(runs: list[Path], extra: list[Path], fpr: float) -> str:
-    """One block of rows per direction, one column per detector."""
+def h1_table(runs: list[Path], extra: list[Path], fpr: float,
+             entity_alarms: bool = False) -> str:
+    """One block of rows per direction, one column per detector. ``entity_alarms``:
+    alarms per alerted entity and ten-minute window first, then per (destination,
+    minute)."""
     data = _load(runs, extra)
     lines = [r"\begin{tabular}{l" + "r" * len(DETECTORS) + "}", r"\toprule",
              "Attack & " + " & ".join(h for _, h in DETECTORS) + r" \\"]
@@ -84,13 +94,19 @@ def h1_table(runs: list[Path], extra: list[Path], fpr: float) -> str:
                 r = s[(s["model"] == m) & (s["target_fpr"] == fpr) & (s["attack"] == a)]
                 cells.append(_cell(r.iloc[0] if len(r) else None))
             lines.append(f"{ATTACK_NAMES[a]} & " + " & ".join(cells) + r" \\")
-        alarms, ttd = [], []
+        alarms, entity, ttd = [], [], []
         for m, _ in DETECTORS:
             r = f[(f["model"] == m) & (f["target_fpr"] == fpr)]
             alarms.append(f"{r['alarms_per_hour'].iloc[0]:.1f}" if len(r) else "--")
+            entity.append(f"{r['entity_alarms_per_hour'].iloc[0]:.2f}"
+                          if len(r) and "entity_alarms_per_hour" in r else "--")
             t = s[(s["model"] == m) & (s["target_fpr"] == fpr)]["median_ttd_s"].dropna()
             ttd.append(f"{np.median(t):.0f}" if len(t) else "--")
-        lines.append(r"\addlinespace Alarms/h & " + " & ".join(alarms) + r" \\")
+        if entity_alarms:
+            lines.append(r"\addlinespace Alarms/h (entity) & " + " & ".join(entity) + r" \\")
+            lines.append(r"Alarms/h (dst., min.) & " + " & ".join(alarms) + r" \\")
+        else:
+            lines.append(r"\addlinespace Alarms/h & " + " & ".join(alarms) + r" \\")
         lines.append(r"Median TTD (s) & " + " & ".join(ttd) + r" \\")
     lines += [r"\bottomrule", r"\end{tabular}"]
     return "\n".join(lines) + "\n"
@@ -431,7 +447,8 @@ def main() -> None:
         print(args.out.read_text())
         return
     DETECTORS[:] = DETECTOR_SETS[args.set]
-    args.out.write_text(h1_table(args.runs, args.extra, args.fpr))
+    args.out.write_text(h1_table(args.runs, args.extra, args.fpr,
+                                 entity_alarms=args.set == "r2"))
     print(args.out.read_text())
 
 
