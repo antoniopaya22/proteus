@@ -19,23 +19,29 @@ files() { for f in "$@"; do [ -f "$f" ] && echo "$f"; done; true; }
 # Every detector at the same thresholds: the r2c runs (r2b where r2c is not there yet).
 both() { local a b; a=$(exists ${A}c); b=$(exists ${B}c); echo ${a:-$(exists ${A}b)} ${b:-$(exists ${B}b)}; }
 
+# More detectors for the same directions: the system of two on 2018 -> 2017, the first
+# runs (per-flow classifier), selected rate thresholds, KitNET and Apollon.
+MORE="${A}_pcr $A $B ${A}_sel ${B}_p2 ${A}_kitnet ${B}_kitnet ${A}_apollon ${B}_apollon"
+
 # Detection across networks (tab:h1, tab:h1-1e-4).
 for f in 1e-3 1e-4; do
-  $PY proteus.evaluation.tables h1 --set r2 --fpr $f --runs $(both) \
-    --extra $(exists $A $B ${A}_kitnet ${B}_kitnet ${A}_apollon ${B}_apollon) \
-    --out $T/h1_r2_$f.tex > /dev/null
+  $PY proteus.evaluation.tables h1 --set paper --fpr $f --runs $(both) \
+    --extra $(exists $MORE) --out $T/h1_$f.tex > /dev/null
 done
+
+# Every threshold evaluated (tab:budgets): the system first where a run has it.
+$PY proteus.evaluation.tables budgets --runs $(exists ${A}_pcr | head -1) $(exists ${B}c ${B}b | head -1) \
+  --extra $(both) $(exists ${A}_sel ${B}_p2) --out $T/budgets.tex > /dev/null
 
 # Detection against alarms per alerted entity (fig:curves).
 $PY proteus.evaluation.tables curves \
-  --runs $(both) $(exists ${A}_sel ${B}_sel ${A}_kitnet ${B}_kitnet $C17 $C18) \
-  --detectors proteus_sys_r proteus rate_rules_local rate_rules_sel proteus_free kitnet_local syn_cusum trw_svc \
+  --runs $(exists ${A}_pcr) $(both) $(exists ${A}_sel ${B}_p2 ${A}_kitnet ${B}_kitnet $C17 $C18) \
+  --detectors proteus_pcr proteus proteus_cert_r rate_rules_local rate_rules_sel proteus_free kitnet_local syn_cusum trw_svc \
   --data-out $T/curves.csv --out $T/curves.tex > /dev/null
 
 # Confidence intervals (campaigns: Wilson; alarms: bootstrap over days).
-$PY proteus.evaluation.tables summary --runs $(both) \
-  --extra $(exists $A $B ${A}_kitnet ${B}_kitnet ${A}_apollon ${B}_apollon) \
-  --detectors proteus proteus_sys_r proteus_cert@cert proteus_cert_r@certr proteus_free rate_rules_local kitnet_local flow_clf apollon \
+$PY proteus.evaluation.tables summary --runs $(both) --extra $(exists $MORE) \
+  --detectors proteus_pcr proteus proteus_cert_r@certr proteus_free rate_rules_local rate_rules_sel kitnet_local flow_clf apollon \
   --out $T/summary_ci.csv > /dev/null
 
 # Harm frontiers (tab:frontier and the data of fig:frontier).
@@ -47,9 +53,9 @@ done
 
 # Damage under the adaptive attacker (tab:adaptive) and under the query attacker (tab:query).
 csvs=$(files $A/adaptive_0.001_g30.csv $B/adaptive_0.001_g20.csv)
-[ -n "$csvs" ] && $PY proteus.evaluation.tables adaptive --csv $csvs --out $T/adaptive.tex > /dev/null
+[ -n "$csvs" ] && $PY proteus.evaluation.tables adaptive --set paper --csv $csvs --out $T/adaptive.tex > /dev/null
 csvs=$(files $A/query_attack_0.001_all.csv $B/query_attack_0.001_all.csv)
-[ -n "$csvs" ] && $PY proteus.evaluation.tables query --csv $csvs --out $T/query.tex > /dev/null
+[ -n "$csvs" ] && $PY proteus.evaluation.tables query --set paper --csv $csvs --out $T/query.tex > /dev/null
 
 # Sub-core ablations (tab:ablation).
 runs=$(exists ${A}_ablation ${B}_ablation)
@@ -59,7 +65,7 @@ runs=$(exists ${A}_ablation_r ${B}_ablation_r)
   --out $T/ablation_cert.tex > /dev/null
 
 # Comparison of defences (tab:bench), one file per direction.
-DEF="proteus proteus_sys_r proteus_cert@cert proteus_free rate_rules_local kitnet_local flow_clf apollon"
+DEF="proteus_pcr proteus proteus_cert_r@certr proteus_free rate_rules_local rate_rules_sel kitnet_local flow_clf apollon"
 for pair in "A:18_17:g30" "B:17_18:g20"; do
   IFS=: read -r run tag grid <<< "$pair"; R=${!run}
   h1=$(exists ${R}c ${R}b | head -1)

@@ -185,3 +185,29 @@ def test_adaptive_table_reads_the_system_from_the_ladder(tmp_path):
     # The system passes where both members are quiet with the same plan: 900, by reuse.
     assert row.split(" & ")[2] == "900$^a$" and row.split(" & ")[3] == "4.0k"
     assert row.split(" & ")[6] == "--"  # a detector that is not in the run
+
+
+def test_budget_table_counts_campaigns_and_takes_a_detector_from_the_first_run_that_has_it(tmp_path):
+    import pandas as pd
+
+    from proteus.evaluation.tables import budget_table
+
+    def run(name, models):
+        d = tmp_path / f"csecicids2018__cicids2017__loo_labels__{name}"
+        d.mkdir()
+        s = [{"model": m, "threshold": "entity", "target_fpr": 0.5, "attack": a, "detected_strict": k}
+             for m, (vol, other, _) in models.items() for a, k in (("dos_hulk", vol), ("web_xss", other))]
+        fa = [{"model": m, "threshold": "entity", "target_fpr": 0.5, "entity_alarms_per_hour": e}
+              for m, (_, _, e) in models.items()]
+        pd.DataFrame(s).to_csv(d / "summary.csv", index=False)
+        pd.DataFrame(fa).to_csv(d / "false_alarms.csv", index=False)
+        return d
+
+    first = run("r2_pcr", {"proteus_pcr": (3, 1, 1.35), "proteus": (3, 0, 1.01)})
+    more = run("r2c", {"proteus": (9, 9, 9.0), "rate_rules_local": (2, 1, 5.28)})
+    table = budget_table([first], [more])
+    row = next(line for line in table.splitlines() if line.startswith("Budget 0.5"))
+    cells = [c.strip() for c in row.rstrip("\\").split("&")]
+    assert cells[1:3] == ["3+1 (1.35)", "3+0 (1.01)"]  # the first run wins for proteus
+    assert cells[3] == "--" and cells[5] == "2+1 (5.28)"
+    assert "Budget 1 & -- & --" in table

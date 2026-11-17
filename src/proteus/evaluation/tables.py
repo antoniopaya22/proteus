@@ -210,6 +210,50 @@ def ablation_table(runs: list[Path], fpr: float, base: str = "proteus") -> str:
     return "\n".join(lines) + "\n"
 
 
+BUDGET_ROWS = [("entity", 0.5, "Budget 0.5"), ("entity", 1.0, "Budget 1"), ("entity", 3.0, "Budget 3"),
+               ("entity", 10.0, "Budget 10"), ("local", 1e-3, r"FPR $10^{-3}$"),
+               ("local", 1e-4, r"FPR $10^{-4}$")]
+BUDGET_PAPER = [("proteus_pcr", r"\sysname"), ("proteus", "Fast"), ("proteus_cert_r", "Cert."),
+                ("proteus_free", "Unc."), ("rate_rules_local", "Rules"), ("rate_rules_sel", "Sel.")]
+
+
+def budget_table(runs: list[Path], extra: list[Path],
+                 detectors: list[tuple[str, str]] | None = None) -> str:
+    """Every threshold evaluated, per direction: campaigns detected under the strict
+    criterion, volumetric and scans + others, and in parentheses the false alarms per
+    alerted entity and hour. ``runs`` gives one run per direction; ``extra`` adds
+    detectors that it lacks (a detector is read from the first run that has it)."""
+    from proteus.evaluation.bench import VOLUMETRIC
+
+    detectors = detectors or BUDGET_PAPER
+    n = len(detectors)
+    lines = [r"\begin{tabular}{l" + "r" * n + "}", r"\toprule",
+             "Threshold & " + " & ".join(h for _, h in detectors) + r" \\"]
+    for run in runs:
+        key = "__".join(run.name.split("__")[:2])
+        dirs = [run] + [e for e in extra if e.name.startswith(key)]
+        s = pd.concat([pd.read_csv(d / "summary.csv").assign(_run=i) for i, d in enumerate(dirs)])
+        fa = pd.concat([pd.read_csv(d / "false_alarms.csv").assign(_run=i) for i, d in enumerate(dirs)])
+        first = s.groupby("model")["_run"].min()
+        s = s[s["_run"] == s["model"].map(first)]
+        fa = fa[fa["_run"] == fa["model"].map(first)]
+        s = s.assign(vol=s["attack"].str.startswith(VOLUMETRIC))
+        lines += [r"\midrule", rf"\multicolumn{{{n + 1}}}{{l}}{{\emph{{{DIRECTION.get(key, key)}}}}} \\"]
+        for kind, target, label in BUDGET_ROWS:
+            cells = []
+            for m, _ in detectors:
+                g = s[(s["model"] == m) & (s["threshold"] == kind) & np.isclose(s["target_fpr"], target)]
+                a = fa[(fa["model"] == m) & (fa["threshold"] == kind) & np.isclose(fa["target_fpr"], target)]
+                if g.empty or a.empty:
+                    cells.append("--")
+                    continue
+                vol, other = (int(g.loc[g["vol"] == v, "detected_strict"].sum()) for v in (True, False))
+                cells.append(f"{vol}+{other} ({a['entity_alarms_per_hour'].iloc[0]:.2f})")
+            lines.append(f"{label} & " + " & ".join(cells) + r" \\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    return "\n".join(lines) + "\n"
+
+
 def frontier_table(csvs: list[Path], data_out: Path | None = None) -> str:
     """Certified harm frontier against the real campaign rate, one block per test
     network (one ``frontier_*_attr.csv`` per direction). Optionally writes the data of
@@ -527,7 +571,7 @@ def curves_figure(points: pd.DataFrame, x: str = "entity_alarms_per_hour",
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("table", choices=["h1", "summary", "ablation", "frontier", "frontier_system",
-                                       "adaptive", "curves", "query"])
+                                       "adaptive", "curves", "query", "budgets"])
     ap.add_argument("--csv", type=Path, nargs="*", default=[], help="frontier or adaptive CSVs")
     ap.add_argument("--data-out", type=Path, default=None)
     ap.add_argument("--detectors", nargs="*", default=None)
@@ -545,6 +589,10 @@ def main() -> None:
         t = summary_table(args.runs, args.extra, args.fpr, args.detectors)
         t.to_csv(args.out, index=False)
         print(t.round(3).to_string())
+        return
+    if args.table == "budgets":
+        args.out.write_text(budget_table(args.runs, args.extra))
+        print(args.out.read_text())
         return
     if args.table == "curves":
         pts = curve_points(args.runs + args.extra)
