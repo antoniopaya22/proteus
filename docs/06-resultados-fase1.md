@@ -2454,3 +2454,26 @@ peticiones mínimas; certificado = Proteus-cert frente a operaciones gratuitas y
 - Encolado: `prio3.sh` (ajuste y evaluación conjunta en los dos sentidos, `cp_fit_1817` ya
   corriendo) y el lanzador de 2017 (`proteus-2017b`) lo incluye en el adaptativo, la inyección y el
   atacante por consultas.
+
+## 6.87 Atacante adaptativo a presupuesto 0,5, 2017 → 2018, completo (2026-11-17, 16:35)
+
+`adaptb_1718` (rejilla de 16, dos variantes aleatorias; daño del sistema desde la escalera: un mismo
+plan contra los dos detectores). Parte del ritmo real que conserva el atacante (media geométrica) y
+ataques que pasan a su ritmo real, de 10:
+
+| Detector | Planes gratuitos | Con peticiones mínimas |
+|---|---|---|
+| Proteus (fast ∪ cert) | **7,1 %, 2 pasan** (los dos escaneos, lentos) | 50 %, 6 pasan |
+| Proteus-fast | 17,5 %, 3 | 59 %, 6 |
+| Proteus-cert | 10,8 %, 4 | 54 %, 7 |
+| Reglas, todos los rasgos | 15,3 %, 5 | igual |
+| Reglas con selección | 12,0 %, 5 | igual |
+| Núcleo sin restricciones | 55 %, 6 | 60 %, 6 |
+
+- Con operaciones gratuitas, reutilización y ráfagas **el sistema es claramente el más robusto en la
+  red grande**: la mitad de daño que las reglas y 2 ataques que pasan frente a 5. Junto con 2018 → 2017
+  a FPR 10⁻³ (5,8 % frente a 9,2 %), la ventaja tiene el mismo signo en los dos sentidos.
+- Con peticiones mínimas el sistema cae por detrás de las reglas, que no dependen de bytes. Dos de las
+  filas (LOIC-UDP) están mal: esta ejecución encogía también los flujos UDP, lo que se corrigió después
+  (commit 77efc73). Sin ellas, con peticiones mínimas pasan GoldenEye, Slowloris y los dos escaneos.
+- Esto es lo que debe arreglar `proteus_cert_p` (ajuste corriendo ahora).
