@@ -59,6 +59,9 @@ stage_baselines() {  # The detectors Proteus is compared with (tab:detectors).
       --models kitnet_local $BUD --tag r2_kitnet
     run $O/run_${tag}_r2_sel.log $PY proteus.evaluation.h1 --train $train --test $test \
       --models rate_rules_sel $BUD --tag r2_sel
+    # The system's two detectors as rate thresholds (union rules_pcr).
+    run $O/run_${tag}_r2_rules.log $PY proteus.evaluation.h1 --train $train --test $test --reuse $dir \
+      --models rate_rules_local rate_rules_cr $BUD --tag r2_rules
     # The same sub-cores as monotone linear models: what the trees add.
     run $O/run_${tag}_r2_lin.log $PY proteus.evaluation.h1 --train $train --test $test \
       --models proteus_lin $BUD --tag r2_lin
@@ -122,6 +125,9 @@ stage_adaptive() {  # tab:adaptive, tab:frontier: fixed plans on a grid of rates
   run $O/adaptive_r2g_17_18_b0.5.log $PY proteus.evaluation.adaptive --run $B --extra-runs ${B}_p2 \
     --test csecicids2018 --models proteus proteus_cert_r proteus_free rate_rules_sel --local rate_rules_local \
     $c --variants 2 --grid 16 --tag g16
+  # The system's two detectors as rate thresholds (union rules_pcr), same attacker.
+  run $O/adaptive_r2g_18_17_b0.5_rules.log $PY proteus.evaluation.adaptive --run $A --test cicids2017 \
+    --models --local rate_rules_local rate_rules_cr --certify --alarm-budget 0.5 --grid 30 --tag rules
 }
 
 stage_query() {  # tab:query: black-box search with hard labels, at the operating point.
