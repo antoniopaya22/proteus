@@ -104,12 +104,14 @@ MIN_REQUEST_BYTES = {80: 18, 8080: 18, 21: 24, 22: 500}
 
 def shrink_requests(df: pd.DataFrame, sel: np.ndarray,
                     floors: dict[int, int] | None = None) -> pd.DataFrame:
-    """Send the request of each selected flow with as few payload bytes as its service
+    """Send the request of each selected TCP flow with as few payload bytes as its service
     allows (``floors``, by destination port; default ``MIN_REQUEST_BYTES``). The number
     of requests, connections and packets does not change, so the attack does the same
     work: unlike padding, this lowers evidence, and no certificate covers it."""
     floors = MIN_REQUEST_BYTES if floors is None else floors
     out = _with_ids(df)
+    # Only requests over TCP: the bytes of a UDP flood are its harm, not a disguise.
+    sel = np.asarray(sel) & (out["proto"].to_numpy() == 6)
     floor = out.loc[sel, "dst_port"].map(floors)
     cur = out.loc[sel, "fwd_bytes"]
     out.loc[sel, "fwd_bytes"] = np.minimum(cur, floor.fillna(cur)).astype(cur.dtype)

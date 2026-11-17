@@ -265,3 +265,10 @@ def test_shrink_requests_only_lowers_payload_bytes_of_known_services():
     assert (y.loc[other, "fwd_bytes"] == x.loc[other, "fwd_bytes"]).all()
     for c in ("fwd_pkts", "bwd_pkts", "bwd_bytes", "duration_us"):
         assert (y[c] == x[c]).all(), c  # the same requests, connections and packets
+
+
+def test_shrink_requests_leaves_udp_floods_alone():
+    x = flows(np.random.default_rng(0))
+    x["proto"] = np.int16(17)
+    y = op.shrink_requests(x, attacker(x))
+    assert (y["fwd_bytes"] == x["fwd_bytes"]).all()
