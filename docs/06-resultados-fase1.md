@@ -2477,3 +2477,21 @@ ataques que pasan a su ritmo real, de 10:
   filas (LOIC-UDP) están mal: esta ejecución encogía también los flujos UDP, lo que se corrigió después
   (commit 77efc73). Sin ellas, con peticiones mínimas pasan GoldenEye, Slowloris y los dos escaneos.
 - Esto es lo que debe arreglar `proteus_cert_p` (ajuste corriendo ahora).
+
+## 6.88 Kitsune tal como se publicó, sobre los paquetes del viernes de CIC-IDS-2017 (2026-11-17, 17:30)
+
+`kitsune_fri` (AfterImage + KitNET, entrenado con los primeros 100 000 paquetes del día, el doble del
+periodo por defecto del original; umbral al presupuesto de 0,5 alarmas/h sobre la hora benigna
+siguiente; 9,9 millones de paquetes IPv4 TCP/UDP).
+
+- Detecta **ninguna** de las cinco campañas del día (botnet, LOIC-HTTP, tres escaneos), con 4,6
+  alarmas por destino y minuto por hora sobre el tráfico benigno de después (4,5 por entidad): el
+  umbral que cumple el presupuesto en la hora de calibración (1,8·10⁷, RMSE desbordado por rasgos
+  fuera del rango del entrenamiento) queda por encima de todos los paquetes de ataque y no de la
+  deriva benigna de la tarde.
+- Con las operaciones gratuitas a nivel de paquete el resultado no cambia (como mucho 0,06 % de los
+  paquetes de LOIC alertados, por debajo del criterio). No hay nada que evadir: a este presupuesto
+  Kitsune no ve los ataques.
+- Para darle su mejor oportunidad, relanzado con un millón de paquetes de entrenamiento (diez veces el
+  periodo por defecto; `kitsune_1m`). Si sigue igual, el paper lo dirá así y coincide con Arp et al.
+  (un umbral de tasa supera a Kitsune en sus propios datos).
