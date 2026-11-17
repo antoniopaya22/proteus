@@ -2387,3 +2387,21 @@ de bots, 2 de spam) y `ctuA` (al revés: 1 DDoS, 1 fast-flux, 4 escaneos, 7 de s
   coste en CTU-13 es de 0,33 a 0,90 alarmas; a cambio desaparece una regla que rompía Proteus-cert
   en 2018 (§6.65) y que habría que justificar por dataset. Falta el pliegue A (`ctuA_nox`,
   corriendo) y UGR'16.
+
+## 6.84 CTU-13 con el sistema final, los dos pliegues, sin retocar nada (2026-11-17, 10:20)
+
+`ctuB_nox` y `ctuA_nox`, presupuesto 0,5 por detector, sin exclusión. Campañas de al menos cinco
+flujos (las de uno a cuatro no las puede detectar ningún detector con el criterio estricto; el
+escenario 3 trae 57 «campañas» de un flujo).
+
+| Pliegue | DDoS | Escaneos de bots | Spam | Otros | Alarmas por entidad/h | Sospechosos |
+|---|---|---|---|---|---|---|
+| B (prueba s01–s04, s06, s10) | 3/11 | 2/4 | 2/2 | — | 0,90 | 9/181 |
+| A (prueba s05, s07–s09, s11–s13) | 1/1 | 0/4 | 2/6 | fast-flux 0/1 | 3,68 (0,59 sin s11) | 22/119 |
+
+- Proteus-cert no alerta nada a presupuesto en el pliegue B (puntuaciones benignas empatadas en el
+  máximo): ahí el sistema es Proteus-fast. Reglas: un DDoS más y un spam menos, a 5,5 y 6,2 alarmas.
+- Frontera de escaneo (Proteus-fast): un origen nuevo que repite las sondas de un bot se alerta a
+  14–133 sondas/min si el escaneo dura seis horas y a 25–145 si dura una; los bots van a 5–36.
+- Llevado al paper (sección de tráfico real, CTU-13), sin las cifras v1/v3 de antes (núcleo de un
+  solo modelo entrenado en CIC-IDS-2017, «27 de 181 sospechosos», «9,3 alarmas»).
