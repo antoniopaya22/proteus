@@ -19,7 +19,7 @@ de registro que se muestra en el terminal indica el comando exacto.
 
 | Etapa | Produce | Notas |
 |---|---|---|
-| `data` | Ficheros Parquet de CIC-IDS2017, CSE-CIC-IDS2018, CTU-13, UGR'16, CIC-DDoS2019 y UNSW-NB15 | Los ficheros originales deben estar en `data/raw/<dataset>`; consulta [Datasets](datasets.md) |
+| `data` | Ficheros Parquet de CIC-IDS2017, CSE-CIC-IDS2018, CTU-13, UGR'16 y CIC-DDoS2019 | Los ficheros originales deben estar en `data/raw/<dataset>`; consulta [Datasets](datasets.md) |
 | `h1` | Detección entre redes en ambos sentidos: se ajustan todos los detectores de Proteus y después se evalúan juntos, con los mismos umbrales y presupuestos de alarmas | La ejecución 2017 → 2018 tarda alrededor de 1,5 h y alcanza un pico de unos 16 GB |
 | `baselines` | Los detectores con los que se compara Proteus: KitNET, umbrales de tasa con rasgos seleccionados, Apollon y el clasificador por flujo, TRW y CUSUM | Reutiliza los modelos de `h1` donde puede |
 | `systems` | Alertas por flujo de cada detector, el complemento de fidelidad por ventana y los sistemas candidatos (uniones) que se forman con ellas | Consulta [Experimentos](experiments.md) |
@@ -31,7 +31,7 @@ de registro que se muestra en el terminal indica el comando exacto.
 | `ablation` | Ablación de subnúcleos (`proteus-K` elimina el subnúcleo K) | Reutiliza los modelos de `h1` |
 | `poisoning` | Fronteras bajo envenenamiento de la línea base | |
 | `budget` | Certificado de presupuesto (suavizado aleatorizado, el mecanismo de BARS) frente a operaciones gratuitas | |
-| `real` | CTU-13 y UGR'16 (dos particiones cada uno), CIC-DDoS2019 y UNSW-NB15; fronteras del lado del origen en CTU-13 | |
+| `real` | CTU-13 y UGR'16 (dos particiones cada uno) y CIC-DDoS2019; fronteras del lado del origen en CTU-13 | |
 | `shell` | Ataques basados en decisión y en puntuación contra detectores por flujo; calibración del contador de realimentación | Necesita el extra `attacks` (ART); tarda horas |
 | `robustness` | Cuatro semillas más, líneas base calculadas sin etiquetas, balance de clases del conjunto de entrenamiento | Vuelve a ajustar los detectores |
 | `packets` | Comprobación del certificado a nivel de paquete sobre el pcap del viernes de CIC-IDS2017 | Necesita el pcap y el extra `packets` (`dpkt`) |

@@ -78,8 +78,8 @@ Datasets are not versioned. How to download and convert them is in
 | Corrected CIC-IDS2017 and CSE-CIC-IDS2018 (Liu et al., CNS 2022) | detection across networks, frontiers, attacks | [distrinet](https://intrusion-detection.distrinet-research.be/CNS2022/Datasets/) |
 | CIC-IDS2017 Friday pcap | checking the certificate on packets | CIC (download form) |
 | CTU-13 | real traffic with an unlabelled background | Stratosphere Lab (CTU) |
-| UNSW-NB15 | attackers from a traffic generator | UNSW Canberra (official) |
-| UGR'16, CIC-DDoS2019, CTU-SME-11 | in progress | see `data/README.md` |
+| UGR'16 | real ISP traffic with injected attacks | see `data/README.md` |
+| CIC-DDoS2019 | a check of detection on reflection and SYN floods | see `data/README.md` |
 
 ## Reproducing the experiments
 

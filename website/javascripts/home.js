@@ -11,7 +11,7 @@
     stages: [["data", "convertir los datasets (una vez)"], ["h1", "detección entre redes"], ["review", "máximo sin monotonía, presupuestos"],
       ["ablation", "ablación de subnúcleos"], ["packets", "certificado sobre paquetes reales"], ["budget", "certificado por presupuesto"],
       ["frontier", "frontera de daño"], ["adaptive", "atacante adaptativo"], ["poisoning", "envenenamiento de líneas base"],
-      ["real", "CTU-13 y UNSW-NB15"], ["shell", "ataques a la capa por flujo"], ["cost", "coste por etapa"], ["tables", "tablas y figuras"]],
+      ["real", "CTU-13, UGR'16 y CIC-DDoS2019"], ["shell", "ataques a la capa por flujo"], ["cost", "coste por etapa"], ["tables", "tablas y figuras"]],
     stagesHead: "# etapas, en orden",
   } : {
     ops: ["pad every payload", "split each flow in three", "add decoy flows", "rotate source ports"],
@@ -19,7 +19,7 @@
     stages: [["data", "convert the datasets (once)"], ["h1", "detection across networks"], ["review", "unconstrained maximum, budgets"],
       ["ablation", "ablation of sub-cores"], ["packets", "certificate on real packets"], ["budget", "budget certificate"],
       ["frontier", "harm frontier"], ["adaptive", "adaptive attacker"], ["poisoning", "poisoning of baselines"],
-      ["real", "CTU-13 and UNSW-NB15"], ["shell", "attacks on the per-flow shell"], ["cost", "cost per stage"], ["tables", "tables and figures"]],
+      ["real", "CTU-13, UGR'16 and CIC-DDoS2019"], ["shell", "attacks on the per-flow shell"], ["cost", "cost per stage"], ["tables", "tables and figures"]],
     stagesHead: "# stages, in order",
   };
 

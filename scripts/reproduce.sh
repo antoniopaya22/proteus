@@ -38,7 +38,7 @@ FIT="proteus proteus_cert proteus_cert_r proteus_free core_mono_dst_x core_free_
 SYS="proteus proteus_cert proteus_cert_r proteus2 proteus_free core_mono_dst_x core_free_dst_b rate_rules_local"
 
 stage_data() {  # Raw files: see data/README.md.
-  for d in cicids2017 csecicids2018 ctu13 ugr16 cicddos2019 unsw_nb15; do
+  for d in cicids2017 csecicids2018 ctu13 ugr16 cicddos2019; do
     run $P/prepare_$d.log $PY proteus.datasets.prepare --dataset $d --raw $R/$d --out $P/$d
   done
 }
@@ -163,7 +163,7 @@ stage_budget() {  # tab:budget (randomised smoothing, the mechanism of BARS).
     --base core_free_dst_b --certified proteus_cert_r
 }
 
-stage_real() {  # sec:evaluation:real and the appendix: CTU-13, UGR'16, CIC-DDoS-2019, UNSW-NB15.
+stage_real() {  # sec:evaluation:real and the appendix: CTU-13, UGR'16, CIC-DDoS-2019.
   local fa="s01 s02 s03 s04 s06 s10" fb="s05 s07 s08 s09 s11 s12 s13"
   local jul="2016-07-27 2016-07-28 2016-07-29 2016-07-30 2016-07-31"
   local aug="2016-08-01 2016-08-02 2016-08-03 2016-08-04 2016-08-05 2016-08-06 2016-08-07"
@@ -182,9 +182,6 @@ stage_real() {  # sec:evaluation:real and the appendix: CTU-13, UGR'16, CIC-DDoS
   run $O/run_17_ugr_r2.log $PY proteus.evaluation.h1 --train cicids2017 --test ugr16 --reuse $B --extra-runs ${B}_p2 --test-days $jul $aug --tag r2 $b --models $r $xs
   run $O/run_17_ddos19_r2.log $PY proteus.evaluation.h1 --train cicids2017 --test cicddos2019 --reuse $B --extra-runs ${B}_p2 --tag r2 --models $r
   run $O/run_18_ddos19_r2.log $PY proteus.evaluation.h1 --train csecicids2018 --test cicddos2019 --reuse $A --extra-runs ${A}_p2 --tag r2 --models $r
-  # UNSW-NB15: source-side detectors on the default evidence (v1).
-  run $O/run_17_unsw.log env PROTEUS_EVIDENCE=v1 $PY proteus.evaluation.h1 --train cicids2017 --test unsw_nb15 \
-    --models core_both_x core_both_cert core_src_x rate_rules_local --tag src
 }
 
 stage_shell() {  # tab:aml (decision-based attacks on per-flow detectors) and tab:feedback.
