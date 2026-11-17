@@ -158,14 +158,14 @@ Nota **4/10** (baja de 5; revisor nuevo cada vez, varianza ±1, y la tabla por a
 dejó ver contradicciones con la frontera). Con los `\todo` entregados, 5; con prioridades 1–3 y 7,
 6–7. Casillas (R3):
 
-- [ ] **R3-1. Frontera/adaptativo frente a tab:h1.** Escaneos 2018 (6/6 en tab:h1, pasan en la
+- [~] **R3-1. Frontera/adaptativo frente a tab:h1.** (explicado en el paper: LOIC-HTTP 2018 y FTP 2017 se alertan en <1 % de flujos; los escaneos 2018 barren 21 hosts y la frontera reproduce solo el más sondeado; falta `iso_1718`) Escaneos 2018 (6/6 en tab:h1, pasan en la
       frontera), LOIC-HTTP 2018 (0/1 frente a factor 4,4), FTP 2017 (0/1 frente a factor 11).
       Declarar el criterio de la frontera (cualquier flujo alertado, víctima sola, origen nuevo,
       minutos ruidosos descontados) frente al estricto; reconciliar fila a fila; `iso_1718` (en cola).
-- [ ] **R3-2. Lo que añade el modelo.** Unión monótona no aprendida (reglas de tasa sobre la
+- [~] **R3-2. Lo que añade el modelo.** (`rate_rules_cr` + unión `rules_pcr` y su adaptativo encolados en `extra6.sh`; `proteus_lin` en `extra5.sh`) Unión monótona no aprendida (reglas de tasa sobre la
       evidencia de cert ∪ reglas sobre la de fast) al mismo presupuesto; comparación por ataque con
       prueba de signos o bootstrap; las dos métricas de alarmas en el resumen; `proteus_lin` (en cola).
-- [ ] **R3-3. Alcance en resumen y conclusión.** Peticiones mínimas + reutilización dejan pasar los
+- [x] **R3-3. Alcance en resumen y conclusión.** (tab:families: lo aditivo no mueve a los monótonos y sube al núcleo sin restricciones de 6,5 % a 27 % y de 26 % a 47 %, KitNET de 19 % a 39 %; resumen y conclusión con peticiones mínimas y DoS lento) Peticiones mínimas + reutilización dejan pasar los
       DoS lentos (~370 conexiones > 256): al resumen/conclusión. Desglose por tipo de plan (solo
       aditivas / reutilización / ráfagas / mínimas) para núcleo sin restricciones y KitNET: ¿alguna
       operación solo aditiva evade un detector no monótono?

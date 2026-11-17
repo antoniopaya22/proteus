@@ -2652,3 +2652,18 @@ que conserva el atacante (media geométrica) y pares que pasan a su ritmo real:
   en la campaña real y ~70 al daño que deja Proteus (pool por defecto de Apache prefork: 256); con
   peticiones mínimas y reutilización ~370. Slowloris 2018: ~310 real, ~140 al daño.
 - Sensibilidad de METIS a λ: Proteus primero con λ = 1, 3 y 10 en los dos sentidos.
+
+### 6.97 Daño por familia de planes (adaptativo al presupuesto, los dos sentidos)
+
+| Detector | Simple | + aditivos | + ráfagas | + reutilización |
+|---|---|---|---|---|
+| Sistema 18→17 | 2,6 %/0 | 2,7 %/0 | 2,7 %/0 | 11,1 %/2 |
+| Núcleo sin restricciones 18→17 | 6,5 %/1 | 26,8 %/3 | 26,8 %/3 | 38,2 %/6 |
+| KitNET 18→17 | 18,5 %/3 | 39,2 %/3 | 39,2 %/3 | 55,9 %/7 |
+| Sistema 17→18 | 5,6 %/2 | 5,6 %/2 | 5,6 %/2 | 7,1 %/2 |
+| Núcleo sin restricciones 17→18 | 25,7 %/4 | 46,9 %/6 | 46,9 %/6 | 55,2 %/6 |
+
+Las operaciones aditivas no mueven a ningún detector monótono (sistema, reglas) y sí a los que no lo
+son: es la prueba empírica de que el certificado defiende frente a algo que ocurre. Contradicciones
+frontera/tab:h1 explicadas (criterio «algún flujo» frente a estricto; escaneos 2018: 1 origen, 21
+destinos, la frontera reproduce solo el destino más sondeado, ~20 % de las sondas).
