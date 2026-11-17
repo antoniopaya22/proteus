@@ -2176,3 +2176,31 @@ Ese detector ya no forma parte del sistema: el paper necesita lo mismo para el c
 (Proteus-cert-R). Lanzado en paralelo (`proteus-certr`: `ablr_1817`, `smooth_r`, `poi_certr`), con la
 ablación de 2018 al final de la cola (`ablr_1718`, `extra4.sh`). `extra.sh` (balance de clases) pasa
 a ajustar Proteus y Proteus-cert-R. `poi_prot` (Proteus-fast) espera el cerrojo.
+
+## 6.76 Ablación y certificado de presupuesto del detector certificado actual, 2018 → 2017 (2026-11-17, 03:25)
+
+`ablr_1817` (Proteus-cert-R sin cada subnúcleo; parte de campañas volumétricas y escaneos / otras, y
+alarmas por entidad alertada y hora, FPR 10⁻³):
+
+| Variante | Detección | Alarmas |
+|---|---|---|
+| Todos los subnúcleos | 0,82 / 0,40 | 3,01 |
+| sin destino (exceso) | 0,82 / 0,40 | 2,59 |
+| sin origen | 1,00 / 0,40 | 3,53 |
+| sin par | 1,00 / 0,10 | 2,27 |
+| sin destino en bruto | 0,82 / 0,30 | 3,30 |
+
+- El subnúcleo de par lleva las «otras» (sin él 0,40 → 0,10) y quitarlo o quitar el de origen deja
+  sitio en el máximo calibrado para dos campañas de volumen más: los subnúcleos compiten por el mismo
+  presupuesto de falsos positivos. No se elige por sentido (sería ajustar sobre los ataques de prueba).
+
+`smooth_r` (suavizado aleatorizado, factor de ruido 0,25, 300 flujos por campaña, 6 variantes):
+radio certificado mediano 0,15–1,83, desplazamiento por operaciones gratuitas 9,6–250, variantes
+dentro del radio 0 % (0,4 % en Slowhttptest). Proteus-cert-R certifica el 98 % de los flujos de Hulk,
+76 % de GoldenEye, 38 % de Slowloris, 72 % del escaneo, 2 % de Slowhttptest y 0 % de LOIC-HTTP (no lo
+detecta). El núcleo sin restricciones sigue alertando en el 93–100 % de las variantes de las
+inundaciones y en el 64 % de las del escaneo. Llevado al apéndice del paper (`tab:budget`).
+
+Paper, hecho en esta pasada con los nombres nuevos: RQ3 (comprobación del certificado: Proteus-cert
+certifica en la ventana los cuatro DoS y un escaneo; Proteus-fast solo Hulk), apéndice del
+temporizador (recall certificado 0,712 / 0,711 / 0,707) y del arrastre entre campañas.
