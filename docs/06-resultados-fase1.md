@@ -2600,3 +2600,19 @@ ejecuciones anteriores al suelo solo-TCP se descartan en `tables.without_udp_shr
   pero son menos robustas (0,12 frente a 0,19).
 - `run2017.sh`: el guard contaba los `flock` en espera con `--test csecicids2018` y bloqueaba los
   trabajos de 2017 indefinidamente; ahora solo cuenta procesos python en marcha.
+
+### 6.94 Ablación r2 de los dos detectores (18 → 17, FPR 10⁻³)
+
+| Variante | fast vol./otros/alarmas | cert vol./otros/alarmas |
+|---|---|---|
+| Completo | 1,00 / 0,10 / 1,75 | 0,82 / 0,30 / 3,01 |
+| sin destino | 1,00 / 0,10 / 1,21 | 0,82 / 0,30 / 2,59 |
+| sin origen | 1,00 / 0,20 / 1,21 | 1,00 / 0,30 / 3,53 |
+| sin par | 1,00 / 0,20 / 2,20 | 1,00 / 0,00 / 2,27 |
+| sin destino bruto | 0,82 / 0,00 / 1,82 | 0,82 / 0,30 / 3,30 |
+
+- En fast solo el destino bruto aporta detección; quitar el origen mejora las dos cosas en este
+  sentido (detecta además la fuerza bruta FTP con menos alarmas). Se declara en el paper; se
+  mantienen todos los sub-núcleos (origen y par sostienen los escaneos de CTU-13; elegir por sentido
+  sería ajustar sobre la evaluación).
+- En cert el par sostiene Infiltration y SSH. Falta 17 → 18 (`abl_1718`, `ablr_1718` en cola).
