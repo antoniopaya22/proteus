@@ -2364,3 +2364,26 @@ de bots, 2 de spam) y `ctuA` (al revés: 1 DDoS, 1 fast-flux, 4 escaneos, 7 de s
 - **Estas cifras llevan la exclusión.** Para el paper se usarán las de sin exclusión y presupuesto 0,5
   (`ctuB_nox`, `ctuA_nox`, adelantadas con `prio2.sh`; `extra2.sh` pasa también a presupuestos 0,5 / 1
   / 0,1 para UGR'16), y con ellas se decide si la exclusión desaparece del todo.
+
+## 6.83 CTU-13, pliegue B, sin la exclusión de subnúcleos saturados (2026-11-17, 09:25)
+
+`ctuB_nox` (mismos modelos que `ctuB`; presupuestos 0,5 / 1 / 0,1). Sistema de dos (`proteus_pcr`):
+
+| Umbral | Con exclusión | Sin exclusión |
+|---|---|---|
+| Presupuesto 0,1 | 3/13 DDoS, 2/60 escaneos, 2/2 spam a 0,33 | igual detección a 0,90 |
+| Presupuesto 0,5 | (no se evaluó) | igual detección a 0,90 |
+| Presupuesto 1 | igual detección a 0,72 | igual detección a 0,90 |
+| FPR 10⁻³ | 3 / 3 / 2 a 0,99 | 3 / 2 / 2 a **41,4** |
+
+- A presupuesto, quitar la exclusión no cambia la detección y sube las alarmas de 0,33–0,72 a 0,90 por
+  entidad y hora: sigue por debajo de una. A FPR fija se dispara a 41 (Proteus-cert satura: 40,8
+  alarmas a las dos FPR, como en 2018), que es justo por lo que el sistema se opera a presupuesto.
+- Sin exclusión Proteus-cert no alerta de nada a presupuesto (0 campañas, 0 alarmas): en esta red
+  sus puntuaciones benignas empatan en el máximo y el umbral queda fuera de alcance. El sistema es
+  aquí Proteus-fast.
+- Las reglas: 4/13 DDoS y 2/2 spam a 5,5 alarmas con presupuesto 0,5.
+- **Decisión: una sola regla en todos los datasets, presupuesto de alarmas y sin exclusión.** El
+  coste en CTU-13 es de 0,33 a 0,90 alarmas; a cambio desaparece una regla que rompía Proteus-cert
+  en 2018 (§6.65) y que habría que justificar por dataset. Falta el pliegue A (`ctuA_nox`,
+  corriendo) y UGR'16.
