@@ -2163,3 +2163,16 @@ escaneos de 11 + otros de 10; alarmas por entidad alertada y hora.
 - Tabla nueva para el paper (`tables h1 --set paper`): columnas Proteus (el sistema), Fast, Cert.,
   Unc., Rules, Sel., KitNET, Flow, Apollon. A FPR 10⁻³ en este sentido el sistema detecta 11/11 y
   3/10 a 4,10; las reglas con selección 9/11 y 0/10 a 1,93.
+
+## 6.75 Envenenamiento de líneas base con r2, detector certificado sobre toda la evidencia (2026-11-17, 02:25)
+
+`poi_cert` (antiguo Proteus-cert, 2018 → 2017, ocho días de envenenamiento al 95 % de la frontera):
+las cifras del paper se repiten exactas con r2. SSH 3 469 y FTP 17 165 flujos/h no se mueven, ni con
+línea base infinita; Hulk pasa de 5 427 a 11 182 el primer día y se queda; GoldenEye de 5 441 a 8 061;
+Slowloris (3 996) y Slowhttptest (3 756) no se mueven. Techo con línea base infinita: LOIC-HTTP
+19 115, escaneo del viernes 2 757, escaneo del jueves 23 867.
+
+Ese detector ya no forma parte del sistema: el paper necesita lo mismo para el certificado actual
+(Proteus-cert-R). Lanzado en paralelo (`proteus-certr`: `ablr_1817`, `smooth_r`, `poi_certr`), con la
+ablación de 2018 al final de la cola (`ablr_1718`, `extra4.sh`). `extra.sh` (balance de clases) pasa
+a ajustar Proteus y Proteus-cert-R. `poi_prot` (Proteus-fast) espera el cerrojo.
