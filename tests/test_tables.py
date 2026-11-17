@@ -182,9 +182,11 @@ def test_adaptive_table_reads_the_system_from_the_ladder(tmp_path):
     pd.DataFrame(ladder).to_csv(run / "adaptive_ladder_0.001_g30.csv", index=False)
     table = adaptive_table([run / "adaptive_0.001_g30.csv"], ADAPTIVE_PAPER)
     row = next(line for line in table.splitlines() if line.startswith("DoS Hulk"))
-    # The system passes where both members are quiet with the same plan: 900, by reuse.
-    assert row.split(" & ")[2] == "900$^a$" and row.split(" & ")[3] == "4.0k"
-    assert row.split(" & ")[6] == "--"  # a detector that is not in the run
+    # The system passes where both members are quiet with the same plan: 900, by reuse;
+    # no plan with minimal requests was tried, so that column is the same.
+    cells = row.split(" & ")
+    assert cells[2] == "900$^a$" and cells[3] == "900$^a$" and cells[4] == "4.0k"
+    assert cells[7] == "--"  # a detector that is not in the run
 
 
 def test_budget_table_counts_campaigns_and_takes_a_detector_from_the_first_run_that_has_it(tmp_path):

@@ -370,6 +370,7 @@ ADAPTIVE = [("proteus", "Proteus", "adaptive_flows_per_h"),
 # The paper: the system (a union, from the per-rate ladder), its two detectors, the
 # certified damage of the certified one, and the detectors it is compared with.
 ADAPTIVE_PAPER = [("proteus+proteus_cert_r", r"\sysname", "union"),
+                  ("proteus+proteus_cert_r", r"\sysname, min.", "union_shrink"),
                   ("proteus", "Fast", "adaptive_flows_per_h"),
                   ("proteus_cert_r", "Cert.", "adaptive_flows_per_h"),
                   ("proteus_cert_r", "Certified", "certified_flows_per_h"),
@@ -403,12 +404,12 @@ def adaptive_table(csvs: list[Path], columns: list[tuple[str, str, str]] | None 
     for path in csvs:
         d = pd.read_csv(path)
         unions = {}
-        if any(col == "union" for _, _, col in columns):
+        if any(col.startswith("union") for _, _, col in columns):
             ladder = pd.read_csv(path.with_name(path.name.replace("adaptive_", "adaptive_ladder_", 1)))
             for m, _, col in columns:
-                if col == "union":
-                    unions[m] = (ladder_damage(ladder, m.split("+")),
-                                 ladder_damage(ladder[ladder["plan"] == "plain"], m.split("+")))
+                if col.startswith("union"):
+                    unions[(m, col)] = (ladder_damage(ladder, m.split("+"), shrink=col == "union_shrink"),
+                                        ladder_damage(ladder[ladder["plan"] == "plain"], m.split("+")))
         key = "__".join(path.parent.name.split("__")[:2])
         lines += [r"\midrule", rf"\multicolumn{{{n + 2}}}{{l}}{{\emph{{{DIRECTION.get(key, key)}}}}} \\"]
         attacks = d.drop_duplicates(["day", "attack"])[["day", "attack", "real_flows_per_h"]]
@@ -420,8 +421,8 @@ def adaptive_table(csvs: list[Path], columns: list[tuple[str, str, str]] | None 
             cells = []
             rmax = float(g["rmax_flows_per_h"].iloc[0])
             for m, _, col in columns:
-                if col == "union":
-                    best, plain = (s.get((a["day"], a["attack"]), np.nan) for s in unions[m])
+                if col.startswith("union"):
+                    best, plain = (s.get((a["day"], a["attack"]), np.nan) for s in unions[(m, col)])
                     c = _rate(float(best), rmax)
                     if np.isfinite(best) and best >= a["real_flows_per_h"]:
                         c = rf"\textbf{{{c}}}"

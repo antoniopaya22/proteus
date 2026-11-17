@@ -60,9 +60,9 @@ for m in proteus proteus_cert_r; do
 done
 
 # Damage under the adaptive attacker (tab:adaptive) and under the query attacker (tab:query).
-csvs=$(files $A/adaptive_0.001_g30.csv $B/adaptive_0.001_g20.csv)
+csvs=$(files $A/adaptive_b0.5_g30.csv $B/adaptive_b0.5_g16.csv)
 [ -n "$csvs" ] && $PY proteus.evaluation.tables adaptive --set paper --csv $csvs --out $T/adaptive.tex > /dev/null
-csvs=$(files $A/query_attack_0.001_all.csv $B/query_attack_0.001_all.csv)
+csvs=$(files $A/query_attack_b0.5_all.csv $B/query_attack_b0.5_all.csv)
 [ -n "$csvs" ] && $PY proteus.evaluation.tables query --set paper --csv $csvs --out $T/query.tex > /dev/null
 
 # Sub-core ablations (tab:ablation).
@@ -74,12 +74,12 @@ runs=$(exists ${A}_ablation_r ${B}_ablation_r)
 
 # Comparison of defences (tab:bench), one file per direction.
 DEF="proteus_pcr proteus proteus_cert_r@certr proteus_free rate_rules_local rate_rules_sel kitnet_local flow_clf apollon"
-for pair in "A:18_17:g30" "B:17_18:g20"; do
+for pair in "A:18_17:g30" "B:17_18:g16"; do
   IFS=: read -r run tag grid <<< "$pair"; R=${!run}
   h1=$(exists ${R}_pcr ${R}c ${R}b $R ${R}_sel ${R}_p2 ${R}_kitnet ${R}_apollon)
   [ -n "$h1" ] || continue
   $PY proteus.evaluation.bench --h1 $h1 \
-    $(f=$(files $R/adaptive_0.001_$grid.csv); [ -n "$f" ] && echo --adaptive $f) \
-    --detectors $DEF --out $T/bench_$tag.csv > /dev/null
+    $(f=$(files $R/adaptive_b0.5_$grid.csv); [ -n "$f" ] && echo --adaptive $f) \
+    --alarm-budget 0.5 --detectors $DEF --out $T/bench_$tag.csv > /dev/null
 done
 ls "$T"

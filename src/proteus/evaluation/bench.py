@@ -91,11 +91,13 @@ def pareto(scores: pd.DataFrame) -> pd.Series:
     return pd.Series(front, index=scores.index)
 
 
-def detection_alarms(runs: list[Path], fpr: float) -> pd.DataFrame:
+def detection_alarms(runs: list[Path], fpr: float, kind: str = "local") -> pd.DataFrame:
+    """Detection and alarms of every model of the runs at one threshold: ``kind``
+    "local" (``fpr`` is a false-positive rate) or "entity" (``fpr`` is an alarm budget)."""
     rows = {}
     for run in runs:
         c = pd.read_csv(run / "campaigns.csv")
-        c = c[(c["threshold"] == "local") & (c["target_fpr"] == fpr)]
+        c = c[(c["threshold"] == kind) & np.isclose(c["target_fpr"], fpr)]
         for m, g in c.groupby("model"):
             if m in rows:
                 continue
@@ -111,7 +113,7 @@ def detection_alarms(runs: list[Path], fpr: float) -> pd.DataFrame:
         fa_file = run / "false_alarms.csv"
         fa = pd.read_csv(fa_file) if fa_file.exists() else pd.DataFrame()
         if "entity_alarms_per_hour" in fa:  # alarms per alerted entity, where the run has them
-            fa = fa[(fa["threshold"] == "local") & (fa["target_fpr"] == fpr)]
+            fa = fa[(fa["threshold"] == kind) & np.isclose(fa["target_fpr"], fpr)]
             for m, e in fa.drop_duplicates("model").set_index("model")["entity_alarms_per_hour"].items():
                 if m in rows:
                     rows[m].setdefault("entity_alarms_per_hour", e)
@@ -156,8 +158,8 @@ def robustness(adaptive: list[Path]) -> pd.DataFrame:
 
 
 def bench(runs: list[Path], adaptive: list[Path], fpr: float,
-          detectors: list[str] | None = None) -> pd.DataFrame:
-    d = detection_alarms(runs, fpr)
+          detectors: list[str] | None = None, kind: str = "local") -> pd.DataFrame:
+    d = detection_alarms(runs, fpr, kind)
     if detectors:
         d = d.loc[[m for m in detectors if m in d.index]]
     # Left join: a defence without an adaptive run keeps its row, with no composite.
@@ -197,11 +199,16 @@ def main() -> None:
                     help="h1 run directories (first one wins for a repeated model)")
     ap.add_argument("--adaptive", type=Path, nargs="*", default=[])
     ap.add_argument("--fpr", type=float, default=1e-3)
+    ap.add_argument("--alarm-budget", type=float, default=None,
+                    help="detection and alarms at this alarm budget instead of --fpr")
     ap.add_argument("--detectors", nargs="*", default=None,
                     help="defences to compare (default: every model found)")
     ap.add_argument("--out", type=Path, required=True)
     args = ap.parse_args()
-    t = bench(args.h1, args.adaptive, args.fpr, args.detectors)
+    if args.alarm_budget is not None:
+        t = bench(args.h1, args.adaptive, args.alarm_budget, args.detectors, kind="entity")
+    else:
+        t = bench(args.h1, args.adaptive, args.fpr, args.detectors)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     t.to_csv(args.out)
     dims = ["detection", "false_alarms"] + (["robustness"] if args.adaptive else [])
