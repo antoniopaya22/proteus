@@ -27,3 +27,18 @@ def test_slack_with_rescoring_timer():
     s = slack(["dsvc__flows__t600"], {"dsvc__flows__t600": "conserved"}, delta_s=120,
               timer_s=10)
     assert abs(s[0] - 250 / 600) < 1e-12
+
+
+
+def test_the_packet_certified_detector_uses_no_payload_bytes_and_no_per_connection_counts():
+    import numpy as np
+
+    from proteus.evaluation import h1
+    from proteus.evidence.features import build
+    from test_operators import flows
+
+    _, specs = build(flows(np.random.default_rng(0)), version="v3")
+    cols, _ = h1.detectors({s.name: s.conservation for s in specs}, [])["proteus_cert_p"]
+    counters = {c.split("__")[1] for c in cols}
+    assert counters <= set(h1.PACKET_SAFE) and "fpkts" in counters
+    assert all(float(c.split("__t")[1].split("__")[0]) >= 600 for c in cols)

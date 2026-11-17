@@ -46,6 +46,10 @@ EXPORT_TIMEOUT_S = 120.0  # CICFlowMeter flow timeout in both datasets (max dura
 TIMER_S = float(os.environ.get("PROTEUS_TIMER_S", "0"))
 CAMPAIGN_GAP_S = 600.0
 REUSE_SAFE = ("fbytes", "n_src", "n_dport", "n_dhost", "n_dsvc", "n_dhost_nr")
+# Evidence that neither smaller requests nor connection reuse can remove: forward packets
+# (a request is at least one; reuse saves at most the factor of ``certify.reuse_worst_case``)
+# and distinct counts. Payload bytes are left out, since an attacker can shrink requests.
+PACKET_SAFE = ("fpkts", "n_src", "n_dport", "n_dhost", "n_dsvc", "n_dhost_nr")
 
 
 # ---------------------------------------------------------------- data
@@ -555,6 +559,10 @@ def proteus_detectors(specs, rules, src_rules, raw, raw_of, cst) -> dict:
         # lower (payload bytes and distinct counts), at scales of 10 minutes and more.
         "proteus_cert_r": calmax(parts, keep=lambda c: _tau(c) >= 600
                                  and c.split("__")[1] in REUSE_SAFE),
+        # Certifiable against smaller requests as well: forward packets instead of payload
+        # bytes, at scales of 10 minutes and more (reuse discounted by the packet factor).
+        "proteus_cert_p": calmax(parts, keep=lambda c: _tau(c) >= 600
+                                 and c.split("__")[1] in PACKET_SAFE),
         # The same restriction on every time scale: no sub-core uses evidence that a
         # free operation or connection reuse can lower.
         "proteus2": calmax(parts, keep=lambda c: c.split("__")[1] in REUSE_SAFE),
@@ -616,6 +624,8 @@ UNIONS = {"proteus_sys": ("proteus", "proteus_cert"),
           "proteus_sys_r": ("proteus", "proteus_cert", "proteus_cert_r"),
           # the two detectors that carry the detection and the damage of the three
           "proteus_pcr": ("proteus", "proteus_cert_r"),
+          # with the certified detector on packets (robust to smaller requests too)
+          "proteus_pcp": ("proteus", "proteus_cert_p"),
           # with the uncertified window-fidelity complement (evaluation.window_fidelity)
           "proteus_w": ("proteus", "window_fidelity"),
           "proteus_sys_rw": ("proteus", "proteus_cert", "proteus_cert_r", "window_fidelity"),
