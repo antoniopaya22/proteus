@@ -68,8 +68,8 @@ cuadran con las tablas. Objeciones, por gravedad, y qué hacemos con cada una:
       intervalos en tabla (ya los calcula `tables summary`) o quitar las frases; ampliar el experimento
       de la capa por flujo o suavizar la motivación.
 - [ ] **O6. Calibración con etiquetas y días futuros; diseño ajustado en las dos redes de prueba.**
-      Hacer: `prior_none` (en cola), y evaluar el sistema final, congelado, en UGR'16 y CTU-13; llevar
-      al resumen las alarmas en tráfico real.
+      Hacer: `prior_none` (hecho, §6.95), y evaluar el sistema final, congelado, en UGR'16 y CTU-13;
+      llevar al resumen las alarmas en tráfico real. CTU-13 hecho; falta UGR'16 sin exclusión.
 - [ ] **O7. Líneas base de construcción propia.** KitNET con nuestros contadores, «BARS»
       reimplementado, ninguna defensa de la tabla 1 con su código. Hacer lo viable: Kitsune tal como
       se publicó sobre paquetes (hay pcap de CIC-IDS-2017) y declarar el resto; comparar el núcleo sin
@@ -343,8 +343,9 @@ tres detectores, se queda el de tres y se cuenta.
 - [x] Tabla de detección r2 (`tables h1 --set r2`): Proteus, sistema, certificadas, certificadas
       frente a reutilización, `proteus_free`, reglas, KitNET, flujo; alarmas por entidad y por
       destino-minuto; criterio estricto. Falta `proteus_free` en daño y banco (con `adapt2`).
-- [ ] Líneas base causales y sin etiquetas (`--baseline prior --mask none`) en 18 → 17, en
+- [x] Líneas base causales y sin etiquetas (`--baseline prior --mask none`) en 18 → 17, en
       `seeds.sh`. Los umbrales siguen usando las etiquetas para elegir el benigno limpio: decirlo.
+      (Hecho: misma detección, 1,37 frente a 1,35 alarmas; en el paper y en §6.95.)
 - [ ] UGR'16: alarmas/h corregidas por el muestreo del 1 % o cota declarada.
 
 ## Indicaciones de Antonio (2026-11-16)

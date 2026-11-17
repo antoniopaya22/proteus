@@ -2616,3 +2616,18 @@ ejecuciones anteriores al suelo solo-TCP se descartan en `tables.without_udp_shr
   mantienen todos los sub-núcleos (origen y par sostienen los escaneos de CTU-13; elegir por sentido
   sería ajustar sobre la evaluación).
 - En cert el par sostiene Infiltration y SSH. Falta 17 → 18 (`abl_1718`, `ablr_1718` en cola).
+
+### 6.95 Líneas base causales y sin enmascarar (`priorb_none`, 18 → 17)
+
+Líneas base solo con días anteriores (`--baseline prior`) y sin enmascarar minutos de ataque
+(`--mask none`). Al presupuesto 0,5:
+
+| Detector | loo/etiquetas | prior/none |
+|---|---|---|
+| Sistema (fast ∪ cert) | 11+3, 1,35 | 11+3, 1,37 |
+| Proteus-fast | 11+1, 1,01 | 11+1, 0,69 |
+| Proteus-cert | 8+2, 0,41 | 8+2, 0,76 |
+| Reglas | 9+4, 5,28 | 9+4, 5,53 |
+
+Misma detección; las alarmas apenas cambian. Queda un uso de etiquetas: el tráfico limpio para
+calibrar los umbrales (se declara). Cierra la mitad de la objeción «calibración con etiquetas».
