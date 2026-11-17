@@ -70,9 +70,9 @@ runs=$(exists ${A}_ablation_r ${B}_ablation_r)
 DEF="proteus_pcr proteus proteus_cert_r@certr proteus_free rate_rules_local rate_rules_sel kitnet_local flow_clf apollon"
 for pair in "A:18_17:g30" "B:17_18:g20"; do
   IFS=: read -r run tag grid <<< "$pair"; R=${!run}
-  h1=$(exists ${R}c ${R}b | head -1)
+  h1=$(exists ${R}_pcr ${R}c ${R}b $R ${R}_sel ${R}_p2 ${R}_kitnet ${R}_apollon)
   [ -n "$h1" ] || continue
-  $PY proteus.evaluation.bench --h1 $h1 $(exists $R ${R}_kitnet ${R}_apollon) \
+  $PY proteus.evaluation.bench --h1 $h1 \
     $(f=$(files $R/adaptive_0.001_$grid.csv); [ -n "$f" ] && echo --adaptive $f) \
     --detectors $DEF --out $T/bench_$tag.csv > /dev/null
 done

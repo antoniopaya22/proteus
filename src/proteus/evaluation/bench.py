@@ -12,7 +12,8 @@ declared or empirical references, and the dimensions are combined as METIS does:
 * **detection**: share of campaigns detected, volumetric attacks and scans on one side
   and the rest on the other, averaged (already on an absolute scale, like utility in
   METIS: 0 = nothing detected, 1 = everything);
-* **false alarms**: alarms per hour on benign traffic, on a log scale between 0 alarms
+* **false alarms**: alarms per hour on benign traffic (per alerted entity where the run
+  reports them, else per destination and minute), on a log scale between 0 alarms
   (score 1) and ``ALARM_LIMIT`` per hour (score 0: one per minute is more than a
   team can triage);
 * **robustness**: per attack, how much of its real rate the attacker keeps when it
@@ -40,12 +41,19 @@ LAMBDA = 3.0  # risk aversion of ssd, as fixed in METIS
 VOLUMETRIC = ("dos_", "ddos_", "portscan")
 RMIN_PER_H = 1e-3 * 3600  # lowest rate tried by evaluation.adaptive (flows/h)
 NAMES = {
-    "proteus": "Proteus", "proteus_cert@cert": "Proteus (cert.\\ alerts)",
-    "proteus_cert": "Proteus certified core", "core_free_dst_b": "Unconstrained core",
-    "rate_rules_local": "Rate thresholds", "kitnet_local": "KitNET",
-    "flow_clf": "Per-flow classifier", "apollon": "Apollon",
+    "proteus_pcr": r"\sysname", "proteus": r"\sysname-fast",
+    "proteus_cert_r": r"\sysname-cert", "proteus_cert_r@certr": r"\sysname-cert (certified alerts)",
+    "proteus_cert@cert": "Certified alerts, every conserved counter",
+    "proteus_cert": "Certified detector, every conserved counter",
+    "proteus_free": "Unconstrained core", "core_free_dst_b": "Unconstrained sub-core",
+    "rate_rules_local": "Rate thresholds", "rate_rules_sel": "Selected rate thresholds",
+    "kitnet_local": "KitNET", "flow_clf": "Per-flow classifier", "apollon": "Apollon",
     "core_mono_dst_x": "Monotone core (single)",
 }
+# Systems whose robustness is read from the per-rate ladder of the adaptive attacker:
+# an attack passes only where every member is quiet with the same plan.
+SYSTEMS = {"proteus_pcr": ("proteus", "proteus_cert_r"),
+           "proteus_sys_r": ("proteus", "proteus_cert", "proteus_cert_r")}
 
 
 def ssd(x, lam: float = LAMBDA, w=None) -> float:
@@ -96,9 +104,17 @@ def detection_alarms(runs: list[Path], fpr: float) -> pd.DataFrame:
             g = g[g["attack"] != "(none)"]
             vol = g["attack"].str.startswith(VOLUMETRIC)
             per_day = per_day_all
-            rows[m] = {"det_volumetric": g.loc[vol, "detected"].mean(),
-                       "det_other": g.loc[~vol, "detected"].mean(),
+            det = "detected_strict" if "detected_strict" in g else "detected"
+            rows[m] = {"det_volumetric": g.loc[vol, det].mean(),
+                       "det_other": g.loc[~vol, det].mean(),
                        "alarms_per_hour": per_day.mean()}
+        fa_file = run / "false_alarms.csv"
+        fa = pd.read_csv(fa_file) if fa_file.exists() else pd.DataFrame()
+        if "entity_alarms_per_hour" in fa:  # alarms per alerted entity, where the run has them
+            fa = fa[(fa["threshold"] == "local") & (fa["target_fpr"] == fpr)]
+            for m, e in fa.drop_duplicates("model").set_index("model")["entity_alarms_per_hour"].items():
+                if m in rows:
+                    rows[m].setdefault("entity_alarms_per_hour", e)
     return pd.DataFrame(rows).T
 
 
@@ -117,8 +133,25 @@ def robustness(adaptive: list[Path]) -> pd.DataFrame:
         # Certified alerts (``model@cert`` in the h1 runs) are robust to the certified
         # damage: the worst case over every combination of free operations.
         c = out["robustness_certified"].dropna().rename("robustness").to_frame()
-        c.index = c.index + "@cert"
-        out = pd.concat([out, c])
+        # ``@certr`` (certified also against connection reuse) for the detectors whose
+        # evidence reuse cannot lower, where both worst cases coincide.
+        out = pd.concat([out] + [c.set_axis(c.index + tag) for tag in ("@cert", "@certr")])
+    from proteus.evaluation.tables import ladder_damage
+    for name, members in SYSTEMS.items():
+        parts = []
+        for p in adaptive:
+            ladder_file = p.with_name(p.name.replace("adaptive_", "adaptive_ladder_", 1))
+            if not ladder_file.exists():
+                continue
+            ladder = pd.read_csv(ladder_file)
+            if not set(members) <= set(ladder["detector"]):
+                continue
+            real = pd.read_csv(p).drop_duplicates(["day", "attack"]).set_index(["day", "attack"])
+            dmg = ladder_damage(ladder, list(members))
+            parts += [damage_score(real.loc[k, "real_flows_per_h"], v) for k, v in dmg.items()]
+        if parts:
+            out.loc[name, ["robustness", "robustness_mean", "attacks"]] = [
+                ssd(parts), float(np.mean(parts)), len(parts)]
     return out
 
 
@@ -130,7 +163,9 @@ def bench(runs: list[Path], adaptive: list[Path], fpr: float,
     # Left join: a defence without an adaptive run keeps its row, with no composite.
     t = d.join(robustness(adaptive), how="left") if adaptive else d
     t["detection"] = t[["det_volumetric", "det_other"]].mean(axis=1)
-    t["false_alarms"] = t["alarms_per_hour"].map(alarm_score)
+    alarms = t["entity_alarms_per_hour"].fillna(t["alarms_per_hour"]) if "entity_alarms_per_hour" in t \
+        else t["alarms_per_hour"]
+    t["false_alarms"] = alarms.astype(float).map(alarm_score)
     dims = ["detection", "false_alarms"] + (["robustness"] if adaptive else [])
     full = t[dims].notna().all(axis=1)
     t["composite"] = t[dims].apply(lambda r: ssd(r.to_numpy()), axis=1).where(full)

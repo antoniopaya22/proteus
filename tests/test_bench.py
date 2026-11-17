@@ -26,3 +26,27 @@ def test_alarm_and_damage_scores_are_anchored():
 def test_pareto_front():
     s = pd.DataFrame({"a": [1, 0.5, 0.4], "b": [0.2, 0.9, 0.1]}, index=["x", "y", "z"])
     assert pareto(s).to_dict() == {"x": True, "y": True, "z": False}
+
+
+def test_robustness_of_a_system_comes_from_the_ladder_and_certified_alerts_get_both_tags(tmp_path):
+    import pandas as pd
+
+    from proteus.evaluation.bench import damage_score, robustness
+
+    rows = [{"day": "wed", "attack": "dos_hulk", "detector": m, "real_flows_per_h": 36000.0,
+             "adaptive_flows_per_h": v, "certified_flows_per_h": c}
+            for m, v, c in (("proteus", 3600.0, float("nan")), ("proteus_cert_r", 360.0, 720.0))]
+    csv = tmp_path / "adaptive_0.001_g30.csv"
+    pd.DataFrame(rows).to_csv(csv, index=False)
+    ladder = [{"day": "wed", "attack": "dos_hulk", "detector": m, "plan": "reuse",
+               "flows_per_h": rate, "detected": rate > quiet}
+              for m, quiet in (("proteus", 3600.0), ("proteus_cert_r", 360.0))
+              for rate in (36.0, 360.0, 3600.0)]
+    pd.DataFrame(ladder).to_csv(tmp_path / "adaptive_ladder_0.001_g30.csv", index=False)
+    r = robustness([csv])
+    # The system is quiet only where both members are: 360 flows/h.
+    assert abs(r.loc["proteus_pcr", "robustness"] - damage_score(36000.0, 360.0)) < 1e-9
+    assert r.loc["proteus_pcr", "attacks"] == 1 and "proteus_sys_r" not in r.index
+    cert = damage_score(36000.0, 720.0)
+    assert abs(r.loc["proteus_cert_r@cert", "robustness"] - cert) < 1e-9
+    assert abs(r.loc["proteus_cert_r@certr", "robustness"] - cert) < 1e-9
