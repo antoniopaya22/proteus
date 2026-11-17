@@ -44,11 +44,13 @@ $PY proteus.evaluation.tables summary --runs $(both) --extra $(exists $MORE) \
   --detectors proteus_pcr proteus proteus_cert_r@certr proteus_free rate_rules_local rate_rules_sel kitnet_local flow_clf apollon \
   --out $T/summary_ci.csv > /dev/null
 
-# Harm frontiers (tab:frontier and the data of fig:frontier).
-for m in proteus proteus_cert proteus_cert_r proteus2; do
+# Harm frontier of the system (tab:frontier) and of each detector.
+runs=$(for d in $A $B; do [ -f $d/frontier_proteus_0.001_attr.csv ] && echo $d; done; true)
+[ -n "$runs" ] && $PY proteus.evaluation.tables frontier_system --set paper --runs $runs \
+  --data-out $T/frontier.csv --out $T/frontier.tex > /dev/null
+for m in proteus proteus_cert_r; do
   csvs=$(files $A/frontier_${m}_0.001_attr.csv $B/frontier_${m}_0.001_attr.csv)
-  [ -n "$csvs" ] && $PY proteus.evaluation.tables frontier --csv $csvs \
-    --data-out $T/frontier_${m}.csv --out $T/frontier_${m}.tex > /dev/null
+  [ -n "$csvs" ] && $PY proteus.evaluation.tables frontier --csv $csvs --out $T/frontier_${m}.tex > /dev/null
 done
 
 # Damage under the adaptive attacker (tab:adaptive) and under the query attacker (tab:query).

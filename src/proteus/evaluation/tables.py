@@ -283,10 +283,10 @@ def frontier_table(csvs: list[Path], data_out: Path | None = None) -> str:
     return "\n".join(lines) + "\n"
 
 
-def frontier_system_table(runs: list[Path], fpr: float = 1e-3,
-                          data_out: Path | None = None) -> str:
-    """Frontier of the deployed system, which alerts when proteus (every scale) or
-    proteus_cert alerts: the plain frontier is the lower of their plain frontiers
+def frontier_system_table(runs: list[Path], fpr: float = 1e-3, data_out: Path | None = None,
+                          members: tuple[str, ...] = ("proteus", "proteus_cert")) -> str:
+    """Frontier of a system that alerts when any of ``members`` does (the paper's:
+    proteus and proteus_cert_r): the plain frontier is the lower of their plain frontiers
     (the attack as it ran, no free operations), the certified frontier the lower of
     their certified ones (every combination of free operations is alerted above it).
     Factor: how many times slower than the real campaign the attack must run; ``--``
@@ -297,11 +297,11 @@ def frontier_system_table(runs: list[Path], fpr: float = 1e-3,
              r"Attack & Real rate & Frontier & Factor & Frontier & Factor \\"]
     fig = []
     fmt = lambda v: "--" if not np.isfinite(v) else f"{v:,.0f}".replace(",", "\\,")
-    fac = lambda real, v: (f"{real / v:,.1f}" if np.isfinite(v) and v > 0 and real / v >= 1
-                           else "--")
+    fac = lambda real, v: (f"{real / v:,.1f}".replace(",", "\\,")
+                           if np.isfinite(v) and v > 0 and real / v >= 1 else "--")
     for run in runs:
         parts = {m: pd.read_csv(run / f"frontier_{m}_{fpr}_attr.csv")
-                 for m in ("proteus", "proteus_cert")
+                 for m in members
                  if (run / f"frontier_{m}_{fpr}_attr.csv").exists()}
         if not parts:
             continue
@@ -614,7 +614,8 @@ def main() -> None:
         print(args.out.read_text())
         return
     if args.table == "frontier_system":
-        args.out.write_text(frontier_system_table(args.runs, args.fpr, args.data_out))
+        members = ("proteus", "proteus_cert_r") if args.set == "paper" else ("proteus", "proteus_cert")
+        args.out.write_text(frontier_system_table(args.runs, args.fpr, args.data_out, members))
         print(args.out.read_text())
         return
     if args.table == "ablation":
