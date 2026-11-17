@@ -2495,3 +2495,22 @@ siguiente; 9,9 millones de paquetes IPv4 TCP/UDP).
 - Para darle su mejor oportunidad, relanzado con un millón de paquetes de entrenamiento (diez veces el
   periodo por defecto; `kitsune_1m`). Si sigue igual, el paper lo dirá así y coincide con Arp et al.
   (un umbral de tasa supera a Kitsune en sus propios datos).
+
+## 6.89 Detector certificado sobre paquetes, 2018 → 2017 (2026-11-17, 17:40)
+
+`cp_fit_1817` (`proteus_cert_p`: paquetes de ida y recuentos distintos, escalas ≥ 10 min). Vol./escaneos
+de 11 (otros de 10, ninguno) y alarmas por entidad alertada y hora:
+
+| Umbral | Todas sus alertas | Certificadas (gratuitas) | Certificadas (+ reutilización) |
+|---|---|---|---|
+| Presupuesto 0,5 | 7 a 0,49 | 5 a 0,00 | 2 a 0,00 |
+| Presupuesto 3 | 7 a 1,19 | 6 a 0,67 | 5 a 0,27 |
+| FPR 10⁻³ | 7 a 0,96 | 5 a 0,47 | 3 a 0,12 |
+
+- Detecta Hulk, GoldenEye, LOIC-HTTP y cuatro escaneos; no los DoS lentos (Slowloris, Slowhttptest),
+  que mueven pocos paquetes. Frente a Proteus-cert (bytes): 8+2 a 0,41 a presupuesto 0,5, con 4+2
+  certificadas también frente a reutilización.
+- El descuento de la reutilización (paquetes / 5) le quita casi toda la certificación a presupuesto
+  bajo: a 0,5 solo certifica 2 campañas frente a reutilización. Es el precio de no depender de bytes.
+- La prueba que decide es el atacante (`adaptb_1817`, corriendo, con los tres detectores): si el
+  sistema fast ∪ cert_p, o fast ∪ cert_r ∪ cert_p, aguanta peticiones mínimas con reutilización.
