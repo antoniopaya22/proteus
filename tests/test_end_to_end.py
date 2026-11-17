@@ -171,6 +171,25 @@ def test_cross_network_run_end_to_end(world):
     for m in ("shrink", "costly"):
         assert (q[mode == m].set_index("target")["query_flows_per_h"] >= free).all(), m
 
+    # The adaptive attacker at an alarm budget saves after every scenario and resumes.
+    adapt = [sys.executable, "-m", "proteus.evaluation.adaptive", "--run", str(out), "--test", "net2",
+             "--models", "proteus", "proteus_cert_r", "--local", "rate_rules_local",
+             "--certify", "proteus_cert_r", "--alarm-budget", "1", "--grid", "6", "--rmax", "2",
+             "--variants", "1", "--days", "day1", "--tag", "e2e"]
+    r = subprocess.run(adapt + ["--attacks", "dos_hulk"], cwd=world, env=env, capture_output=True,
+                       text=True, check=False)
+    assert r.returncode == 0, r.stderr[-2000:]
+    a1 = pd.read_csv(out / "adaptive_b1_e2e.csv")
+    assert set(a1["attack"]) == {"dos_hulk"} and len(a1) == 3
+    assert {"shrink_flows_per_h", "spread_flows_per_h"} <= set(a1.columns)
+    assert (out / "adaptive_ladder_b1_e2e.csv").exists()
+    r = subprocess.run(adapt + ["--attacks", "dos_hulk", "portscan", "--resume"], cwd=world, env=env,
+                       capture_output=True, text=True, check=False)
+    assert r.returncode == 0 and "resuming: 1 scenarios" in r.stdout, r.stderr[-2000:]
+    a2 = pd.read_csv(out / "adaptive_b1_e2e.csv")
+    assert sorted(a2["attack"].unique()) == ["dos_hulk", "portscan"] and len(a2) == 6
+    assert a2[a2["attack"] == "dos_hulk"].reset_index(drop=True).equals(a1)
+
     again = _run(world, "--train", "net1", "--test", "net2", "--reuse", str(out),
                  "--models", "proteus", "--tag", "e2e_reuse")
     assert again.returncode == 0, again.stderr[-2000:]

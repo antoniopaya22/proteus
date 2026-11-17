@@ -221,6 +221,8 @@ def main() -> None:
     ap.add_argument("--days", nargs="*", default=None, help="test days (file stems)")
     ap.add_argument("--full-scan", action="store_true",
                     help="score every detector at every rate (no per-detector stop)")
+    ap.add_argument("--resume", action="store_true",
+                    help="keep the scenarios already in the output files and skip them")
     args = ap.parse_args()
     rng = np.random.default_rng(args.seed)
     fitted = h1.load_models(args.run)
@@ -233,13 +235,29 @@ def main() -> None:
     rates = np.geomspace(args.rmin, args.rmax, args.grid)
     delta = h1.EXPORT_TIMEOUT_S
     baselines = Baselines(args.test)
-    rows, ladder = [], []
+    label = threshold_label(args.fpr, args.alarm_budget)
+    tag = f"_{args.tag}" if args.tag else ""
+    out_rows = args.run / f"adaptive_{label}{tag}.csv"
+    out_ladder = args.run / f"adaptive_ladder_{label}{tag}.csv"
+    rows, ladder, done = [], [], set()
+    if args.resume and out_rows.exists() and out_ladder.exists():
+        rows = pd.read_csv(out_rows).to_dict("records")
+        ladder = pd.read_csv(out_ladder).to_dict("records")
+        done = {(r["day"], r["attack"]) for r in rows}
+        print(f"resuming: {len(done)} scenarios already done", flush=True)
+
+    def save() -> None:
+        """Results so far, written after every scenario (a long run can be killed)."""
+        pd.DataFrame(rows).to_csv(out_rows, index=False)
+        pd.DataFrame(ladder).to_csv(out_ladder, index=False)
+
     for day in h1.days(args.test):
         if args.days and day.stem not in args.days:
             continue
         flows = pd.read_parquet(day, columns=FLOW_COLS)
         want = args.attacks or ATTACKS
-        present = [a for a in want if (flows["is_attack"] & (flows["attack"] == a)).any()]
+        present = [a for a in want if (flows["is_attack"] & (flows["attack"] == a)).any()
+                   and (day.stem, a) not in done]
         if not present:
             continue
         base = baselines.for_day(day)
@@ -324,12 +342,9 @@ def main() -> None:
                              "certified_flows_per_h": cert[n] * 3600 if n in cert else np.nan,
                              "rmax_flows_per_h": args.rmax * 3600})
                 print(rows[-1], flush=True)
+            save()
+    save()  # the ladder (METIS-style dose ladder): detection at every rate and plan
     out = pd.DataFrame(rows)
-    tag = f"_{args.tag}" if args.tag else ""
-    label = threshold_label(args.fpr, args.alarm_budget)
-    out.to_csv(args.run / f"adaptive_{label}{tag}.csv", index=False)
-    # Dose ladder (METIS-style): detection at every rate and variant.
-    pd.DataFrame(ladder).to_csv(args.run / f"adaptive_ladder_{label}{tag}.csv", index=False)
     print(out.pivot_table(index=["day", "attack"], columns="detector",
                           values="adaptive_flows_per_h").round(0).to_string())
 

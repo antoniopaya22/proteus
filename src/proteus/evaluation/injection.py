@@ -149,6 +149,8 @@ def main() -> None:
     ap.add_argument("--days", nargs="*", default=None)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--tag", default="")
+    ap.add_argument("--resume", action="store_true",
+                    help="keep the (victim, attack) pairs already in the output files and skip them")
     args = ap.parse_args()
     known = ["plain"] + [p for p in STRUCTURED if not p.startswith("spread")]
     unknown = sorted(set(args.plans) - set(known))
@@ -166,11 +168,18 @@ def main() -> None:
     baselines = Baselines(args.test)
     label = threshold_label(args.fpr, args.alarm_budget)
     tag = f"_{args.tag}" if args.tag else ""
-    rows, ladders = [], []
+    out_rows = args.run / f"injection_{label}{tag}.csv"
+    out_ladder = args.run / f"injection_ladder_{label}{tag}.csv"
+    rows, ladders, done = [], [], set()
+    if args.resume and out_rows.exists() and out_ladder.exists():
+        rows = pd.read_csv(out_rows).to_dict("records")
+        ladders = pd.read_csv(out_ladder).to_dict("records")
+        done = {(r["day"], r["attack"], r["victim"]) for r in rows}
+        print(f"resuming: {len(done)} pairs already done", flush=True)
 
     def save() -> None:
-        pd.DataFrame(rows).to_csv(args.run / f"injection_{label}{tag}.csv", index=False)
-        pd.DataFrame(ladders).to_csv(args.run / f"injection_ladder_{label}{tag}.csv", index=False)
+        pd.DataFrame(rows).to_csv(out_rows, index=False)
+        pd.DataFrame(ladders).to_csv(out_ladder, index=False)
 
     for day in h1.days(args.test):
         if args.days and day.stem not in args.days:
@@ -193,6 +202,8 @@ def main() -> None:
             victims = pick_victims(flows, None if scan else port, proto, args.victims)
             print(f"{day.stem} {attack}: {len(victims)} victims", flush=True)
             for victim, n_benign in victims:
+                if (day.stem, attack, victim) in done:
+                    continue
                 sc = scenario(flows, template, victim, port, proto, args.window,
                               int(A["src_ip"].nunique()), scan)
                 if sc.background.empty:
