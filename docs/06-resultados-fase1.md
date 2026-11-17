@@ -2245,3 +2245,30 @@ temporizador (recall certificado 0,712 / 0,711 / 0,707) y del arrastre entre cam
 Estado: 11 744 servicios, 9 012 hosts, 22 981 pares, unos 10,5 MB. En línea con §6.38. Una primera
 medida sin fijar hilos dio 104 000 y 155 000 flujos/s: era multihilo y no vale como «un núcleo».
 `reproduce.sh cost` fija ahora hilo y núcleo (antes no lo hacía).
+
+## 6.79 El sistema de dos detectores en 2017 → 2018 y tabla de todos los umbrales (2026-11-17, 05:50)
+
+`p2_all_1718` (etiqueta `r2c`, con `proteus_pcr`). «13+1» = volumétricas y escaneos de 13 + otros de
+12; alarmas por entidad alertada y hora.
+
+| Umbral | Sistema | Proteus-fast | Proteus-cert | Sin restricciones | Reglas | Reglas sel. |
+|---|---|---|---|---|---|---|
+| Presupuesto 0,5 | 12+1 a 0,26 | 8+1 a 0,20 | 12+1 a 0,08 | 9+0 a 0,28 | 13+2 a 1,31 | 13+2 a 0,61 |
+| Presupuesto 1 | 12+1 a 0,48 | 11+1 a 0,42 | 12+1 a 0,08 | 9+0 a 0,29 | 13+2 a 1,93 | 13+2 a 0,71 |
+| Presupuesto 3 | 13+1 a 1,07 | 13+1 a 1,02 | 12+1 a 0,08 | 9+0 a 0,30 | 13+2 a 2,50 | 13+2 a 1,29 |
+| Presupuesto 10 | 13+1 a 2,23 | 13+1 a 2,18 | 12+1 a 0,08 | 12+1 a 5,82 | 13+2 a 4,97 | 13+2 a 3,40 |
+| FPR 10⁻³ | 13+2 a 8,48 | 13+1 a 1,57 | 12+2 a 7,28 | 13+2 a 17,00 | 13+2 a 13,46 | 13+5 a 18,66 |
+| FPR 10⁻⁴ | 12+2 a 7,47 | 9+1 a 0,27 | 12+2 a 7,28 | 9+0 a 1,30 | 13+2 a 2,93 | 13+2 a 1,55 |
+
+- Con presupuesto 0,5 el sistema detecta 12 de 13 a 0,26 (falta LOIC-HTTP, la inundación HTTP
+  distribuida, que entra con presupuesto 3 a 1,07). El sistema de tres llegaba a 13 a 0,30 gracias al
+  antiguo Proteus-cert: es el coste de quitarlo, y se dice en el paper.
+- Punto de operación del paper: presupuesto 0,5 por detector (el más bajo evaluado, fijado sin mirar
+  cuál conviene): 11+3 a 1,35 en 2017 y 12+1 a 0,26 en 2018.
+- `proteus2` da 7,80 alarmas a FPR 10⁻³ aquí y 10,26 en su ejecución de ajuste (§6.72) con las mismas
+  12+2 campañas: sus puntuaciones saturan en 2018 y el umbral es inestable. Los dos miembros del
+  sistema dan lo mismo en todas las ejecuciones (1,57 y 7,28).
+- Paper: sección de detección reescrita con el sistema final (tabla a FPR 10⁻³ con columnas Proteus,
+  Fast, Cert., Unc., Rules, Sel., KitNET, Flow, Apollon; tabla nueva `tab:budgets` con todos los
+  umbrales; curvas regeneradas), resumen, conclusión y destacados. `scripts/paper_tables.sh` regenera
+  idénticas las seis tablas y figuras nuevas.
