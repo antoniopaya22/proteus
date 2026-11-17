@@ -235,7 +235,7 @@ stage_tables() {
   [ -n "${DRY:-}" ] || bash scripts/paper_tables.sh
 }
 
-STAGES="data h1 baselines systems cert frontier adaptive query injection ablation poisoning budget real shell robustness packets kitsune cost tables"
+STAGES="data h1 baselines systems cert frontier adaptive query injection ablation poisoning budget real shell robustness kitsune packets cost tables"
 [ $# -eq 0 ] && { echo "usage: $0 all | <stage>...   stages: $STAGES"; exit 1; }
 [ "$1" = all ] && set -- $STAGES
 for s in "$@"; do "stage_$s"; done
