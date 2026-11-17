@@ -388,6 +388,9 @@ def ladder_damage(ladder: pd.DataFrame, members: list[str], costly: bool = False
 
 QUERY = [("proteus", "Proteus"), ("proteus_sys_r", "System"), ("proteus_cert_r", "Cert.-R"),
          ("rate_rules_local", "Rules"), ("rate_rules_sel", "Sel. rules")]
+# The paper: the system is the union that the query attacker was run against (``pcr``).
+QUERY_PAPER = [("pcr", r"\sysname"), ("proteus", "Fast"), ("proteus_cert_r", "Cert."),
+               ("rate_rules_local", "Rules"), ("rate_rules_sel", "Sel.")]
 
 
 def query_table(csvs: list[Path], targets: list[tuple[str, str]] | None = None) -> str:
@@ -559,7 +562,7 @@ def main() -> None:
         print(args.out.read_text())
         return
     if args.table == "query":
-        args.out.write_text(query_table(args.csv))
+        args.out.write_text(query_table(args.csv, QUERY_PAPER if args.set == "paper" else None))
         print(args.out.read_text())
         return
     if args.table == "frontier_system":
