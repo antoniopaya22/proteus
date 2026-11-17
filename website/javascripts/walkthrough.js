@@ -52,13 +52,13 @@
         [{ rate: 30 }, "Empieza la inundación: miles de peticiones a la vez. El detector por conexión ve conexiones raras; Proteus ve que el servidor recibe muchísimo más de lo normal. Los dos avisan."],
         [{ rate: 30, pad: 1 }, "El atacante rellena sus paquetes para que cada conexión parezca legítima. El detector por conexión se lo cree. A Proteus le da igual el aspecto: los bytes recibidos han subido, no bajado."],
         [{ rate: 30, pad: 1, decoy: 1, split: 1 }, "Añade señuelos y parte sus conexiones. Todo eso es tráfico de más, así que los marcadores solo suben. La alerta sigue ahí, y está certificada: ningún disfraz de este tipo puede quitarla."],
-        [{ rate: 2 }, "Su única salida es enviar menos. Por debajo de cierto ritmo Proteus calla, pero el servidor ya no está saturado: el ataque ha perdido casi toda su fuerza."]
+        [{ rate: 2 }, "Lo que le queda es enviar menos: más despacio, desde más máquinas o con peticiones más pequeñas. Eso no se certifica, se mide. Por debajo de cierto ritmo Proteus calla, pero el servidor ya no está saturado: el ataque ha perdido casi toda su fuerza."]
       ] : [
         [{ rate: 0 }, "A normal day. A few clients visit the server and its tallies stay at their usual level."],
         [{ rate: 30 }, "The flood starts: thousands of requests at once. The per-connection detector sees odd connections; Proteus sees that the server receives far more than usual. Both raise an alert."],
         [{ rate: 30, pad: 1 }, "The attacker pads its packets so that each connection looks legitimate. The per-connection detector believes it. Proteus does not care how a connection looks: the bytes received went up, not down."],
         [{ rate: 30, pad: 1, decoy: 1, split: 1 }, "It adds decoys and splits its connections. All of that is extra traffic, so the tallies only go up. The alert stays, and it is certified: no disguise of this kind can remove it."],
-        [{ rate: 2 }, "The only way out is to send less. Below a certain rate Proteus stays quiet, but the server is no longer overloaded: the attack has lost almost all its strength."]
+        [{ rate: 2 }, "What is left is to send less: more slowly, from more machines or with smaller requests. Those are not certified, they are measured. Below a certain rate Proteus stays quiet, but the server is no longer overloaded: the attack has lost most of its strength."]
       ]
     },
     scan: {
