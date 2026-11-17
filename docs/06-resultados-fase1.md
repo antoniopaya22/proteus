@@ -2272,3 +2272,44 @@ medida sin fijar hilos dio 104 000 y 155 000 flujos/s: era multihilo y no vale c
   Fast, Cert., Unc., Rules, Sel., KitNET, Flow, Apollon; tabla nueva `tab:budgets` con todos los
   umbrales; curvas regeneradas), resumen, conclusión y destacados. `scripts/paper_tables.sh` regenera
   idénticas las seis tablas y figuras nuevas.
+
+## 6.80 Frontera y comparación conjunta con el sistema final, 2018 → 2017 (2026-11-17, 06:50)
+
+**Frontera del sistema** (`tables frontier_system --set paper`: la menor de las dos fronteras simples
+y la certificada de Proteus-cert). Factor = cuántas veces más lento que la campaña real.
+
+| Ataque (real) | Simple (factor) | Certificada (factor) |
+|---|---|---|
+| SSH (1 541) | 969 (1,6) | 2 403 (—) |
+| FTP (3 910) | 432 (9,0) | 38 980 (—) |
+| Hulk (518 525) | 1 407 (369) | 8 612 (60) |
+| GoldenEye (44 976) | 1 497 (30) | 6 179 (7,3) |
+| Slowloris (10 461) | 811 (12,9) | 2 925 (3,6) |
+| Slowhttptest (5 107) | 629 (8,1) | 2 809 (1,8) |
+| Escaneo jue. (10 418) | 11 (915) | 563 (18,5) |
+| Escaneo vie. (107 850) | 84 (1 280) | 544 (198) |
+| LOIC-HTTP (290 167) | 2 174 (134) | 164 536 (1,8) |
+
+- Frente al detector certificado antiguo, la frontera certificada mejora en todo salvo FTP
+  (19 786 → 38 980) y LOIC-HTTP (28 728 → 164 536): Hulk 11 291 → 8 612, SSH 4 602 → 2 403, escaneo del
+  viernes 4 280 → 544. Y cubre además la reutilización de conexiones.
+- Servicio con tráfico (servidor web externo, 227 flujos/h): la frontera simple de Proteus-fast sube
+  un orden de magnitud (Hulk 1 407 → 22 171); las de Proteus-cert no se mueven en los DoS (Hulk 8 612
+  → 8 511 certificada) y en LOIC-HTTP sube por encima de 230 000.
+- Paper: subsección compacta (unas 400 palabras menos), sin la figura de mancuernas.
+
+**Comparación conjunta** (`bench`, FPR 10⁻³; detección estricta, alarmas por entidad, robustez del
+sistema desde la escalera):
+
+| Defensa | Detección | Alarmas | Robustez | A₃ | Pareto |
+|---|---|---|---|---|---|
+| Proteus (sistema) | 0,65 | 0,60 | 0,21 | 0,42 | sí |
+| Núcleo sin restricciones | 0,61 | 0,59 | 0,20 | 0,41 | no |
+| Proteus-cert, alertas certificadas | 0,51 | 0,76 | 0,17 | 0,39 | sí |
+| Reglas | 0,66 | 0,44 | 0,20 | 0,38 | sí |
+| Proteus-fast | 0,55 | 0,75 | 0,13 | 0,38 | sí |
+| KitNET | 0,51 | 0,61 | 0,06 | 0,30 | no |
+| Reglas con selección | 0,41 | 0,74 | 0,04 | 0,28 | no |
+
+- El sistema queda primero **por poco**; el paper lo dice así («narrowly»). La diferencia clara está
+  con KitNET y las reglas con selección. Falta 2017 → 2018 (`adapt_1718`).

@@ -124,8 +124,11 @@ trabajo es de seguridad de redes (el certificado vale para detectores no aprendi
   - [x] Detección RQ1–RQ2 con el sistema (tablas `--set paper`, tabla `tab:budgets` con todos los
         umbrales, curvas, precio de la monotonía, otros detectores); punto de operación: presupuesto
         0,5 por detector (§6.79 de docs/06).
-  - [ ] Frontera (RQ4) con Proteus-fast y Proteus-cert en ambos sentidos: espera a `fr_*_1718`.
-  - [ ] Comparación de defensas (`tab:bench`) con el sistema y Apollon; tráfico real (CTU-13, UGR'16).
+  - [x] Frontera (RQ4) del sistema en 2018 → 2017, compacta y sin figura (§6.80); falta 2017 → 2018
+        (`fr_*_1718`).
+  - [x] Comparación de defensas (`tab:bench`) con el sistema en 2018 → 2017; falta 2017 → 2018.
+  - [x] Introducción: los dos detectores.
+  - [ ] Tráfico real (CTU-13, UGR'16) con el sistema: espera a `ctuA/ctuB`, `ugr*` y sus `_nox`.
   - [x] Resumen (250 palabras), conclusión y destacados con las cifras del sistema a presupuesto.
         PDF enviado a Antonio el 2026-11-17.
   - [x] Coste de los dos detectores en un hilo y un núcleo (§6.78); `paper_tables.sh` genera las
