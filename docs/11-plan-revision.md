@@ -78,7 +78,21 @@ cuadran con las tablas. Objeciones, por gravedad, y qué hacemos con cada una:
 - [ ] **O10. Título, extensión y pulido.** «Certified robustness to adversarial evasion» promete de
       más para una garantía sobre operaciones aditivas que cubre 14 de 24 campañas; 13 900 palabras;
       la sección de tráfico real parece un cuaderno.
-- [ ] **Discrepancias (23).** Corregir todas: daño certificado de LOIC-HTTP en `tab:adaptive` (204k)
+**Estado (2026-11-17, tarde; Antonio: «arregla todo lo que pida el revisor»; la máquina se ampliará
+a una con GPU para las defensas publicadas):**
+- O1 y O2: código hecho (commit 9ec24f0: `operators.shrink_requests`, planes `shrink*` en `adaptive`,
+  modo `--shrink` en `query_attack`, `--alarm-budget` en ambos con `h1.budget_threshold`; 221 tests).
+  Corriendo sobre 2017 a presupuesto 0,5: `adaptb_1817` y después `qab_1817` (unidad `proteus-op`).
+- O8: hecho en el texto (Proteus = los dos detectores del núcleo; la capa por flujo se mide aparte).
+- O10: título nuevo provisional («Certifying Network Intrusion Alerts against Adversarial Traffic
+  Manipulation», pendiente de que Antonio lo confirme; la web sigue con el anterior), resumen con la
+  cobertura certificada en el punto de operación (10 de 24) y sin «but not under an adaptive
+  attacker»; destacado «certified away» reescrito.
+- Discrepancias: corregidas 19 de 23 (commit 08d140a del paper). Quedan las de la sección de tráfico
+  real (UGR'16 13/12 días, cifras de CTU-13, nombres antiguos), que se reescribe con `ctu*_nox` y
+  UGR'16, y la del daño certificado de LOIC-HTTP, que se explica cuando esté la tabla a presupuesto.
+
+- [~] **Discrepancias (23).** Corregir todas: daño certificado de LOIC-HTTP en `tab:adaptive` (204k)
       frente a la frontera (164 536); dos columnas «Cert.» con significados distintos (1,73 / 6,13
       frente a 3,01 / 7,28); frases que no cuadran con sus tablas (escaneos que «para antes»
       Proteus-fast, mejor puntuación de alarmas 0,75 frente a 0,76, «29 veces», recall de la capa por
