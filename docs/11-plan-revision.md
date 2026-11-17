@@ -121,13 +121,17 @@ trabajo es de seguridad de redes (el certificado vale para detectores no aprendi
   - [x] Envenenamiento contra Proteus-cert como tabla (`tab:poisoning`); falta Proteus-fast (`poi_prot`).
   - [x] Daño bajo ataque (rejilla y atacante por consultas) en 2018 → 2017 (`tab:adaptive`,
         `tab:query`); falta 2017 → 2018 (`adapt_1718`, `qa_1718`).
-  - [ ] Detección RQ1–RQ2 con el sistema (tablas `--set paper`, curvas, presupuestos, precio de la
-        monotonía, otras líneas base): espera a `p2_all_1718`.
+  - [x] Detección RQ1–RQ2 con el sistema (tablas `--set paper`, tabla `tab:budgets` con todos los
+        umbrales, curvas, precio de la monotonía, otros detectores); punto de operación: presupuesto
+        0,5 por detector (§6.79 de docs/06).
   - [ ] Frontera (RQ4) con Proteus-fast y Proteus-cert en ambos sentidos: espera a `fr_*_1718`.
   - [ ] Comparación de defensas (`tab:bench`) con el sistema y Apollon; tráfico real (CTU-13, UGR'16).
-  - [ ] Resumen, introducción y conclusión con las cifras del sistema a presupuesto.
-  - [ ] Apéndice: tabla a 10⁻⁴, ablación (ambos detectores, ambos sentidos), balance de clases,
-        CIC-DDoS-2019 y UNSW; `paper_tables.sh` con el conjunto nuevo.
+  - [x] Resumen (250 palabras), conclusión y destacados con las cifras del sistema a presupuesto.
+        PDF enviado a Antonio el 2026-11-17.
+  - [x] Coste de los dos detectores en un hilo y un núcleo (§6.78); `paper_tables.sh` genera las
+        tablas y figuras nuevas idénticas a las del paper.
+  - [~] Apéndice: tabla a 10⁻⁴ hecha; faltan ablación (ambos detectores, ambos sentidos), balance
+        de clases, CIC-DDoS-2019 y UNSW.
   - [ ] Recorte hacia 10 000 palabras una vez todo esté con cifras r2.
 
 **Computers & Security** (Elsevier), por la vía de suscripción (sin coste); reserva: *Journal of
