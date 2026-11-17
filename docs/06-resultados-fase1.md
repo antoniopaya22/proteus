@@ -2583,3 +2583,20 @@ ejecuciones anteriores al suelo solo-TCP se descartan en `tables.without_udp_shr
   Slowloris (17 → 18); Hulk sigue teniendo que ir 14 y 26 veces más despacio.
 - Las reglas lo hacen con 4–5 veces las alarmas del sistema (`tab:budgets`).
 
+
+### 6.93 Frontera y comparación de defensas al presupuesto, en los dos sentidos
+
+- **Frontera** (`tables frontier_budget`): se lee de las ejecuciones adaptativas al presupuesto 0,5
+  (plan `plain`, los dos detectores callados al mismo ritmo; certificada = daño certificado de
+  Proteus-cert). Sustituye a la de FPR 10⁻³ solo en 18 → 17. 18 → 17: DoS 6 (Slowhttptest) a 398
+  veces (Hulk), DDoS HTTP 146, escaneos 100 y 445, FTP 11, SSH 1,8. 17 → 18: inundaciones 4,4 a 681,
+  SSH 26, los escaneos ya iban por debajo. Certificada: Hulk 32 y 681, GoldenEye 4,2 y 3,1,
+  Slowloris 2,3 y 2,2, HOIC 3,7, SSH de la red grande 26.
+- **Comparación de defensas** solo con las defensas atacadas (Apollon y el clasificador por flujo
+  quedan en `tab:h1` y en el ataque al clasificador). KitNET recalculado al presupuesto
+  (`kitb_1817`, ahora `r2_kitnet`; `reproduce.sh` le pasa `$BUD`). Proteus tiene el compuesto más
+  alto en los dos sentidos (0,43) y está en el frente de Pareto; en 18 → 17 domina a las reglas
+  (0,65/0,79/0,18 frente a 0,61/0,55/0,16); en 17 → 18 las reglas detectan más (0,58 frente a 0,50)
+  pero son menos robustas (0,12 frente a 0,19).
+- `run2017.sh`: el guard contaba los `flock` en espera con `--test csecicids2018` y bloqueaba los
+  trabajos de 2017 indefinidamente; ahora solo cuenta procesos python en marcha.
