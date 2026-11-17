@@ -2432,3 +2432,25 @@ peticiones mínimas; certificado = Proteus-cert frente a operaciones gratuitas y
   certificado de reutilización (las peticiones conservan su carga; falla al encogerlas o al ahorrar un
   saludo TLS/SSH), y una fila nueva en la tabla de operaciones («peticiones más pequeñas: medido, no
   certificado»). Web actualizada igual.
+
+## 6.86 Peticiones mínimas con reutilización también desarman a Proteus-fast (2026-11-17, 13:30)
+
+`adaptb_1718` (2017 → 2018, presupuesto 0,5), primeros ataques:
+
+| Ataque (real) | Proteus-fast libre | fast con mín.+reuse | Proteus-cert tal cual | cert con mín. |
+|---|---|---|---|---|
+| SSH (62 340) | 27 780 | 27 780 | 2 418 | 12 312 |
+| GoldenEye (38 445) | 12 312 | **141 426** | 12 312 | 319 103 |
+| Slowloris (12 184) | 12 312 | **141 426** | 5 457 | 319 103 |
+
+- Proteus-fast también usa bytes; encogiendo las peticiones y reutilizando conexiones a la vez bajan
+  conexiones y bytes, y los dos detectores quedan atrás. El sistema actual no cubre la combinación.
+- **Salida de diseño, implementada (commit df47702):** `proteus_cert_p`, certificado sobre paquetes de
+  ida y recuentos distintos (escalas ≥ 10 min). Encoger una petición no le quita paquetes (cada
+  petición es al menos uno) y la reutilización los reduce como mucho en el factor c = 5 que ya
+  descuenta el peor caso (`reuse_worst_case`). Supuesto declarable: peticiones de un paquete (vale para
+  inundaciones y fuerza bruta). Si detecta parecido a Proteus-cert, sustituye a este y el sistema
+  queda certificado frente a operaciones gratuitas, reutilización **y** peticiones mínimas.
+- Encolado: `prio3.sh` (ajuste y evaluación conjunta en los dos sentidos, `cp_fit_1817` ya
+  corriendo) y el lanzador de 2017 (`proteus-2017b`) lo incluye en el adaptativo, la inyección y el
+  atacante por consultas.
