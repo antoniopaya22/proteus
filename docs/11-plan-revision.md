@@ -112,13 +112,23 @@ trabajo es de seguridad de redes (el certificado vale para detectores no aprendi
 - [ ] Atacante por consultas 17 → 18 (`qa_1718`, `~/tools/extra3.sh`, al final de la cola).
 - [~] **Reescritura del paper con el sistema de dos** (nombres: Proteus = el sistema, Proteus-fast =
       todas las escalas, Proteus-cert = el certificado sobre evidencia que la reutilización no baja;
-      el antiguo Proteus-cert pasa a ablación de la evidencia, apéndice `app:evidence`). Hecho:
-      diseño (`tab:variants`, subsección «The two detectors», algoritmo), apéndice `tab:evidence`,
-      generador (`tables h1 --set paper`, curvas con `proteus_pcr`). Cifras de 2017 del sistema en
-      §6.74 de docs/06. Falta: resumen, introducción, evaluación (RQ1–RQ6), discusión, conclusión,
-      apéndice, `paper_tables.sh` con el conjunto nuevo; espera a `p2_all_1718` para 2018.
-- [ ] Paper: reglas con selección en 2018 compiten en detección y alarmas (13+2 a 0,61) y no tienen
-      robustez (85 % del ritmo real): decirlo así en RQ2 y en la comparación.
+      el antiguo Proteus-cert pasa a ablación de la evidencia, apéndice `app:evidence`).
+  - [x] Diseño (`tab:variants`, «The two detectors», algoritmo) y apéndice `tab:evidence`.
+  - [x] Generador: `tables h1|adaptive|query --set paper`, curvas con `proteus_pcr`, ablación por
+        entidad.
+  - [x] Discusión (alcance del certificado, amenazas a la validez), tabla de detectores.
+  - [x] RQ3 (comprobación del certificado), apéndices de presupuesto, temporizador y arrastre.
+  - [x] Envenenamiento contra Proteus-cert como tabla (`tab:poisoning`); falta Proteus-fast (`poi_prot`).
+  - [x] Daño bajo ataque (rejilla y atacante por consultas) en 2018 → 2017 (`tab:adaptive`,
+        `tab:query`); falta 2017 → 2018 (`adapt_1718`, `qa_1718`).
+  - [ ] Detección RQ1–RQ2 con el sistema (tablas `--set paper`, curvas, presupuestos, precio de la
+        monotonía, otras líneas base): espera a `p2_all_1718`.
+  - [ ] Frontera (RQ4) con Proteus-fast y Proteus-cert en ambos sentidos: espera a `fr_*_1718`.
+  - [ ] Comparación de defensas (`tab:bench`) con el sistema y Apollon; tráfico real (CTU-13, UGR'16).
+  - [ ] Resumen, introducción y conclusión con las cifras del sistema a presupuesto.
+  - [ ] Apéndice: tabla a 10⁻⁴, ablación (ambos detectores, ambos sentidos), balance de clases,
+        CIC-DDoS-2019 y UNSW; `paper_tables.sh` con el conjunto nuevo.
+  - [ ] Recorte hacia 10 000 palabras una vez todo esté con cifras r2.
 
 **Computers & Security** (Elsevier), por la vía de suscripción (sin coste); reserva: *Journal of
 Information Security and Applications*. Se buscaron números especiales abiertos y gratuitos y no hay
