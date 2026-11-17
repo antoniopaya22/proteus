@@ -11,7 +11,8 @@ que cada conexión toca.
   disparado, para que un analista vea por qué.
 - **Una alerta certificada** es una alerta que viene con una prueba: ninguna cantidad
   de relleno, tráfico señuelo o partición de conexiones la habría evitado. Lo único que
-  podría evitarla es enviar menos, y eso debilita el ataque.
+  podría evitarla es enviar menos, y eso debilita el ataque (o, en una inundación,
+  enviar peticiones más pequeñas, que el certificado no cubre).
 
 ## La idea en un minuto
 
@@ -23,8 +24,8 @@ que cada conexión toca.
   la cuenta de cada servicio, máquina y origen: cuánto tráfico recibe, desde cuántos
   orígenes, cuántas conexiones quedan sin respuesta. Cada conexión solo actualiza los
   marcadores de las máquinas que implica.
-- **Un atacante siempre puede enviar más, pero no puede enviar menos sin debilitar su
-  ataque.** Rellenar paquetes, mandar señuelos o partir conexiones es tráfico de más,
+- **Un atacante siempre puede enviar más, pero no puede enviar menos peticiones sin
+  debilitar su ataque.** Rellenar paquetes, mandar señuelos o partir conexiones es tráfico de más,
   así que sube los marcadores. El modelo de Proteus está construido para que su
   puntuación solo pueda subir cuando un marcador sube. Por eso los disfraces no pueden
   quitar una alerta, y Proteus lo comprueba para cada alerta con una evaluación más del

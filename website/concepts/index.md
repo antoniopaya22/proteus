@@ -11,7 +11,8 @@ machines that a connection touches.
   analyst can see why.
 - **A certified alert** is an alert that comes with a proof: no amount of padding,
   decoy traffic or connection splitting could have avoided it. The only thing that
-  could is sending less, which makes the attack weaker.
+  could is sending less, which makes the attack weaker (or, for a flood, sending
+  smaller requests, which the certificate does not cover).
 
 ## The idea in one minute
 
@@ -22,8 +23,8 @@ machines that a connection touches.
   a tally for every service, host and source: how much traffic it receives, from how
   many sources, how many connections go unanswered. A connection only updates the
   tallies of the machines it involves.
-- **An attacker can always send more, but it cannot send less without weakening the
-  attack.** Padding, decoys and split connections are all extra traffic, so they raise
+- **An attacker can always send more, but it cannot send fewer requests without
+  weakening the attack.** Padding, decoys and split connections are all extra traffic, so they raise
   the tallies. The model inside Proteus is built so that its score can only go up when
   a tally goes up. Disguises therefore cannot remove an alert, and Proteus checks this
   for each alert with one extra evaluation of the model: a *certified* alert.
