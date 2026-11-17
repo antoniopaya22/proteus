@@ -24,6 +24,7 @@ Antonio pide iterar hasta la máxima nota posible. Protocolo:
 | 0 | 2026-11-15 | 5/10 | revisión mayor | reutilización de conexiones fuera del certificado; valor frente a reglas de tasa no establecido; criterio de detección vacío; sistema no evaluado como conjunto; atacante adaptativo débil; calibración optimista y una semilla; comparaciones indirectas; trabajo relacionado; presentación de cuaderno |
 | 1 (diagnóstico, a mitad de ronda) | 2026-11-17 | 4/10 | revisión mayor | los bytes de carga no se conservan respecto al daño (peticiones mínimas) y el atacante nunca lo prueba; cifras de cabecera a presupuesto 0,5 y robustez a FPR 10⁻³; evaluación adversaria en un solo sentido y sobre víctimas sin carga; ventaja frente a reglas y núcleo sin restricciones dentro del ruido; sin intervalos ni semillas; calibración con etiquetas; líneas base propias; el sistema evaluado no incluye la capa por flujo; título y resumen prometen de más; 13 900 palabras |
 | 1 (diagnóstico 2, a mitad de ronda) | 2026-11-17 22:00 | 5/10 | revisión mayor | puntos de operación mezclados (envenenamiento, consultas, ablación, servidor con carga, tab:h1 a FPR 10⁻³; la conclusión del envenenamiento no vale al presupuesto); el certificado cubre lo que menos importa y el título vende de más; novedad limitada frente a reglas; «daño» en flujos y no en servicio denegado; validez externa y ajuste sobre las redes de prueba; calibración con etiquetas (umbrales); comparación con alarmas reales distintas; atacantes aprendidos no ejecutados; certificado de reutilización sin prueba formal; (A4) demasiado fuerte; desalojo de estado; exportador del chequeo de paquetes; extensión |
+| 2 (tras los cambios de R2, pedida por Antonio) | 2026-11-17 23:50 | 4/10 | revisión mayor | el certificado protege donde no hace falta y peticiones mínimas + reutilización tumban a Proteus-cert (Slowloris ~370 conexiones > 256); lo que añade el modelo frente a reglas no está establecido (por ataque las reglas dejan menos daño en 5 de 9 en 18 → 17; métrica de alarmas por destino-minuto al revés); frontera/adaptativo contradicen tab:h1 al mismo punto (escaneos 2018, LOIC-HTTP 2018, FTP 2017); validez externa (víctimas ociosas, etiquetas en la calibración, UGR'16 y CTU-13 no al presupuesto, Δ desconocido en tráfico real); saturación de los árboles monótonos; supuestos (caché del exportador, muestreo, «free» inconsistente); atacante adaptativo débil (sin optimizador de caja blanca); faltan defensas robustas publicadas; novedad estrecha; extensión |
 
 **Criterio de parada (Antonio, 2026-11-17):** cuando los resultados y la funcionalidad estén a nivel de
 un 8, se para de añadir experimentos y se hace una revisión a fondo del paper: coherencia de principio a
@@ -150,6 +151,40 @@ publicado sin garantía.
       de UGR'16, bots «dos o tres órdenes por debajo»); «todo detector se enfrenta al mismo atacante»;
       una evaluación extra frente a dos en el algoritmo; 119 frente a 152 contadores; bytes
       «forward» frente a «payload»; leyenda de la figura; la nota de la bibliografía.
+
+### Revisión 3 (2026-11-17 23:50, tras aplicar R2; la pidió Antonio)
+
+Nota **4/10** (baja de 5; revisor nuevo cada vez, varianza ±1, y la tabla por ataque al presupuesto
+dejó ver contradicciones con la frontera). Con los `\todo` entregados, 5; con prioridades 1–3 y 7,
+6–7. Casillas (R3):
+
+- [ ] **R3-1. Frontera/adaptativo frente a tab:h1.** Escaneos 2018 (6/6 en tab:h1, pasan en la
+      frontera), LOIC-HTTP 2018 (0/1 frente a factor 4,4), FTP 2017 (0/1 frente a factor 11).
+      Declarar el criterio de la frontera (cualquier flujo alertado, víctima sola, origen nuevo,
+      minutos ruidosos descontados) frente al estricto; reconciliar fila a fila; `iso_1718` (en cola).
+- [ ] **R3-2. Lo que añade el modelo.** Unión monótona no aprendida (reglas de tasa sobre la
+      evidencia de cert ∪ reglas sobre la de fast) al mismo presupuesto; comparación por ataque con
+      prueba de signos o bootstrap; las dos métricas de alarmas en el resumen; `proteus_lin` (en cola).
+- [ ] **R3-3. Alcance en resumen y conclusión.** Peticiones mínimas + reutilización dejan pasar los
+      DoS lentos (~370 conexiones > 256): al resumen/conclusión. Desglose por tipo de plan (solo
+      aditivas / reutilización / ráfagas / mínimas) para núcleo sin restricciones y KitNET: ¿alguna
+      operación solo aditiva evade un detector no monótono?
+- [ ] **R3-4. Tráfico real al presupuesto.** UGR'16 (en cola), CTU-13 al presupuesto ya; no dar
+      alertas certificadas donde Δ es desconocido; saturación de los árboles monótonos (empates,
+      alternativas que siguen creciendo).
+- [ ] **R3-5. Atacante más fuerte.** Optimizador de caja blanca sobre ritmo, orígenes, tamaño de
+      petición y ráfagas contra cada modelo monótono; consultas y envenenamiento al presupuesto (en
+      cola); envenenamiento + remodelado.
+- [ ] **R3-6. Defensa robusta publicada** (Whisper, HyperVision, CertTA/BARS con su código); quitar o
+      reducir Apollon/clasificador por flujo/BARS reimplementado en el cuerpo.
+- [ ] **R3-7. Extensión ~10k palabras**, un punto de operación y un esquema de nombres; resultados
+      solo en texto a tablas (inyección, real); quitar METIS o dejar solo Pareto.
+- [ ] **R3-8. (A1) con un exportador de producción**; caché del exportador y muestreo en supuestos.
+- [ ] **R3-9. Discrepancias 2–16** (escaneo del viernes certificado; «más alarmas» de cert en la
+      discusión; KitNET «not run» pero en h1_1e-3; «0» frente a «<4»; nombres Certified/Cert./Bound;
+      carry-over y δ a FPR sin decirlo; spreading solo en consultas; 38k es del presupuesto; coste;
+      CTU-13 22,2 frente a 3,68; cabecera de intervals; «free» inconsistente; pair «optional»).
+- [ ] **R3-10. Menores.** Entidades del argmax; Algoritmo 1 «0 for baselines»; TTD con Δ.
 
 ### Revisión de diagnóstico 2 (2026-11-17 22:00, pedida por Antonio; no cuenta como la de la ronda)
 
