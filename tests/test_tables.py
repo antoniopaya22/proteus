@@ -365,3 +365,22 @@ def test_injection_summary_needs_every_member_of_the_system_quiet_per_victim(tmp
     # The system passes only on v2 (1000 and 2000 quiet for both); v1 keeps 100, v3 10.
     assert t.loc["System", "passes"] == 1 / 3
     assert abs(t.loc["System", "share"] - (0.1 * 1.0 * 0.01) ** (1 / 3)) < 1e-9
+
+
+def test_plan_families_separate_additive_plans_from_reuse(tmp_path):
+    import pandas as pd
+
+    from proteus.evaluation.tables import plan_family_table
+
+    run = tmp_path / "csecicids2018__cicids2017__loo_labels__r2"
+    run.mkdir()
+    pd.DataFrame([{"day": "wed", "attack": "dos_hulk", "detector": "proteus_free",
+                   "real_flows_per_h": 1000.0}]).to_csv(run / "adaptive_b0.5_g30.csv", index=False)
+    # Padding (random0) lets the unconstrained core pass at 1000; reuse at 1000 too.
+    quiet = {"plain": 10.0, "random0": 1000.0, "reuse": 1000.0}
+    ladder = [{"day": "wed", "attack": "dos_hulk", "detector": "proteus_free", "plan": p,
+               "flows_per_h": r, "detected": r > q} for p, q in quiet.items() for r in (10.0, 100.0, 1000.0)]
+    pd.DataFrame(ladder).to_csv(run / "adaptive_ladder_b0.5_g30.csv", index=False)
+    row = next(x for x in plan_family_table([run / "adaptive_b0.5_g30.csv"]).splitlines()
+               if x.startswith("Unc."))
+    assert row.rstrip(" \\\\").split(" & ")[1:] == ["1.0\\%/0", "100.0\\%/1", "100.0\\%/1", "100.0\\%/1"]

@@ -600,6 +600,45 @@ def injection_summary(csv: Path, floor: float | None = None) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+# Plans of ``evaluation.adaptive`` grouped by what they change: nothing, only additions
+# (the operations the certificate covers), bursts, connection reuse.
+PLAN_FAMILIES = [("Plain", ("plain",)),
+                 ("Additive", ("plain", "random0", "random1", "random2", "random3", "mimic")),
+                 ("+ bursts", ("plain", "random0", "random1", "random2", "random3", "mimic", "pulse")),
+                 ("+ reuse", ("plain", "random0", "random1", "random2", "random3", "mimic", "pulse",
+                              "reuse", "reuse+pulse"))]
+FAMILY_DETECTORS = [(r"\sysname", ("proteus", "proteus_cert_r")), ("Fast", ("proteus",)),
+                    ("Rules", ("rate_rules_local",)), ("Sel.", ("rate_rules_sel",)),
+                    ("Unc.", ("proteus_free",)), ("KitNET", ("kitnet_local",))]
+
+
+def plan_family_table(csvs: list[Path], floor: float = GRID_MIN_FLOWS_PER_H) -> str:
+    """Damage of the adaptive attacker when it may use only some families of plans: the
+    geometric mean of the share of the real rate it keeps (capped at 1; alerted at every
+    rate counts as ``floor``) and, after a slash, the attacks that pass at their real
+    rate. One block per direction, one row per detector."""
+    n = len(PLAN_FAMILIES)
+    lines = [r"\begin{tabular}{l" + "r" * n + "}", r"\toprule",
+             "Detector & " + " & ".join(h for h, _ in PLAN_FAMILIES) + r" \\"]
+    for path in csvs:
+        a = pd.read_csv(path)
+        ladder = pd.read_csv(path.with_name(path.name.replace("adaptive_", "adaptive_ladder_", 1)))
+        real = a.drop_duplicates(["day", "attack"]).set_index(["day", "attack"])["real_flows_per_h"]
+        key = "__".join(path.parent.name.split("__")[:2])
+        lines += [r"\midrule", rf"\multicolumn{{{n + 1}}}{{l}}{{\emph{{{DIRECTION.get(key, key)}}}}} \\"]
+        for name, members in FAMILY_DETECTORS:
+            if not set(members) <= set(ladder["detector"]):
+                continue
+            cells = []
+            for _, plans in PLAN_FAMILIES:
+                d = ladder_damage(ladder[ladder["plan"].isin(plans)], list(members)).reindex(real.index).fillna(0.0)
+                keep = np.clip(np.maximum(d, floor) / real, None, 1.0)
+                cells.append(f"{100 * np.exp(np.log(keep).mean()):.1f}\\%/{int((d >= real).sum())}")
+            lines.append(f"{name} & " + " & ".join(cells) + r" \\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    return "\n".join(lines) + "\n"
+
+
 QUERY = [("proteus", "Proteus"), ("proteus_sys_r", "System"), ("proteus_cert_r", "Cert.-R"),
          ("rate_rules_local", "Rules"), ("rate_rules_sel", "Sel. rules")]
 # The paper: the system is the union that the query attacker was run against (``pcr``).
@@ -747,7 +786,7 @@ def curves_figure(points: pd.DataFrame, x: str = "entity_alarms_per_hour",
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("table", choices=["h1", "summary", "ablation", "ablation_pair", "frontier", "frontier_system",
-                                       "frontier_budget", "adaptive", "curves", "query", "budgets", "injection",
+                                       "frontier_budget", "adaptive", "plan_families", "curves", "query", "budgets", "injection",
                                        "intervals"])
     ap.add_argument("--csv", type=Path, nargs="*", default=[], help="frontier or adaptive CSVs")
     ap.add_argument("--data-out", type=Path, default=None)
@@ -788,6 +827,10 @@ def main() -> None:
         return
     if args.table == "frontier":
         args.out.write_text(frontier_table(args.csv, args.data_out))
+        print(args.out.read_text())
+        return
+    if args.table == "plan_families":
+        args.out.write_text(plan_family_table(args.csv))
         print(args.out.read_text())
         return
     if args.table == "injection":

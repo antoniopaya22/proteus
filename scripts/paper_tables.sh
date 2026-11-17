@@ -62,6 +62,7 @@ done
 # Damage under the adaptive attacker (tab:adaptive) and under the query attacker (tab:query).
 csvs=$(files $A/adaptive_b0.5_g30.csv $B/adaptive_b0.5_g16.csv)
 [ -n "$csvs" ] && $PY proteus.evaluation.tables adaptive --set paper --csv $csvs --out $T/adaptive.tex > /dev/null
+[ -n "$csvs" ] && $PY proteus.evaluation.tables plan_families --csv $csvs --out $T/plan_families.tex > /dev/null
 csvs=$(files $A/query_attack_b0.5_all.csv $B/query_attack_b0.5_all.csv)
 [ -n "$csvs" ] && $PY proteus.evaluation.tables query --set paper --csv $csvs --out $T/query.tex > /dev/null
 
