@@ -62,9 +62,13 @@ subnúcleos no se vuelven a ajustar.
 
 Un subnúcleo cuyas puntuaciones benignas empatan en su máximo en una proporción mayor
 que la tasa de falsos positivos objetivo no puede separar nada a esa tasa. Esto ocurre
-cuando un modelo se satura en una red distinta de su red de entrenamiento. Ese
-subnúcleo se puede dejar fuera del máximo (`--exclude-saturated` en el experimento H1);
-el resultado sigue siendo monótono.
+cuando un modelo se satura en una red distinta de su red de entrenamiento. La
+evaluación lo resuelve fijando los umbrales a un presupuesto de alarmas por hora en
+lugar de a una proporción de flujos: un detector que no puede cumplir el presupuesto se
+queda callado en vez de inundar al analista. Ese subnúcleo también se puede dejar fuera
+del máximo (`--exclude-saturated` en el experimento H1), que sigue siendo monótono,
+pero no es la configuración que informa el manuscrito.
+
 
 ## Umbrales locales
 

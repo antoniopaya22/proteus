@@ -57,8 +57,12 @@ are not refitted.
 
 A sub-core whose benign scores tie at its maximum for more than the target
 false-positive rate cannot separate anything at that rate. This happens when a model
-saturates on a network unlike its training network. Such a sub-core can be left out of
-the maximum (`--exclude-saturated` in the H1 experiment); the result is still monotone.
+saturates on a network unlike its training network. The evaluation handles it by
+setting thresholds to a budget of alarms per hour instead of a share of flows: a
+detector that cannot meet the budget stays silent rather than flooding the analyst.
+Such a sub-core can also be left out of the maximum (`--exclude-saturated` in the H1
+experiment), which stays monotone, but that is not the configuration the manuscript
+reports.
 
 ## Local thresholds
 
