@@ -180,7 +180,7 @@ dejó ver contradicciones con la frontera). Con los `\todo` entregados, 5; con p
 - [ ] **R3-7. Extensión ~10k palabras**, un punto de operación y un esquema de nombres; resultados
       solo en texto a tablas (inyección, real); quitar METIS o dejar solo Pareto.
 - [ ] **R3-8. (A1) con un exportador de producción**; caché del exportador y muestreo en supuestos.
-- [ ] **R3-9. Discrepancias 2–16** (escaneo del viernes certificado; «más alarmas» de cert en la
+- [~] **R3-9. Discrepancias 2–16** (hechas 2, 3, 4, 5, 9, 10, 11, 13, 14, 16; quedan 6 nombres, 12 coste, 15 «free») (escaneo del viernes certificado; «más alarmas» de cert en la
       discusión; KitNET «not run» pero en h1_1e-3; «0» frente a «<4»; nombres Certified/Cert./Bound;
       carry-over y δ a FPR sin decirlo; spreading solo en consultas; 38k es del presupuesto; coste;
       CTU-13 22,2 frente a 3,68; cabecera de intervals; «free» inconsistente; pair «optional»).
