@@ -294,6 +294,16 @@ ADAPTIVE = [("proteus", "Proteus", "adaptive_flows_per_h"),
             ("core_free_dst_b", "Unc.", "adaptive_flows_per_h"),
             ("rate_rules_local", "Rules", "adaptive_flows_per_h"),
             ("kitnet_local", "KitNET", "adaptive_flows_per_h")]
+# The paper: the system (a union, from the per-rate ladder), its two detectors, the
+# certified damage of the certified one, and the detectors it is compared with.
+ADAPTIVE_PAPER = [("proteus+proteus_cert_r", r"\sysname", "union"),
+                  ("proteus", "Fast", "adaptive_flows_per_h"),
+                  ("proteus_cert_r", "Cert.", "adaptive_flows_per_h"),
+                  ("proteus_cert_r", "Certified", "certified_flows_per_h"),
+                  ("proteus_free", "Unc.", "adaptive_flows_per_h"),
+                  ("rate_rules_local", "Rules", "adaptive_flows_per_h"),
+                  ("rate_rules_sel", "Sel.", "adaptive_flows_per_h"),
+                  ("kitnet_local", "KitNET", "adaptive_flows_per_h")]
 
 
 def _rate(v: float, rmax: float) -> str:
@@ -306,16 +316,26 @@ def _rate(v: float, rmax: float) -> str:
     return f"{ge}{v / 1000:.1f}k" if v < 10_000 else f"{ge}{v / 1000:.0f}k"
 
 
-def adaptive_table(csvs: list[Path]) -> str:
+def adaptive_table(csvs: list[Path], columns: list[tuple[str, str, str]] | None = None) -> str:
     """Damage under the adaptive attacker: the highest rate (flows/h) at which each
     attack raises no attributable alert of its own, when the attacker also picks its
     free operations, per detector; one block per direction. Bold: the attack passes at
-    its real rate. a: free operations or mimicry raised the damage over the plain attack."""
-    n = len(ADAPTIVE)
+    its real rate. a: free operations or mimicry raised the damage over the plain attack.
+    A column of kind ``union`` (members joined by ``+``) is read from the ladder file
+    next to each CSV: a plan must leave every member quiet at the same rate."""
+    columns = columns or ADAPTIVE
+    n = len(columns)
     lines = [r"\begin{tabular}{l" + "r" * (n + 1) + "}", r"\toprule",
-             "Attack & Real & " + " & ".join(h for _, h, _ in ADAPTIVE) + r" \\"]
+             "Attack & Real & " + " & ".join(h for _, h, _ in columns) + r" \\"]
     for path in csvs:
         d = pd.read_csv(path)
+        unions = {}
+        if any(col == "union" for _, _, col in columns):
+            ladder = pd.read_csv(path.with_name(path.name.replace("adaptive_", "adaptive_ladder_", 1)))
+            for m, _, col in columns:
+                if col == "union":
+                    unions[m] = (ladder_damage(ladder, m.split("+")),
+                                 ladder_damage(ladder[ladder["plan"] == "plain"], m.split("+")))
         key = "__".join(path.parent.name.split("__")[:2])
         lines += [r"\midrule", rf"\multicolumn{{{n + 2}}}{{l}}{{\emph{{{DIRECTION.get(key, key)}}}}} \\"]
         attacks = d.drop_duplicates(["day", "attack"])[["day", "attack", "real_flows_per_h"]]
@@ -325,7 +345,15 @@ def adaptive_table(csvs: list[Path]) -> str:
                 name += f" ({a['day'][:3].title()}.)"
             g = d[(d["day"] == a["day"]) & (d["attack"] == a["attack"])].set_index("detector")
             cells = []
-            for m, _, col in ADAPTIVE:
+            rmax = float(g["rmax_flows_per_h"].iloc[0])
+            for m, _, col in columns:
+                if col == "union":
+                    best, plain = (s.get((a["day"], a["attack"]), np.nan) for s in unions[m])
+                    c = _rate(float(best), rmax)
+                    if np.isfinite(best) and best >= a["real_flows_per_h"]:
+                        c = rf"\textbf{{{c}}}"
+                    cells.append(c + (r"$^a$" if best > plain else ""))
+                    continue
                 if m not in g.index:
                     cells.append("--")
                     continue
@@ -527,7 +555,7 @@ def main() -> None:
         print(args.out.read_text())
         return
     if args.table == "adaptive":
-        args.out.write_text(adaptive_table(args.csv))
+        args.out.write_text(adaptive_table(args.csv, ADAPTIVE_PAPER if args.set == "paper" else None))
         print(args.out.read_text())
         return
     if args.table == "query":

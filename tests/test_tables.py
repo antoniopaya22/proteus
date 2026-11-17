@@ -161,3 +161,27 @@ def test_curves_name_the_fast_member_next_to_the_system():
     fig = curves_figure(pts, detectors=["proteus_pcr", "proteus"])
     assert r"\addlegendentry{\sysname}" in fig and r"\addlegendentry{\sysname-fast}" in fig
     assert r"\addlegendentry{\sysname}" in curves_figure(pts, detectors=["proteus"])
+
+
+def test_adaptive_table_reads_the_system_from_the_ladder(tmp_path):
+    import pandas as pd
+
+    from proteus.evaluation.tables import ADAPTIVE_PAPER, adaptive_table
+
+    run = tmp_path / "csecicids2018__cicids2017__loo_labels__r2"
+    run.mkdir()
+    rows = [{"day": "wed", "attack": "dos_hulk", "detector": m, "real_flows_per_h": 5000.0,
+             "adaptive_flows_per_h": v, "certified_flows_per_h": v, "best_plan": "plain",
+             "rmax_flows_per_h": 720000.0} for m, v in (("proteus", 4000.0), ("proteus_cert_r", 900.0))]
+    pd.DataFrame(rows).to_csv(run / "adaptive_0.001_g30.csv", index=False)
+    ladder = [{"day": "wed", "attack": "dos_hulk", "detector": m, "plan": plan,
+               "flows_per_h": rate, "detected": rate > quiet}
+              for plan, limits in (("plain", {"proteus": 300.0, "proteus_cert_r": 300.0}),
+                                   ("reuse", {"proteus": 4000.0, "proteus_cert_r": 900.0}))
+              for m, quiet in limits.items() for rate in (300.0, 900.0, 4000.0)]
+    pd.DataFrame(ladder).to_csv(run / "adaptive_ladder_0.001_g30.csv", index=False)
+    table = adaptive_table([run / "adaptive_0.001_g30.csv"], ADAPTIVE_PAPER)
+    row = next(line for line in table.splitlines() if line.startswith("DoS Hulk"))
+    # The system passes where both members are quiet with the same plan: 900, by reuse.
+    assert row.split(" & ")[2] == "900$^a$" and row.split(" & ")[3] == "4.0k"
+    assert row.split(" & ")[6] == "--"  # a detector that is not in the run
