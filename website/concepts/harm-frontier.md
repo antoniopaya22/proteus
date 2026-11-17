@@ -100,7 +100,17 @@ attributable alert, maximised over:
   decoys, new source ports);
 - **mimicry**: padding and inserted packets until each attack flow reaches the median
   forward packets and bytes per packet of the victim's benign traffic, only adding,
-  never removing.
+  never removing;
+- **connection reuse**: 20 requests per connection, which lowers every per-connection
+  counter;
+- **bursts**: each minute's flows sent in its first six seconds;
+- reuse and bursts together;
+- the same plans with **minimal requests**: every TCP request carries the fewest
+  payload bytes its service allows (18 for HTTP, 24 for FTP, 500 for SSH). No
+  certificate covers this (assumption A5); it is reported apart.
+
+The system is quiet only when both of its detectors are, at the same rate and with the
+same plan, and every detector is at its operating point (0.5 alarms per hour).
 
 Rates are scanned on a geometric grid, without assuming monotonicity in the rate: the
 attacker needs only one quiet rate, and detectors without monotone structure need not
@@ -118,8 +128,8 @@ not limited to that list, so Proteus is also evaluated against one that *searche
 
 - **What it knows.** Nothing about the detector: no model, no thresholds, no features.
 - **What it controls.** The shape of its own traffic (padding, inserted packets, split
-  flows, decoys, source ports, requests per connection, bursts and, as a costly option,
-  the number of sources) and its rate.
+  flows, decoys, source ports, requests per connection, bursts, minimal requests and,
+  as a costly option, the number of sources) and its rate.
 - **What it observes.** One bit per attempt: whether any of its flows was alerted.
 
 It wants the highest rate that passes, because rate is damage. It first probes the rate
