@@ -212,8 +212,8 @@ stage_packets() {  # sec:evaluation:packets. Needs the CIC-IDS-2017 Friday pcap 
     --out experiments/outputs/packet_check_v3
 }
 
-stage_cost() {  # Deployment and cost (sec:evaluation:cost).
-  run $O/cost_r2.log $PY proteus.evaluation.cost --run $A --test cicids2017 \
+stage_cost() {  # Deployment and cost (sec:evaluation:cost): one thread, pinned to one core.
+  run $O/cost_r2.log env OMP_NUM_THREADS=1 taskset -c 0 $PY proteus.evaluation.cost --run $A --test cicids2017 \
     --day wednesday --models proteus proteus_cert_r core_mono_dst_x
 }
 

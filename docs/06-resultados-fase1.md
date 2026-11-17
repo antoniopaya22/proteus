@@ -2229,3 +2229,19 @@ temporizador (recall certificado 0,712 / 0,711 / 0,707) y del arrastre entre cam
 - Generador: `tables adaptive --set paper` saca el daño del sistema (de la escalera), sus dos
   detectores, el daño certificado y las comparaciones (sin restricciones, reglas, reglas con
   selección, KitNET).
+
+## 6.78 Coste de los dos detectores finales, un hilo en un núcleo (2026-11-17, 05:25)
+
+`cost1_r2` (`OMP_NUM_THREADS=1 taskset -c 15`, miércoles de CIC-IDS-2017, 496 641 flujos):
+
+| Etapa | Flujos/s |
+|---|---|
+| Evidencia (152 contadores) | 174 800 |
+| Puntuar Proteus-fast (218 rasgos) | 25 400 |
+| Puntuar Proteus-cert (57 rasgos) | 36 500 |
+| Certificar cada flujo: fast / cert | 30 900 / 37 100 |
+| Un solo modelo monótono (122 rasgos) | 80 600 |
+
+Estado: 11 744 servicios, 9 012 hosts, 22 981 pares, unos 10,5 MB. En línea con §6.38. Una primera
+medida sin fijar hilos dio 104 000 y 155 000 flujos/s: era multihilo y no vale como «un núcleo».
+`reproduce.sh cost` fija ahora hilo y núcleo (antes no lo hacía).
