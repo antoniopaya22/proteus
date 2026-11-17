@@ -2631,3 +2631,24 @@ Líneas base solo con días anteriores (`--baseline prior`) y sin enmascarar min
 
 Misma detección; las alarmas apenas cambian. Queda un uso de etiquetas: el tráfico limpio para
 calibrar los umbrales (se declara). Cierra la mitad de la objeción «calibración con etiquetas».
+
+### 6.96 Inyección en 16 víctimas por ataque (`inj_1817`, 18 → 17, presupuesto 0,5)
+
+92 pares ataque–víctima (destinos del mismo día que ningún ataque toca, repartidos por carga:
+hasta 368 flujos/h en el puerto atacado, 11 000 en los hosts de los escaneos). Parte del ritmo real
+que conserva el atacante (media geométrica) y pares que pasan a su ritmo real:
+
+| Detector | Conserva | Pasan | Con peticiones mínimas |
+|---|---|---|---|
+| Sistema | 7,4 % | 11 % | 16,4 %, 50 % |
+| Reglas | 10,3 % | 11 % | 20,9 %, 50 % |
+| Núcleo sin restricciones | 12,9 % | 39 % | |
+| KitNET | 29,1 % | 57 % | |
+| Reglas con selección | 76,1 % | 74 % | |
+
+- Sin tendencia con la carga (5 %, 13 %, 6,5 % por tercios). Los 10 pares que pasan son todos el
+  DDoS LOIC-HTTP con reutilización (Proteus-cert no lo detecta al presupuesto).
+- Ley de Little con las duraciones reales: Slowloris/Slowhttptest 2017 mantienen ~240/120 conexiones
+  en la campaña real y ~70 al daño que deja Proteus (pool por defecto de Apache prefork: 256); con
+  peticiones mínimas y reutilización ~370. Slowloris 2018: ~310 real, ~140 al daño.
+- Sensibilidad de METIS a λ: Proteus primero con λ = 1, 3 y 10 en los dos sentidos.

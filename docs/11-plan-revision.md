@@ -157,29 +157,29 @@ Nota **5/10** (sube de 4). Con los `\todo` entregados, ~6; con además las prior
 Reconoce: lema correcto, tabla de supuestos ejemplar, franqueza, evaluación adversaria en espacio
 de tráfico, frontera como métrica operativa, reproducibilidad. Casillas:
 
-- [ ] **R2-1. Un solo punto de operación.** Envenenamiento, atacante por consultas (`qab_*` en cola),
+- [~] **R2-1. Un solo punto de operación.** (tab:h1 al presupuesto, FPR al apéndice; envenenamiento y consultas con su umbral en el pie y la conclusión del envenenamiento corregida; `poib_*` y `qab_*` en cola; ablación a FPR declarada) Envenenamiento, atacante por consultas (`qab_*` en cola),
       ablación, servidor con carga (inyección `inj_1817` en marcha) y una tabla por ataque al
       presupuesto; o umbral en cada pie y ninguna comparación entre umbrales (D3–D7). La conclusión
       del envenenamiento (escaneo del jueves acotado por Proteus-cert) no vale al presupuesto: medir
       cuánto mueve el envenenamiento a Proteus-fast al presupuesto.
-- [ ] **R2-2. Afirmaciones a la medida del certificado.** Título/resumen/conclusión: «aditivas»;
+- [x] **R2-2. Afirmaciones a la medida del certificado.** (título «Additive», resumen, conclusión, highlights, introducción, web y walkthrough) Título/resumen/conclusión: «aditivas»;
       cobertura certificada y fronteras certificadas al presupuesto junto a la detección; D1, D9;
       «held on every real campaign» → lo probado.
-- [ ] **R2-3. Evaluación congelada en datos no vistos.** UGR'16 al presupuesto con Proteus-cert
+- [~] **R2-3. Evaluación congelada en datos no vistos.** (saturación de CTU-13 explicada; UGR'16 y semillas 17 → 18 en cola) UGR'16 al presupuesto con Proteus-cert
       (`ugr*_nox` en cola), semillas en 17 → 18 (en cola); explicar la saturación de Proteus-cert en
       CTU-13.
-- [ ] **R2-4. Daño en servicio.** Degradación del servicio en la frontera para los DoS HTTP (réplica
+- [~] **R2-4. Daño en servicio.** (conexiones simultáneas por la ley de Little: ~70 frente a 256 trabajadores; inyección en 16 víctimas: 7,4 % frente a 10 %, sin tendencia con la carga; falta medirlo en un servidor real) Degradación del servicio en la frontera para los DoS HTTP (réplica
       contra un servidor real o modelo de concurrencia); víctimas con carga realista (inyección).
-- [ ] **R2-5. Líneas base que aíslen el modelo.** Modelo monótono simple (lineal no negativo) en la
+- [~] **R2-5. Líneas base que aíslen el modelo.** (`proteus_lin` implementado y en cola, `lin_*`; robustez a alarmas desiguales declarada; Whisper/HyperVision pendientes) Modelo monótono simple (lineal no negativo) en la
       misma arquitectura; Whisper o HyperVision si es viable; robustez a alarmas reales iguales
       (unión calibrada al mismo presupuesto realizado).
 - [ ] **R2-6. Un atacante aprendido publicado** en espacio de tráfico (NetMasquerade si hay código;
       máquina con GPU).
-- [ ] **R2-7. Rigor.** Enunciado y prueba formal del certificado de reutilización con ρ definido;
+- [x] **R2-7. Rigor.** (proposición y prueba del certificado de reutilización con (A5), (A6) y ρ; (A4) matizado; tabla de operaciones por detector; exportador nombrado; desalojo como ataque. Falta repetir con un segundo exportador.) Enunciado y prueba formal del certificado de reutilización con ρ definido;
       matizar (A4) y las entradas «exact» de la tabla de operaciones por detector; nombrar el
       exportador del chequeo de paquetes (y repetir con otro); desalojo de estado en el modelo de
       amenaza.
-- [ ] **R2-8. Forma.** ~10k palabras (a suplementario: CIC-DDoS-2019, UNSW-NB15, Kitsune en paquetes,
+- [~] **R2-8. Forma.** (suplementario: BARS, METIS, contador, CIC-DDoS; UNSW fuera; métrica «entity alarms per hour»; columna «Bound»; el recorte a ~10k palabras queda para la revisión final) ~10k palabras (a suplementario: CIC-DDoS-2019, UNSW-NB15, Kitsune en paquetes,
       contador de realimentación, BARS, METIS); renombrar la métrica de alarmas y quizá los detectores;
       «Cert.» frente a «Certified».
 - [~] **R2-9. Discrepancias D1–D16** (hechas D1, D2, D5, D8, D9, D10, D11, D12, D13, D16; UNSW-NB15
@@ -190,7 +190,7 @@ de tráfico, frontera como métrica operativa, reproducibilidad. Casillas:
       D8 LOIC-UDP >887; D9 filas sin cota certificada; D10 nombres viejos (UNSW, CIC-DDoS, CTU-SME-11);
       D11 12 frente a 13 días; D12 TRW/CUSUM; D13 párrafo del servidor con carga; D14 semilla 1,57;
       D15 balance; D16 «significativo».
-- [ ] **R2-10. Menores.** METIS (autocita en revisión, λ = 3 sin sensibilidad); frase de alarmas del
+- [x] **R2-10. Menores.** (sensibilidad a λ: Proteus primero con λ = 1, 3, 10; frase de alarmas del resumen; «three training seeds» ligado a 2017) METIS (autocita en revisión, λ = 3 sin sensibilidad); frase de alarmas del
       resumen; «three seeds» solo en un sentido.
 
 ### Revista destino (decidido con Antonio el 2026-11-16)
