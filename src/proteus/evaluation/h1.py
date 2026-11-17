@@ -794,26 +794,49 @@ def entity_threshold(tops: list[tuple], hours: float, budget: float) -> float:
     return float(np.nextafter(g[allowed], np.inf))
 
 
-def budget_threshold(test: str, day: Path, cols: list[str], model, budget: float) -> float:
+def budget_threshold(test: str, day: Path, cols: list[str], model, budget: float,
+                     score_fn=None, cache: dict | None = None, key: str = "") -> float:
     """Threshold of ``model`` for an alarm budget on ``day``, as the main evaluation
-    sets it: the lowest that gives at most ``budget`` alarms per hour, an alarm being a
-    (destination host, minute) with a clean flow at or above it, over the clean benign
-    traffic of the other days of the network (the top 1% of their scores). The
-    attackers use it to face a detector at its operating point."""
+    sets it for the detectors calibrated locally: the lowest that gives at most
+    ``budget`` alarms per hour over the clean benign traffic of the other days of the
+    network, an alarm being an alerted entity (the source host when the source
+    sub-core gives the maximum, else the destination host) in one minute. Only the
+    candidates of every day are scored: its top 2% clean flows by the first detector
+    asked with this ``key`` (the detectors of the different test days differ only in
+    the benign days they were calibrated on, so their top flows nearly coincide);
+    ``cache`` keeps them between calls, which is what makes the large network
+    affordable. ``score_fn`` gives the scores the threshold will be compared with
+    (default ``score``): the attackers pass theirs, so that they face a detector at its
+    operating point on their own scale."""
+    score_fn = score_fn or (lambda X: score(model, X))
+    cache = {} if cache is None else cache
     tops, hours = [], 0.0
     for d in days(test):
         if d == day:
             continue
-        ev, _ = evidence_b(test, d, columns=["dst_ip", "t_start", "t_end", "clean"])
-        clean = ev["clean"].to_numpy()
-        key = pd.util.hash_array(ev["dst_ip"].astype(str).to_numpy()).astype(np.uint64)[clean]
-        minute = (ev["t_start"].astype("int64") // 60_000_000).to_numpy().astype(np.uint64)[clean]
-        hours += (ev["t_end"].max() - ev["t_start"].min()).total_seconds() / 3600
-        del ev
-        sc = np.concatenate([score(model, X) for X in score_batches(cache_parts(test, d), cols)])[clean]
-        cut = np.quantile(sc, 0.99) if len(sc) else np.inf
-        hi = sc >= cut
-        tops.append((sc[hi], key[hi], minute[hi]))
+        if (key, d) not in cache:
+            ev, _ = evidence_b(test, d, columns=["src_ip", "dst_ip", "t_start", "t_end", "clean"])
+            clean = np.flatnonzero(ev["clean"].to_numpy())
+            sc = np.concatenate([np.asarray(score_fn(X), dtype=np.float64)
+                                 for X in score_batches(cache_parts(test, d), cols)])[clean]
+            rows = clean[sc >= (np.quantile(sc, 0.98) if len(sc) else np.inf)]
+            ev = ev.iloc[rows]
+            cache[(key, d)] = {
+                "X": read_rows(cache_parts(test, d), rows, cols).to_numpy(np.float32),
+                "dkey": pd.util.hash_array(ev["dst_ip"].astype(str).to_numpy()).astype(np.uint64),
+                "skey": pd.util.hash_array(ev["src_ip"].astype(str).to_numpy()).astype(np.uint64),
+                "minute": (ev["t_start"].astype("int64") // 60_000_000).to_numpy().astype(np.uint64),
+                "hours": 0.0,
+            }
+            full, _ = evidence_b(test, d, columns=["t_start", "t_end"])
+            cache[(key, d)]["hours"] = (full["t_end"].max() - full["t_start"].min()).total_seconds() / 3600
+            del ev, full
+        c = cache[(key, d)]
+        X = np.asarray(c["X"], dtype=np.float32)
+        side = alert_side(model, cols, X)
+        tops.append((np.asarray(score_fn(X), dtype=np.float64),
+                     np.where(side, c["skey"], c["dkey"]), c["minute"]))
+        hours += c["hours"]
     return entity_threshold(tops, hours, budget)
 
 

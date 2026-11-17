@@ -110,6 +110,9 @@ def mimic(df: pd.DataFrame, bg: pd.DataFrame) -> pd.DataFrame:
     return out
 
 
+_BUDGET_CACHE: dict = {}  # candidate flows of every day, per detector (h1.budget_threshold)
+
+
 def day_models(test: str, day: Path, dets: dict, local: list[str], fpr: float,
                rng: np.random.Generator, budget: float | None = None) -> tuple[dict, dict[str, float]]:
     """Detectors as deployed on one test day: the local ones fitted on clean benign
@@ -125,8 +128,10 @@ def day_models(test: str, day: Path, dets: dict, local: list[str], fpr: float,
         models[n] = (cols, m)
         if budget is None:
             thr[n] = float(np.quantile(m.predict_proba(ref)[:, 1], 1 - fpr, method="higher"))
-        else:
-            thr[n] = h1.budget_threshold(test, day, cols, m, budget)
+        else:  # on the scale the oracle compares with (predict_proba), not h1's raw score
+            thr[n] = h1.budget_threshold(test, day, cols, getattr(m, "model", m), budget,
+                                         lambda X, m=m: m.predict_proba(X)[:, 1],
+                                         cache=_BUDGET_CACHE, key=f"{test}:{n}")
     return models, thr
 
 

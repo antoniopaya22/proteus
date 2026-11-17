@@ -165,6 +165,9 @@ def test_cross_network_run_end_to_end(world):
         d = q[mode == m].set_index("target")["query_flows_per_h"]
         assert d["both"] <= min(d["proteus"], d["rate_rules_local"]), m
     free = q[mode == "free"].set_index("target")["query_flows_per_h"]
+    # At its alarm budget Proteus still alerts on a flood: the threshold is on the scale
+    # the attacker's oracle compares with, so the highest rate tried does not pass.
+    assert free["proteus"] < q["rmax_flows_per_h"].iloc[0]
     for m in ("shrink", "costly"):
         assert (q[mode == m].set_index("target")["query_flows_per_h"] >= free).all(), m
 
