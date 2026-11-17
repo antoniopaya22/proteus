@@ -92,6 +92,24 @@ a una con GPU para las defensas publicadas):**
   real (UGR'16 13/12 días, cifras de CTU-13, nombres antiguos), que se reescribe con `ctu*_nox` y
   UGR'16, y la del daño certificado de LOIC-HTTP, que se explica cuando esté la tabla a presupuesto.
 
+**Vías cortas (2026-11-17, pedido por Antonio: «haz todo lo que puedas; ¿no podemos hacer pruebas
+con campañas o vías más cortas?»).** Todo lo que queda se mide en el punto de operación (presupuesto
+0,5), con versiones cortas por delante de las largas:
+- `~/tools/fast.sh` (bajo el cerrojo): `adaptb_1718` (rejilla de 16, 2 variantes, cinco detectores),
+  semillas 1 y 2 solo con los detectores del paper (`seedb_*`), líneas base causales (`priorb_none`)
+  y atacante por consultas en 2018 a presupuesto (`qab_1718`, 100 consultas).
+- Sobre 2017 en paralelo: `adaptb_1817` y `qab_1817` (unidad `proteus-op2`).
+- Marcas tocadas para que `master.sh` salte lo que queda superado (lista en `~/tools/m/SKIPPED`):
+  `adapt_1718` y las ocho fronteras de 2018 a FPR fija (la tabla de frontera saldrá del atacante a
+  presupuesto: columnas simple y certificada), `ablc_1718` y lo de `proteus2` y el certificado
+  antiguo, las ocho semillas con siete detectores, `prior_none` y `qa_1718` a FPR fija.
+- Umbrales a presupuesto en los atacantes: `h1.budget_threshold` puntúa solo los candidatos de cada
+  día (2 % superior), en la escala del oráculo y por entidad alertada (commit 1a82da8). Una primera
+  versión comparaba en otra escala y el detector no alertaba nunca; se detectó en la primera fila del
+  resultado y el test de extremo a extremo lo cubre ahora.
+- Siguientes, sin GPU: estudio de inyección sobre víctimas con carga real y atacante fuerte (vías 1 y
+  2 de la conversación del 2026-11-17); con GPU: defensas publicadas con su código.
+
 - [~] **Discrepancias (23).** Corregir todas: daño certificado de LOIC-HTTP en `tab:adaptive` (204k)
       frente a la frontera (164 536); dos columnas «Cert.» con significados distintos (1,73 / 6,13
       frente a 3,01 / 7,28); frases que no cuadran con sus tablas (escaneos que «para antes»
