@@ -2141,3 +2141,25 @@ Fronteras (flujos/h; simple y certificada) de los detectores que faltaban:
 - En cert-R la frontera certificada queda pegada a la simple (salvo escaneos y LOIC): casi todo lo
   que alerta lo certifica, también frente a reutilización. Es el dato que justifica que sea el
   miembro certificado del sistema. SSH y FTP quedan por encima de su ritmo real: límite declarado.
+
+## 6.74 El sistema de dos detectores en 2018 → 2017 (2026-11-17, 01:25)
+
+`pcr_1817` (etiqueta `r2_pcr`; `proteus_pcr` = Proteus ∪ Proteus-cert-R). «11+3» = volumétricas y
+escaneos de 11 + otros de 10; alarmas por entidad alertada y hora.
+
+| Umbral | Sistema de dos | Sistema de tres | Proteus | cert-R | `proteus2` | Reglas |
+|---|---|---|---|---|---|---|
+| FPR 10⁻³ | 11+3 a 4,10 | 11+3 a 4,17 | 11+1 a 1,75 | 9+3 a 3,01 | 11+3 a 5,39 | 9+5 a 8,97 |
+| FPR 10⁻⁴ | 9+2 a 0,68 | 9+2 a 0,83 | 9+0 a 0,44 | 8+2 a 0,26 | 8+2 a 1,05 | 9+4 a 5,83 |
+| Presupuesto 0,5 | 11+3 a 1,35 | 11+3 a 1,40 | 11+1 a 1,01 | 8+2 a 0,41 | 8+2 a 0,90 | 9+4 a 5,28 |
+| Presupuesto 1 | 11+3 a 1,57 | 11+3 a 2,11 | 11+1 a 1,16 | 8+2 a 0,53 | 9+3 a 1,42 | 9+4 a 5,28 |
+| Presupuesto 3 | 11+4 a 4,08 | 11+4 a 4,23 | 11+2 a 2,64 | 9+3 a 1,89 | 9+3 a 3,33 | 9+4 a 5,90 |
+
+- El sistema de dos detecta en todos los umbrales lo mismo que el de tres con algo menos de alarmas:
+  confirma que Proteus-cert sobra. A presupuesto 0,5: las once campañas de volumen y escaneos y tres
+  de las otras diez a 1,35 alarmas por entidad y hora.
+- Alertas certificadas de cert-R (también frente a reutilización): 4+2 a 0,17 con presupuesto 0,5,
+  6+2 a 0,21 con presupuesto 1, 8+2 a 1,15 con presupuesto 3, 8+3 a 1,73 a FPR 10⁻³.
+- Tabla nueva para el paper (`tables h1 --set paper`): columnas Proteus (el sistema), Fast, Cert.,
+  Unc., Rules, Sel., KitNET, Flow, Apollon. A FPR 10⁻³ en este sentido el sistema detecta 11/11 y
+  3/10 a 4,10; las reglas con selección 9/11 y 0/10 a 1,93.
