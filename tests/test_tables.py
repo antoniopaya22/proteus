@@ -148,3 +148,16 @@ def test_ablation_table_reports_alarms_per_alerted_entity(tmp_path):
     table = ablation_table([run], 1e-3)
     assert r"All sub-cores & 1.00 & 0.00 & 1.75 \\" in table
     assert r"without raw destination & 0.00 & 0.00 & 1.82 \\" in table and "60.0" not in table
+
+
+def test_curves_name_the_fast_member_next_to_the_system():
+    import pandas as pd
+
+    from proteus.evaluation.tables import curves_figure
+
+    pts = pd.DataFrame([
+        {"direction": "csecicids2018__cicids2017", "model": m, "entity_alarms_per_hour": 1.0,
+         "detected": 3, "campaigns": 11} for m in ("proteus", "proteus_pcr")])
+    fig = curves_figure(pts, detectors=["proteus_pcr", "proteus"])
+    assert r"\addlegendentry{\sysname}" in fig and r"\addlegendentry{\sysname-fast}" in fig
+    assert r"\addlegendentry{\sysname}" in curves_figure(pts, detectors=["proteus"])

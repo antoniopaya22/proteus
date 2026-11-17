@@ -33,6 +33,13 @@ DETECTOR_SETS = {
            ("proteus_cert_r@certr", "Cert.-R"), ("proteus_free", "Unc."),
            ("rate_rules_local", "Rules"), ("kitnet_local", "KitNET"), ("flow_clf", "Flow"),
            ("apollon", "Apollon")],
+    # The paper: the system (the fast detector or the certified one), its two members
+    # (of the certified one, the alerts certified also against connection reuse) and
+    # the detectors it is compared with.
+    "paper": [("proteus_pcr", r"\sysname"), ("proteus", "Fast"),
+              ("proteus_cert_r@certr", "Cert."), ("proteus_free", "Unc."),
+              ("rate_rules_local", "Rules"), ("rate_rules_sel", "Sel."),
+              ("kitnet_local", "KitNET"), ("flow_clf", "Flow"), ("apollon", "Apollon")],
 }
 DETECTORS = [  # (model in summary.csv, column header)
     ("core_mono_dst_x", "Fast"),
@@ -401,6 +408,7 @@ CURVE_STYLE = {  # detector -> (legend, pgfplots style)
     "proteus": (r"\sysname", "color=pblue, mark=*, line width=1.1pt"),
     "proteus_sys": (r"\sysname{} $\cup$ \sysname-cert", "color=pnavy, mark=square*"),
     "proteus_sys_r": ("system", "color=pnavy, mark=square, densely dashed"),
+    "proteus_pcr": (r"\sysname", "color=pnavy, mark=square*, line width=1.1pt"),
     "proteus_cert_r": ("reuse-safe sub-cores", "color=pgreen, mark=triangle*"),
     "proteus2_sys": (r"\sysname-2 system", "color=pgreen, mark=triangle, densely dashed"),
     "rate_rules_local": ("rate thresholds", "color=porange, mark=o"),
@@ -447,6 +455,9 @@ def curves_figure(points: pd.DataFrame, x: str = "entity_alarms_per_hour",
     if unknown:
         raise ValueError(f"no curve style for {unknown}")
     styles = {m: CURVE_STYLE[m] for m in (detectors or CURVE_STYLE)}
+    if detectors and "proteus_pcr" in styles and "proteus" in styles:
+        # Next to the system, the detector on every time scale is its fast member.
+        styles["proteus"] = (r"\sysname-fast", "color=pblue, mark=*")
     lines = ["% Detection against alarms per alerted entity and hour (tables.py curves).",
              r"\begin{tikzpicture}",
              r"\begin{groupplot}[group style={group size=2 by 1, horizontal sep=1.4cm},",
@@ -533,7 +544,7 @@ def main() -> None:
         return
     DETECTORS[:] = DETECTOR_SETS[args.set]
     args.out.write_text(h1_table(args.runs, args.extra, args.fpr,
-                                 entity_alarms=args.set == "r2"))
+                                 entity_alarms=args.set in ("r2", "paper")))
     print(args.out.read_text())
 
 
