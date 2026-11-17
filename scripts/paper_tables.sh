@@ -54,8 +54,8 @@ csvs=$(files $A/query_attack_0.001_all.csv $B/query_attack_0.001_all.csv)
 # Sub-core ablations (tab:ablation).
 runs=$(exists ${A}_ablation ${B}_ablation)
 [ -n "$runs" ] && $PY proteus.evaluation.tables ablation --runs $runs --out $T/ablation.tex > /dev/null
-runs=$(exists ${A}_ablation ${B}_ablation_cert)
-[ -n "$runs" ] && $PY proteus.evaluation.tables ablation --base proteus_cert --runs $runs \
+runs=$(exists ${A}_ablation_r ${B}_ablation_r)
+[ -n "$runs" ] && $PY proteus.evaluation.tables ablation --base proteus_cert_r --runs $runs \
   --out $T/ablation_cert.tex > /dev/null
 
 # Comparison of defences (tab:bench), one file per direction.

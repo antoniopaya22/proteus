@@ -134,25 +134,25 @@ stage_query() {  # tab:query: black-box search with hard labels, every candidate
 
 stage_ablation() {  # tab:ablation (proteus-K drops sub-core K).
   local p="proteus proteus-0 proteus-1 proteus-2 proteus-3"
-  local c="proteus_cert proteus_cert-0 proteus_cert-1 proteus_cert-2 proteus_cert-3"
-  run $O/run_18_17_r2_ablation.log $PY proteus.evaluation.h1 --train csecicids2018 --test cicids2017 \
-    --reuse $A --models $p $c --tag r2_ablation
-  run $O/run_17_18_r2_ablation.log $PY proteus.evaluation.h1 --train cicids2017 --test csecicids2018 \
-    --reuse $B --models $p --tag r2_ablation
-  run $O/run_17_18_r2_ablation_cert.log $PY proteus.evaluation.h1 --train cicids2017 --test csecicids2018 \
-    --reuse $B --models $c --tag r2_ablation_cert
+  local c="proteus_cert_r proteus_cert_r-0 proteus_cert_r-1 proteus_cert_r-2 proteus_cert_r-3"
+  while read -r train test dir tag; do
+    run $O/run_${tag}_r2_ablation.log $PY proteus.evaluation.h1 --train $train --test $test \
+      --reuse $dir --models $p --tag r2_ablation
+    run $O/run_${tag}_r2_ablation_r.log $PY proteus.evaluation.h1 --train $train --test $test \
+      --reuse $dir --models $c --tag r2_ablation_r
+  done < <(pairs)
 }
 
 stage_poisoning() {  # fig:poisoning: baselines raised over days.
-  run $O/poisoning_r2_cert_18_17.log $PY proteus.evaluation.poisoning --run $A --test cicids2017 \
-    --model proteus_cert --rounds 8 --caps none 0.25 0.1
+  run $O/poisoning_r2_certr_18_17.log $PY proteus.evaluation.poisoning --run $A --test cicids2017 \
+    --model proteus_cert_r --rounds 8 --caps none 0.25 0.1
   run $O/poisoning_r2_18_17.log $PY proteus.evaluation.poisoning --run $A --test cicids2017 \
     --model proteus --rounds 8 --caps none 0.1
 }
 
 stage_budget() {  # tab:budget (randomised smoothing, the mechanism of BARS).
   run $O/smoothing_r2_18_17.log $PY proteus.evaluation.smoothing --run $A --test cicids2017 \
-    --base core_free_dst_b --certified proteus_cert
+    --base core_free_dst_b --certified proteus_cert_r
 }
 
 stage_real() {  # sec:evaluation:real and the appendix: CTU-13, UGR'16, CIC-DDoS-2019, UNSW-NB15.
@@ -198,7 +198,7 @@ stage_robustness() {  # Seeds, baselines without labels, class balance of the tr
     done
     for b in type type_entity none; do
       run $O/run_${tag}_r2_bal_$b.log $PY proteus.evaluation.h1 --train $train --test $test --balance $b \
-        --models proteus proteus_cert $BUD --tag r2_bal_$b
+        --models proteus proteus_cert_r $BUD --tag r2_bal_$b
     done
   done < <(pairs)
   run $O/run_18_17_r2_prior_none.log $PY proteus.evaluation.h1 --train csecicids2018 --test cicids2017 \
