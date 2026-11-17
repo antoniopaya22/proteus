@@ -36,6 +36,8 @@ COMMANDS: dict[str, tuple[str, str]] = {
                      "black-box query attacker in the traffic space"),
     "injection": ("proteus.evaluation.injection",
                   "the attacks of the test network against many real victims"),
+    "kitsune-pcap": ("proteus.evaluation.kitsune_pcap",
+                     "Kitsune as published on the packets of a capture, and the free operations"),
     "poisoning": ("proteus.evaluation.poisoning", "poisoning of the per-entity baselines"),
     "alarms": ("proteus.evaluation.alarms", "explained alarms per entity on real traffic"),
     "feedback": ("proteus.evaluation.feedback", "feedback of shell alerts into the core"),
