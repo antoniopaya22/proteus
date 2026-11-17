@@ -383,4 +383,4 @@ def test_plan_families_separate_additive_plans_from_reuse(tmp_path):
     pd.DataFrame(ladder).to_csv(run / "adaptive_ladder_b0.5_g30.csv", index=False)
     row = next(x for x in plan_family_table([run / "adaptive_b0.5_g30.csv"]).splitlines()
                if x.startswith("Unc."))
-    assert row.rstrip(" \\\\").split(" & ")[1:] == ["1.0\\%/0", "100.0\\%/1", "100.0\\%/1", "100.0\\%/1"]
+    assert row.removesuffix(" \\\\").split(" & ")[1:] == ["1.0\\%/0", "100.0\\%/1", "100.0\\%/1", "100.0\\%/1"]
