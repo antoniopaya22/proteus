@@ -25,7 +25,7 @@
 </p>
 
 <p align="center">
-  <a href="https://antoniopaya22.github.io/proteus/"><img src="website/assets/screenshot-home.png" alt="Proteus website: intrusion alerts certified against adversarial manipulation of network traffic" width="860"></a>
+  <a href="https://antoniopaya22.github.io/proteus/"><img src="website/assets/screenshot-home.png" alt="Proteus website: intrusion alerts certified against additive manipulation of network traffic" width="860"></a>
 </p>
 
 ---

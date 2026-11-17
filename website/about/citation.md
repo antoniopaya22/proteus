@@ -5,11 +5,11 @@ and the reference will be updated when the manuscript is published. Until then, 
 cite it as:
 
 > A. Payá González, S. Arroni del Riego. *Proteus: Certifying Network Intrusion Alerts
-> against Adversarial Traffic Manipulation*. Manuscript in preparation, 2026.
+> against Additive Traffic Manipulation*. Manuscript in preparation, 2026.
 
 ```bibtex
 @unpublished{paya2026proteus,
-  title  = {Proteus: Certifying Network Intrusion Alerts against Adversarial Traffic Manipulation},
+  title  = {Proteus: Certifying Network Intrusion Alerts against Additive Traffic Manipulation},
   author = {Pay{\'a} Gonz{\'a}lez, Antonio and Arroni del Riego, Sergio},
   year   = {2026},
   note   = {Manuscript in preparation}

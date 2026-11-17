@@ -25,7 +25,7 @@
 </p>
 
 <p align="center">
-  <a href="https://antoniopaya22.github.io/proteus/es/"><img src="website/assets/screenshot-home.png" alt="Web de Proteus: alertas de intrusión certificadas frente a la manipulación adversaria del tráfico de red" width="860"></a>
+  <a href="https://antoniopaya22.github.io/proteus/es/"><img src="website/assets/screenshot-home.png" alt="Web de Proteus: alertas de intrusión certificadas frente a la manipulación aditiva del tráfico de red" width="860"></a>
 </p>
 
 ---
