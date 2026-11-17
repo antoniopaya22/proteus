@@ -2313,3 +2313,27 @@ sistema desde la escalera):
 
 - El sistema queda primero **por poco**; el paper lo dice así («narrowly»). La diferencia clara está
   con KitNET y las reglas con selección. Falta 2017 → 2018 (`adapt_1718`).
+
+## 6.81 Envenenamiento contra Proteus-fast y contador de realimentación con r2, 2018 → 2017 (2026-11-17, 07:25)
+
+**`poi_prot`** (Proteus-fast, ocho días al 95 % de la frontera): ocho de las nueve fronteras no se
+mueven, con y sin tope (SSH 969, FTP 432, Hulk 1 407, GoldenEye 1 497, Slowloris 811, Slowhttptest
+629, escaneo del viernes 352, LOIC-HTTP 2 174), y el techo con línea base infinita coincide con ellas.
+Solo sube el escaneo del jueves (contra un host casi sin tráfico): 11 → 1 692 sondas/h sin tope (27
+con tope de 0,1; techo 1 978). Como el sistema solo calla por debajo de las dos fronteras, ese escaneo
+queda acotado por Proteus-cert en 563 (§6.77). Llevado al paper; la subsección ya no tiene pendientes.
+
+**`fb_1817_*`** (la capa por flujo entrenada en 2018 bloquea en 2017 a su umbral local):
+
+| | Bloqueos benignos (40,8 h) | Orígenes | Alarmas/h con K = 10, τ = 600 s | Sin alarmas desde |
+|---|---|---|---|---|
+| FPR 10⁻³ | 1 480 | 13 | 0,03 | K = 20 |
+| FPR 10⁻⁴ | 507 | 13 | 0 | K = 5 |
+
+Con K = 10 y τ = 600 s un origen puede tener como mucho una sonda bloqueada por minuto: las 805
+sondas bloqueadas de una evasión HopSkipJump cuestan más de 13 h por origen o al menos 81 orígenes.
+El apéndice del paper pasa a estas cifras (antes usaba el bloqueo a puntuación 0,5, anterior a r2);
+falta 2017 → 2018 (`fb_1718_*`).
+
+`smooth` (certificado de presupuesto con el detector certificado antiguo) también terminó; el paper
+usa ya `smooth_r` (§6.76).
