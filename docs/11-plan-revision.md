@@ -110,6 +110,13 @@ trabajo es de seguridad de redes (el certificado vale para detectores no aprendi
       `p2_all_1718` (bajo el cerrojo). Con ellas: tablas de detección (`--set r2` con el sistema de
       dos), figura de curvas, `tab:variants`, texto de RQ1–RQ2.
 - [ ] Atacante por consultas 17 → 18 (`qa_1718`, `~/tools/extra3.sh`, al final de la cola).
+- [~] **Reescritura del paper con el sistema de dos** (nombres: Proteus = el sistema, Proteus-fast =
+      todas las escalas, Proteus-cert = el certificado sobre evidencia que la reutilización no baja;
+      el antiguo Proteus-cert pasa a ablación de la evidencia, apéndice `app:evidence`). Hecho:
+      diseño (`tab:variants`, subsección «The two detectors», algoritmo), apéndice `tab:evidence`,
+      generador (`tables h1 --set paper`, curvas con `proteus_pcr`). Cifras de 2017 del sistema en
+      §6.74 de docs/06. Falta: resumen, introducción, evaluación (RQ1–RQ6), discusión, conclusión,
+      apéndice, `paper_tables.sh` con el conjunto nuevo; espera a `p2_all_1718` para 2018.
 - [ ] Paper: reglas con selección en 2018 compiten en detección y alarmas (13+2 a 0,61) y no tienen
       robustez (85 % del ritmo real): decirlo así en RQ2 y en la comparación.
 
