@@ -110,6 +110,14 @@ con campañas o vías más cortas?»).** Todo lo que queda se mide en el punto d
 - Siguientes, sin GPU: estudio de inyección sobre víctimas con carga real y atacante fuerte (vías 1 y
   2 de la conversación del 2026-11-17); con GPU: defensas publicadas con su código.
 
+**Hecho mientras calcula (2026-11-17, mañana):**
+- Estudio de inyección (`proteus.evaluation.injection`, commit 3efa64b, 225 tests): cada ataque del día
+  contra 16 víctimas reales sin ataques, repartidas en carga, con los planes del adaptativo (los de
+  peticiones mínimas aparte) y el ritmo certificado. Encolado sobre 2017 a presupuesto 0,5
+  (`inj_1817`, unidad `proteus-inj`, espera a `proteus-op2`).
+- Paper: CTU-13 reescrito con el sistema final (§6.84); ataques por flujo y Apollon sin afirmar más de
+  lo que soportan 79 flujos (objeción O5); discusión recortada. Cuerpo: 11 620 palabras.
+
 - [~] **Discrepancias (23).** Corregir todas: daño certificado de LOIC-HTTP en `tab:adaptive` (204k)
       frente a la frontera (164 536); dos columnas «Cert.» con significados distintos (1,73 / 6,13
       frente a 3,01 / 7,28); frases que no cuadran con sus tablas (escaneos que «para antes»
