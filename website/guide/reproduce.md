@@ -25,8 +25,9 @@ terminal shows the exact command.
 | `systems` | Per-flow alerts of every detector, the window-fidelity complement and the candidate systems (unions) built from them | See [Experiments](experiments.md) |
 | `cert` | Free operations on the real campaigns, each campaign without the other attacks of its day, the certificate slack with a re-scoring timer, saturated sub-cores | Reuses the `h1` models |
 | `frontier` | Harm frontier per attack type, plain and certified, on the real victim and on the busiest service | |
-| `adaptive` | Damage under the adaptive attacker with fixed plans, every detector | Peaks at about 12 GB |
-| `query` | Damage under the query attacker (black-box search with hard labels), every candidate in one run | About 3 h |
+| `adaptive` | Damage under the adaptive attacker with fixed plans (minimal requests apart), at the operating point (alarm budget 0.5) | Peaks at about 12 GB |
+| `query` | Damage under the query attacker (black-box search with hard labels), at the operating point | About 3 h per direction |
+| `injection` | Every attack of a test day against many real victims of varying load: hundreds of cases instead of one victim per attack | Several hours |
 | `ablation` | Sub-core ablation (`proteus-K` drops sub-core K) | Reuses the `h1` models |
 | `poisoning` | Baseline poisoning frontiers | |
 | `budget` | Budget certificate (randomised smoothing, the mechanism of BARS) against free operations | |

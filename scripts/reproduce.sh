@@ -111,25 +111,33 @@ stage_frontier() {  # tab:frontier, fig:frontier: real victim, then the busiest 
   done < <(pairs)
 }
 
-stage_adaptive() {  # tab:adaptive: fixed plans on a grid of rates, every detector.
-  local m="proteus proteus_cert proteus_cert_r proteus2 proteus_free core_free_dst_b rate_rules_sel"
-  local c="--certify proteus_cert proteus_cert_r proteus2"
-  run $O/adaptive_r2g_18_17.log $PY proteus.evaluation.adaptive --run $A --extra-runs ${A}_p2 ${A}_sel \
+stage_adaptive() {  # tab:adaptive: fixed plans on a grid of rates, at the operating point.
+  local m="proteus proteus_cert_r proteus_free rate_rules_sel"
+  local c="--certify proteus_cert_r --alarm-budget 0.5"
+  run $O/adaptive_r2g_18_17_b0.5.log $PY proteus.evaluation.adaptive --run $A --extra-runs ${A}_p2 ${A}_sel \
     --test cicids2017 --models $m --local rate_rules_local kitnet_local $c --grid 30 --tag g30
-  run $O/adaptive_r2g_18_17_1e-4.log $PY proteus.evaluation.adaptive --run $A --extra-runs ${A}_p2 \
-    --test cicids2017 --models proteus proteus_cert proteus_cert_r proteus2 --local $c \
-    --fpr 1e-4 --grid 30 --tag g30
-  run $O/adaptive_r2g_17_18.log $PY proteus.evaluation.adaptive --run $B --extra-runs ${B}_p2 ${B}_sel \
-    --test csecicids2018 --models $m --local rate_rules_local kitnet_local $c --variants 4 --grid 20 --tag g20
+  run $O/adaptive_r2g_17_18_b0.5.log $PY proteus.evaluation.adaptive --run $B --extra-runs ${B}_p2 \
+    --test csecicids2018 --models proteus proteus_cert_r proteus_free rate_rules_sel --local rate_rules_local \
+    $c --variants 2 --grid 16 --tag g16
 }
 
-stage_query() {  # tab:query: black-box search with hard labels, every candidate in one run.
-  run $O/query_attack_18_17_all.log $PY proteus.evaluation.query_attack --run $A \
+stage_query() {  # tab:query: black-box search with hard labels, at the operating point.
+  local q="--local rate_rules_local --alarm-budget 0.5 --costly --shrink --max-flows 300000 --tag all"
+  run $O/query_attack_18_17_b0.5.log $PY proteus.evaluation.query_attack --run $A \
     --extra-runs ${A}_p2 ${A}_sel --test cicids2017 \
-    --targets proteus proteus_cert_r proteus_sys_r proteus2 rate_rules_local rate_rules_sel window_fidelity \
-    --union pcr=proteus,proteus_cert_r --union pcrw=proteus,proteus_cert_r,window_fidelity \
-    --union p2w=proteus2,window_fidelity --local rate_rules_local \
-    --budget 150 --costly --max-flows 300000 --tag all
+    --targets proteus proteus_cert_r rate_rules_local rate_rules_sel \
+    --union pcr=proteus,proteus_cert_r --budget 150 $q
+  run $O/query_attack_17_18_b0.5.log $PY proteus.evaluation.query_attack --run $B \
+    --extra-runs ${B}_p2 --test csecicids2018 \
+    --targets proteus proteus_cert_r rate_rules_local rate_rules_sel \
+    --union pcr=proteus,proteus_cert_r --budget 100 $q
+}
+
+stage_injection() {  # Every attack against many real victims of varying load (2018 -> 2017).
+  run $O/injection_18_17_b0.5.log $PY proteus.evaluation.injection --run $A --extra-runs ${A}_sel \
+    --test cicids2017 --models proteus proteus_cert_r proteus_free rate_rules_sel \
+    --local rate_rules_local kitnet_local --certify proteus_cert_r --alarm-budget 0.5 \
+    --victims 16 --grid 14 --window 1800 --tag v16
 }
 
 stage_ablation() {  # tab:ablation (proteus-K drops sub-core K).
@@ -161,7 +169,7 @@ stage_real() {  # sec:evaluation:real and the appendix: CTU-13, UGR'16, CIC-DDoS
   local aug="2016-08-01 2016-08-02 2016-08-03 2016-08-04 2016-08-05 2016-08-06 2016-08-07"
   local m="proteus proteus_cert proteus_cert_r proteus2 core_both_x rate_rules_local"
   local r="proteus proteus_cert proteus_cert_r proteus2 rate_rules_local"
-  local b="--entity-budgets 1 0.1" xs="--exclude-saturated 1e-3"
+  local b="--entity-budgets 0.5 1 0.1" xs=""
   run $O/run_ctu_foldB_r2.log $PY proteus.evaluation.h1 --train ctu13 --test ctu13 --train-days $fb --test-days $fa --tag foldB_r2 $b --models $m $xs
   run $O/run_ctu_foldA_r2.log $PY proteus.evaluation.h1 --train ctu13 --test ctu13 --train-days $fa --test-days $fb --tag foldA_r2 $b --models $m $xs
   for h in 1 6; do
@@ -174,9 +182,6 @@ stage_real() {  # sec:evaluation:real and the appendix: CTU-13, UGR'16, CIC-DDoS
   run $O/run_17_ugr_r2.log $PY proteus.evaluation.h1 --train cicids2017 --test ugr16 --reuse $B --extra-runs ${B}_p2 --test-days $jul $aug --tag r2 $b --models $r $xs
   run $O/run_17_ddos19_r2.log $PY proteus.evaluation.h1 --train cicids2017 --test cicddos2019 --reuse $B --extra-runs ${B}_p2 --tag r2 --models $r
   run $O/run_18_ddos19_r2.log $PY proteus.evaluation.h1 --train csecicids2018 --test cicddos2019 --reuse $A --extra-runs ${A}_p2 --tag r2 --models $r
-  # The same folds without the exclusion of saturated sub-cores.
-  run $O/run_ctu_foldB_r2_nox.log $PY proteus.evaluation.h1 --train ctu13 --test ctu13 --train-days $fb --test-days $fa --reuse $O/ctu13__ctu13__loo_labels__foldB_r2 --tag foldB_r2_nox $b --models $m
-  run $O/run_ctu_foldA_r2_nox.log $PY proteus.evaluation.h1 --train ctu13 --test ctu13 --train-days $fa --test-days $fb --reuse $O/ctu13__ctu13__loo_labels__foldA_r2 --tag foldA_r2_nox $b --models $m
   # UNSW-NB15: source-side detectors on the default evidence (v1).
   run $O/run_17_unsw.log env PROTEUS_EVIDENCE=v1 $PY proteus.evaluation.h1 --train cicids2017 --test unsw_nb15 \
     --models core_both_x core_both_cert core_src_x rate_rules_local --tag src
@@ -191,9 +196,9 @@ stage_shell() {  # tab:aml (decision-based attacks on per-flow detectors) and ta
 }
 
 stage_robustness() {  # Seeds, baselines without labels, class balance of the training set.
-  local ms="proteus proteus_cert proteus_cert_r proteus2 proteus_free core_free_dst_b rate_rules_local"
+  local ms="proteus proteus_cert_r proteus_free rate_rules_local"
   while read -r train test dir tag; do
-    for s in 1 2 3 4; do
+    for s in 1 2; do
       run $O/run_${tag}_r2_s$s.log $PY proteus.evaluation.h1 --train $train --test $test --models $ms $BUD --seed $s --tag r2_s$s
     done
     for b in type type_entity none; do
@@ -202,7 +207,7 @@ stage_robustness() {  # Seeds, baselines without labels, class balance of the tr
     done
   done < <(pairs)
   run $O/run_18_17_r2_prior_none.log $PY proteus.evaluation.h1 --train csecicids2018 --test cicids2017 \
-    --baseline prior --mask none --models proteus proteus_cert rate_rules_local $BUD --tag r2
+    --baseline prior --mask none --models proteus proteus_cert_r rate_rules_local $BUD --tag r2
 }
 
 stage_packets() {  # sec:evaluation:packets. Needs the CIC-IDS-2017 Friday pcap and dpkt (.[packets]).
@@ -222,7 +227,7 @@ stage_tables() {
   [ -n "${DRY:-}" ] || bash scripts/paper_tables.sh
 }
 
-STAGES="data h1 baselines systems cert frontier adaptive query ablation poisoning budget real shell robustness packets cost tables"
+STAGES="data h1 baselines systems cert frontier adaptive query injection ablation poisoning budget real shell robustness packets cost tables"
 [ $# -eq 0 ] && { echo "usage: $0 all | <stage>...   stages: $STAGES"; exit 1; }
 [ "$1" = all ] && set -- $STAGES
 for s in "$@"; do "stage_$s"; done

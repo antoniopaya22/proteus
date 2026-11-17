@@ -226,6 +226,29 @@ hour instead of `--fpr`), `--attacks`, `--days`, `--seed`, `--tag`. After the se
 a scenario, the shapes found against each target are replayed against the others. Results: `query_attack_<fpr>.csv` and
 `query_attack_trace_<fpr>.csv` in the run directory.
 
+## `injection`
+
+Every attack of a test day against many real victims. The benchmarks have one victim
+per attack, almost idle; here each attack (its real flow shapes) is aimed in turn at
+`--victims` services of the same day that no attack touches, chosen to span the range
+of benign load on the attacked port (for scans, hosts on any port), over each victim's
+own traffic. For every (victim, attack) pair and detector it reports the highest rate at
+which the attack raises no alert of its own: plain, with the attacker's plans, with
+minimal requests (apart) and, for `--certify` detectors, the certified rate.
+
+```bash
+PROTEUS_EVIDENCE=v3 python -m proteus.evaluation.injection \
+    --run experiments/outputs/h1/csecicids2018__cicids2017__loo_labels__r2 \
+    --test cicids2017 --models proteus proteus_cert_r --local rate_rules_local \
+    --certify proteus_cert_r --alarm-budget 0.5 --victims 16
+```
+
+Options: `--plans` (default plain, reuse, reuse+pulse, shrink, shrink+reuse), `--window`
+(attack duration), `--grid`, `--rmin`, `--rmax`, `--max-flows`, `--fpr` or
+`--alarm-budget`, `--attacks`, `--days`, `--seed`, `--tag`. Results:
+`injection_<threshold>.csv` (one row per victim, attack and detector) and
+`injection_ladder_<threshold>.csv` in the run directory.
+
 ## `unions`
 
 Evaluates candidate systems without scoring anything again. `h1 --export-alerts`

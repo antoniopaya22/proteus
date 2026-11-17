@@ -234,6 +234,30 @@ mínimas), `--costly` (otra que puede repartirse entre orígenes), `--alarm-budg
 objetivo se vuelven a probar contra los demás. Resultados:
 `query_attack_<fpr>.csv` y `query_attack_trace_<fpr>.csv` en el directorio de la ejecución.
 
+## `injection`
+
+Cada ataque de un día de prueba contra muchas víctimas reales. Los benchmarks tienen
+una víctima por ataque, casi sin tráfico; aquí cada ataque (con las formas reales de sus
+flujos) se lanza por turnos contra `--victims` servicios del mismo día que ningún ataque
+toca, elegidos para cubrir el rango de carga benigna en el puerto atacado (en los
+escaneos, máquinas en cualquier puerto), sobre el tráfico propio de cada víctima. Para
+cada par (víctima, ataque) y cada detector da el ritmo máximo al que el ataque no
+provoca ninguna alerta propia: tal cual, con los planes del atacante, con peticiones
+mínimas (aparte) y, para los detectores de `--certify`, el ritmo certificado.
+
+```bash
+PROTEUS_EVIDENCE=v3 python -m proteus.evaluation.injection \
+    --run experiments/outputs/h1/csecicids2018__cicids2017__loo_labels__r2 \
+    --test cicids2017 --models proteus proteus_cert_r --local rate_rules_local \
+    --certify proteus_cert_r --alarm-budget 0.5 --victims 16
+```
+
+Opciones: `--plans` (por defecto plain, reuse, reuse+pulse, shrink, shrink+reuse),
+`--window` (duración del ataque), `--grid`, `--rmin`, `--rmax`, `--max-flows`, `--fpr` o
+`--alarm-budget`, `--attacks`, `--days`, `--seed`, `--tag`. Resultados:
+`injection_<umbral>.csv` (una fila por víctima, ataque y detector) e
+`injection_ladder_<umbral>.csv` en el directorio de la ejecución.
+
 ## `unions`
 
 Evalúa sistemas candidatos sin volver a puntuar nada. `h1 --export-alerts` escribe, por

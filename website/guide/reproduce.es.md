@@ -25,8 +25,9 @@ de registro que se muestra en el terminal indica el comando exacto.
 | `systems` | Alertas por flujo de cada detector, el complemento de fidelidad por ventana y los sistemas candidatos (uniones) que se forman con ellas | Consulta [Experimentos](experiments.md) |
 | `cert` | Operaciones gratuitas sobre las campañas reales, cada campaña sin los demás ataques de su día, holgura del certificado con temporizador de recálculo, subnúcleos saturados | Reutiliza los modelos de `h1` |
 | `frontier` | Frontera de daño por tipo de ataque, simple y certificada, sobre la víctima real y sobre el servicio con más tráfico | |
-| `adaptive` | Daño bajo el atacante adaptativo con planes fijos, todos los detectores | Pico de unos 12 GB |
-| `query` | Daño bajo el atacante por consultas (búsqueda de caja negra con etiqueta dura), todos los candidatos en una ejecución | Unas 3 h |
+| `adaptive` | Daño bajo el atacante adaptativo con planes fijos (las peticiones mínimas aparte), en el punto de operación (presupuesto de alarmas 0,5) | Pico de unos 12 GB |
+| `query` | Daño bajo el atacante por consultas (búsqueda de caja negra con etiqueta dura), en el punto de operación | Unas 3 h por sentido |
+| `injection` | Cada ataque de un día de prueba contra muchas víctimas reales de carga distinta: cientos de casos en lugar de una víctima por ataque | Varias horas |
 | `ablation` | Ablación de subnúcleos (`proteus-K` elimina el subnúcleo K) | Reutiliza los modelos de `h1` |
 | `poisoning` | Fronteras bajo envenenamiento de la línea base | |
 | `budget` | Certificado de presupuesto (suavizado aleatorizado, el mecanismo de BARS) frente a operaciones gratuitas | |

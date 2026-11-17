@@ -9,6 +9,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Injection study (`proteus injection`): every attack of a test day against many real
+  victims of varying load. Minimal requests (`operators.shrink_requests`) in the adaptive
+  and query attackers, and both attackers at an alarm budget.
 - Query attacker in the traffic space (`proteus query-attack`): a black-box search over
   the shape and the rate of the attacker's traffic that only observes whether it was
   alerted. The shapes found against one target are replayed against the others, so a
