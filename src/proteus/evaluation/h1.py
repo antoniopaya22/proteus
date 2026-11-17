@@ -420,6 +420,7 @@ def training_set(ds: str, rng: np.random.Generator, cap_attack=50_000, cap_benig
 # Unsupervised detectors fitted, for each test day, on clean benign traffic of the
 # other days of the test network (no labels), like the local thresholds.
 LOCAL = {"rate_rules_local": RateRules, "rate_rules_sel": RateRules, "rate_rules_r": RateRules,
+         "rate_rules_cr": RateRules,
          "kitnet_local": KitNET}
 SEL_K = 10  # features kept by rate_rules_sel
 UNSUPERVISED = (RateRules, KitNET, CalibratedMax)
@@ -487,6 +488,7 @@ def detectors(specs: dict[str, str], flow_cols: list[str]) -> dict[str, tuple[li
     raw_all = [k for k in specs if not k.endswith(("__b", "__x", "__xp"))]
     reuse_long = [k for k in long_rules if k.split("__")[1] in REUSE_SAFE]
     reuse_all = [k for k in both if k.split("__")[1] in REUSE_SAFE]
+    reuse_both_long = [k for k in both_long if k.split("__")[1] in REUSE_SAFE]
     return {
         "core_mono_dst": (raw, hgb(cst(raw))),
         # Excess over the entity's own baseline, without the baseline itself: rarity
@@ -512,6 +514,10 @@ def detectors(specs: dict[str, str], flow_cols: list[str]) -> dict[str, tuple[li
         # Rate thresholds on the evidence that connection reuse cannot lower (payload
         # bytes and distinct counts), destination and source side, every time scale.
         "rate_rules_r": (reuse_all, RateRules()),
+        # Rate thresholds on the evidence of Proteus-cert (payload bytes and distinct
+        # counts, scales of 10 minutes and more, both sides): with rate_rules_local, the
+        # system's two detectors without learning (union rules_pcr).
+        "rate_rules_cr": (reuse_both_long, RateRules()),
         # Kitsune's detector on our damped per-entity statistics (its AfterImage
         # counterpart): every evidence feature of both sides, no baselines.
         "kitnet_local": (raw_all, KitNET()),
@@ -628,6 +634,8 @@ UNIONS = {"proteus_sys": ("proteus", "proteus_cert"),
           "proteus_sys_r": ("proteus", "proteus_cert", "proteus_cert_r"),
           # the two detectors that carry the detection and the damage of the three
           "proteus_pcr": ("proteus", "proteus_cert_r"),
+          # the same two detectors as rate thresholds, no learning
+          "rules_pcr": ("rate_rules_local", "rate_rules_cr"),
           # with the certified detector on packets (robust to smaller requests too)
           "proteus_pcp": ("proteus", "proteus_cert_p"),
           # with the uncertified window-fidelity complement (evaluation.window_fidelity)
