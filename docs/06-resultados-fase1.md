@@ -2337,3 +2337,30 @@ falta 2017 → 2018 (`fb_1718_*`).
 
 `smooth` (certificado de presupuesto con el detector certificado antiguo) también terminó; el paper
 usa ya `smooth_r` (§6.76).
+
+## 6.82 CTU-13 con r2 (con exclusión de subnúcleos saturados) (2026-11-17, 08:25)
+
+`ctuB` (entrena con s05, s07–s09, s11–s13; prueba en s01–s04, s06, s10: 13 campañas DDoS, 60 escaneos
+de bots, 2 de spam) y `ctuA` (al revés: 1 DDoS, 1 fast-flux, 4 escaneos, 7 de spam). Sistema de dos
+(`proteus_pcr`); campañas con criterio estricto y alarmas por entidad alertada y hora.
+
+| Pliegue, umbral | DDoS | Escaneos | Spam | Alarmas | Orígenes sospechosos detectados |
+|---|---|---|---|---|---|
+| B, presupuesto 0,1 | 3/13 | 2/60 | 2/2 | 0,33 | 9/181 |
+| B, presupuesto 1 | 3/13 | 2/60 | 2/2 | 0,72 | 11/181 |
+| B, FPR 10⁻³ | 3/13 | 3/60 | 2/2 | 0,99 | 34/181 |
+| A, presupuesto 0,1 | 1/1 | 0/4 | 1/7 | 3,01 | 14/119 |
+| A, presupuesto 1 | 1/1 | 0/4 | 2/7 | 3,73 | 22/119 |
+| A, FPR 10⁻³ | 1/1 | 1/4 | 2/7 | 16,0 | 42/119 |
+
+- Como en v3: detecta parte de los DDoS y el spam, casi ningún escaneo de bot, y los escáneres reales
+  del fondo (orígenes sospechosos) cuentan más que los bots. Las reglas llegan a lo mismo en DDoS con
+  6–15 alarmas (a presupuesto 1 y a FPR 10⁻³). `proteus2` se dispara a 44 alarmas a FPR fija.
+- El pliegue A sigue cargando con el escenario 11 (captura de 16 min de otra semana): 3 alarmas incluso
+  con presupuesto 0,1.
+- Frontera de escaneo de una hora (`ctuscan1`): un origen nuevo que repite las sondas del bot se alerta
+  por primera vez a 25 (s03), 49 (s06), 59 (s08) y 145 (s12) sondas por minuto; los bots reales van a
+  6,8, 36, 5,3 y 12,8: todos por debajo. La de seis horas está corriendo.
+- **Estas cifras llevan la exclusión.** Para el paper se usarán las de sin exclusión y presupuesto 0,5
+  (`ctuB_nox`, `ctuA_nox`, adelantadas con `prio2.sh`; `extra2.sh` pasa también a presupuestos 0,5 / 1
+  / 0,1 para UGR'16), y con ellas se decide si la exclusión desaparece del todo.
