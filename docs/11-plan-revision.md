@@ -292,9 +292,10 @@ se contará así en el paper y se valida la detección en UGR'16 y CTU-13. Si sa
 tres detectores, se queda el de tres y se cuenta.
 
 - [ ] `proteus2` 18 → 17: detección, alarmas, presupuestos (`p2_fit_1817`, `p2_all_1817`).
-- [ ] Atacante adaptativo 18 → 17 con rejilla de 30 ritmos y todos los detectores, incluidas las
-      reglas con selección (`adapt_1817`).
-- [ ] Lo mismo en 17 → 18 (`p2_fit_1718`, `p2_all_1718`, `adapt_1718`), CTU-13 y UGR'16.
+- [x] Atacante adaptativo 18 → 17 con rejilla de 30 ritmos y todos los detectores, incluidas las
+      reglas con selección (`adapt_1817`; rehecho al presupuesto 0,5 como `adaptb_1817`).
+- [~] Lo mismo en 17 → 18 (`adaptb_1718` hecho; adaptativo en el paper en los dos sentidos al
+      presupuesto 0,5 desde el commit 6b365ce del paper), CTU-13 y UGR'16.
 - [ ] Decidir el sistema final (Proteus ∪ cert ∪ cert-R frente a `proteus2_sys`) con todo delante.
 
 ## A. Corrección (hecho en código, commit 5c08e7b; cómputo en marcha)

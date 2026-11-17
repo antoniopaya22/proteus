@@ -2565,3 +2565,21 @@ atacante (media geométrica) y ataques que pasan a ritmo real, de 9; sistemas de
   las reglas sin peticiones mínimas, y 17 % frente a 26 % con ellas (4 ataques pasan frente a 5).
 - Para el paper: el hueco de las peticiones pequeñas se declara y se mide; no es certificable con la
   evidencia de flujo para ataques que mueven pocos paquetes por petición.
+
+### 6.92 Daño adaptativo en los dos sentidos, al presupuesto de 0,5 alarmas/h (paper)
+
+Subsección RQ5 y `tab:adaptive` reescritas en el punto de operación (rejilla 30 en 18 → 17, factor
+1,52; rejilla 16 en 17 → 18, factor 2,26). Las filas de peticiones mínimas sobre inundaciones UDP de
+ejecuciones anteriores al suelo solo-TCP se descartan en `tables.without_udp_shrink`.
+
+| Sentido | Sistema | Sistema, peticiones mínimas | Reglas | Reglas, peticiones mínimas |
+|---|---|---|---|---|
+| 18 → 17 | 11,1 %, 2 de 9 pasan | 17,0 %, 4 | 13,9 %, 3 | 25,7 %, 5 |
+| 17 → 18 | 7,1 %, 2 de 10 | 18,0 %, 4 | 15,3 %, 5 | 15,3 %, 5 |
+
+- En 18 → 17 pasan las dos fuerzas brutas (bajo la frontera); en 17 → 18, los dos escaneos de la red
+  grande, que ya iban a 1 600 y 2 900 flujos/h.
+- Peticiones mínimas + reutilización dejan pasar Slowloris y Slowhttptest (18 → 17) y GoldenEye y
+  Slowloris (17 → 18); Hulk sigue teniendo que ir 14 y 26 veces más despacio.
+- Las reglas lo hacen con 4–5 veces las alarmas del sistema (`tab:budgets`).
+
