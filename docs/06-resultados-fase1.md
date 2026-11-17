@@ -2514,3 +2514,23 @@ de 11 (otros de 10, ninguno) y alarmas por entidad alertada y hora:
   bajo: a 0,5 solo certifica 2 campañas frente a reutilización. Es el precio de no depender de bytes.
 - La prueba que decide es el atacante (`adaptb_1817`, corriendo, con los tres detectores): si el
   sistema fast ∪ cert_p, o fast ∪ cert_r ∪ cert_p, aguanta peticiones mínimas con reutilización.
+
+## 6.90 Semillas 1 y 2 en 2018 → 2017, y el sistema con el certificado sobre paquetes (2026-11-17, 19:35)
+
+`seedb_1817_1`, `seedb_1817_2` (todo reajustado con otra semilla) frente a la semilla 0 (`r2_cpu`).
+«Vol.+otros» de 11 + 10, alarmas por entidad alertada y hora:
+
+| Detector, presupuesto 0,5 | Semilla 0 | Semilla 1 | Semilla 2 |
+|---|---|---|---|
+| Proteus (fast ∪ cert) | 11+3 a 1,35 | 11+2 a 1,57 | 9+2 a 1,25 |
+| Proteus-fast | 11+1 a 1,01 | 11+0 a 0,99 | 9+0 a 0,84 |
+| Proteus-cert | 8+2 a 0,41 | 8+2 a 0,73 | 8+2 a 0,49 |
+| Núcleo sin restricciones | 7+4 a 0,71 | 7+4 a 0,54 | 9+3 a 0,67 |
+| Reglas | 9+4 a 5,28 | 9+4 a 4,93 | 9+4 a 4,98 |
+
+- **«Todas las campañas de 2017» no es estable entre semillas**: la semilla 2 pierde los dos escaneos
+  pequeños del viernes (226 y 118 flujos). El paper debe dar 9–11 de 11 a 1,25–1,57 alarmas, no 11.
+  La ventaja en alarmas frente a las reglas (≈5) sí es estable.
+- Sistema con el certificado sobre paquetes (`proteus_pcp`, presupuesto 0,5): 11+1 a 1,41, frente a
+  11+3 a 1,35 con el de bytes. En detección no añade nada a Proteus-fast; su papel sería solo la
+  robustez frente a peticiones mínimas (pendiente del adaptativo, 6 de 9 ataques).
