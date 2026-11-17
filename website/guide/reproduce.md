@@ -35,6 +35,7 @@ terminal shows the exact command.
 | `shell` | Decision- and score-based attacks on per-flow detectors; calibration of the feedback counter | Needs the `attacks` extra (ART); takes hours |
 | `robustness` | Four more seeds, baselines computed without labels, class balance of the training set | Refits the detectors |
 | `packets` | Packet-level check of the certificate on the CIC-IDS2017 Friday pcap | Needs the pcap and the `packets` extra (`dpkt`) |
+| `kitsune` | Kitsune as published, on the packets of the Friday capture of CIC-IDS2017, against packet-level free operations | Needs the pcap and the `packets` extra |
 | `cost` | Evidence throughput, scoring throughput and state per entity | Measured on one CPU core |
 | `tables` | Runs `scripts/paper_tables.sh` | Uses only finished runs |
 

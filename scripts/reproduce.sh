@@ -210,6 +210,14 @@ stage_robustness() {  # Seeds, baselines without labels, class balance of the tr
     --baseline prior --mask none --models proteus proteus_cert_r rate_rules_local $BUD --tag r2
 }
 
+stage_kitsune() {  # Kitsune as published on the Friday packets (needs the pcap and dpkt).
+  for n in 100000 1000000; do
+    run experiments/outputs/kitsune_friday_$n.log $PY proteus.evaluation.kitsune_pcap \
+      --pcap $R/cicids2017_pcap/Friday-WorkingHours.pcap --flows $P/cicids2017/friday.parquet \
+      --attacker 172.16.0.1 --train-packets $n --out experiments/outputs/kitsune_$n
+  done
+}
+
 stage_packets() {  # sec:evaluation:packets. Needs the CIC-IDS-2017 Friday pcap and dpkt (.[packets]).
   run experiments/outputs/packet_check_v3.log $PY proteus.evaluation.packet_check \
     --pcap $R/cicids2017_pcap/Friday-WorkingHours.pcap --packets experiments/outputs/packet_check/loic_packets.parquet \
@@ -227,7 +235,7 @@ stage_tables() {
   [ -n "${DRY:-}" ] || bash scripts/paper_tables.sh
 }
 
-STAGES="data h1 baselines systems cert frontier adaptive query injection ablation poisoning budget real shell robustness packets cost tables"
+STAGES="data h1 baselines systems cert frontier adaptive query injection ablation poisoning budget real shell robustness packets kitsune cost tables"
 [ $# -eq 0 ] && { echo "usage: $0 all | <stage>...   stages: $STAGES"; exit 1; }
 [ "$1" = all ] && set -- $STAGES
 for s in "$@"; do "stage_$s"; done

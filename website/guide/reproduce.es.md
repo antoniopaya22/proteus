@@ -35,6 +35,7 @@ de registro que se muestra en el terminal indica el comando exacto.
 | `shell` | Ataques basados en decisión y en puntuación contra detectores por flujo; calibración del contador de realimentación | Necesita el extra `attacks` (ART); tarda horas |
 | `robustness` | Cuatro semillas más, líneas base calculadas sin etiquetas, balance de clases del conjunto de entrenamiento | Vuelve a ajustar los detectores |
 | `packets` | Comprobación del certificado a nivel de paquete sobre el pcap del viernes de CIC-IDS2017 | Necesita el pcap y el extra `packets` (`dpkt`) |
+| `kitsune` | Kitsune tal como se publicó, sobre los paquetes del viernes de CIC-IDS2017, frente a operaciones gratuitas a nivel de paquete | Necesita el pcap y el extra `packets` |
 | `cost` | Rendimiento del cálculo de evidencia, rendimiento de la puntuación y estado por entidad | Medido en un núcleo de CPU |
 | `tables` | Ejecuta `scripts/paper_tables.sh` | Usa solo las ejecuciones terminadas |
 
