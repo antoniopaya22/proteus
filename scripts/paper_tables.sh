@@ -50,10 +50,10 @@ $PY proteus.evaluation.tables summary --runs $(both) --extra $(exists $MORE) \
   --detectors proteus_pcr proteus proteus_cert_r@certr proteus_free rate_rules_local rate_rules_sel kitnet_local flow_clf apollon \
   --out $T/summary_ci.csv > /dev/null
 
-# Harm frontier of the system (tab:frontier) and of each detector.
-runs=$(for d in $A $B; do [ -f $d/frontier_proteus_0.001_attr.csv ] && echo $d; done; true)
-[ -n "$runs" ] && $PY proteus.evaluation.tables frontier_system --set paper --runs $runs \
-  --data-out $T/frontier.csv --out $T/frontier.tex > /dev/null
+# Harm frontier of the system at the operating point (tab:frontier), from the adaptive
+# runs; the frontiers of each detector at FPR 1e-3 and at the busiest service, apart.
+csvs=$(files $A/adaptive_b0.5_g30.csv $B/adaptive_b0.5_g16.csv)
+[ -n "$csvs" ] && $PY proteus.evaluation.tables frontier_budget --csv $csvs --out $T/frontier.tex > /dev/null
 for m in proteus proteus_cert_r; do
   csvs=$(files $A/frontier_${m}_0.001_attr.csv $B/frontier_${m}_0.001_attr.csv)
   [ -n "$csvs" ] && $PY proteus.evaluation.tables frontier --csv $csvs --out $T/frontier_${m}.tex > /dev/null

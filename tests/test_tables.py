@@ -263,3 +263,30 @@ def test_minimal_requests_are_ignored_for_udp_floods():
          "flows_per_h": rate, "detected": rate > quiet}
         for plan, quiet in (("plain", 40.0), ("shrink", 4000.0)) for rate in (40.0, 4000.0)])
     assert ladder_damage(ladder, ["proteus"], shrink=True)[("tue", "ddos_loic_udp")] == 40.0
+
+
+def test_frontier_at_the_budget_takes_the_plain_plan_of_the_system_and_the_certified_damage(tmp_path):
+    import pandas as pd
+
+    from proteus.evaluation.tables import frontier_budget_table
+
+    run = tmp_path / "csecicids2018__cicids2017__loo_labels__r2"
+    run.mkdir()
+    rows = [{"day": "wed", "attack": a, "detector": m, "real_flows_per_h": 5000.0,
+             "certified_flows_per_h": c, "rmax_flows_per_h": 720000.0}
+            for a, c in (("dos_hulk", 1000.0), ("ddos_loic_udp", 0.0))
+            for m in ("proteus", "proteus_cert_r")]
+    pd.DataFrame(rows).to_csv(run / "adaptive_b0.5_g30.csv", index=False)
+    ladder = [{"day": "wed", "attack": a, "detector": m, "plan": plan, "flows_per_h": rate,
+               "detected": rate > quiet[m] if a == "dos_hulk" else True}
+              for a in ("dos_hulk", "ddos_loic_udp")
+              for plan, quiet in (("plain", {"proteus": 900.0, "proteus_cert_r": 300.0}),
+                                  ("reuse", {"proteus": 4000.0, "proteus_cert_r": 4000.0}))
+              for m in quiet for rate in (4.0, 300.0, 900.0, 4000.0)]
+    pd.DataFrame(ladder).to_csv(run / "adaptive_ladder_b0.5_g30.csv", index=False)
+    lines = frontier_budget_table([run / "adaptive_b0.5_g30.csv"]).splitlines()
+    hulk = next(x for x in lines if x.startswith("DoS Hulk")).rstrip(" \\").split(" & ")
+    # Plain: both members quiet with the plain plan, so 300 (reuse does not count); 5000/300.
+    assert hulk[2:] == ["300", "17", "1.0k", "5.0"]
+    udp = next(x for x in lines if x.startswith("DDoS LOIC-UDP")).rstrip(" \\").split(" & ")
+    assert udp[2] == "$<$4" and udp[4] == "$<$4"  # alerted at every rate of the grid

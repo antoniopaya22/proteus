@@ -446,6 +446,52 @@ def adaptive_table(csvs: list[Path], columns: list[tuple[str, str, str]] | None 
     return "\n".join(lines) + "\n"
 
 
+def frontier_budget_table(csvs: list[Path], members: tuple[str, ...] = ("proteus", "proteus_cert_r"),
+                          cert: str = "proteus_cert_r") -> str:
+    """Harm frontier of a system at the operating point of the adaptive runs, one block
+    per direction. Plain: the highest rate on the grid at which the attack, sent as it
+    ran, leaves every member quiet (from the ladder next to each CSV). Certified: the
+    certified damage of ``cert``, above which every combination of free operations and
+    connection reuse is alerted. Factor: how many times slower than the real campaign
+    the attack must run; ``--`` when it already ran below the frontier."""
+    lines = [r"\begin{tabular}{lrrrrr}", r"\toprule",
+             r"& & \multicolumn{2}{c}{Plain} & \multicolumn{2}{c}{Certified} \\",
+             r"\cmidrule(lr){3-4}\cmidrule(lr){5-6}",
+             r"Attack & Real & Frontier & Factor & Frontier & Factor \\"]
+    def fac(real: float, v: float, rmax: float) -> str:
+        if not (0 < v < rmax) or real / v < 1:
+            return "--"
+        f = real / v
+        return f"{f:,.0f}".replace(",", "\\,") if f >= 10 else f"{f:.1f}"
+
+    def cell(real: float, v: float, rmin: float, rmax: float) -> str:
+        """Frontier and factor; 0 means alerted at every rate of the grid."""
+        if v == 0:
+            return rf"$<${_rate(rmin, np.inf)} & $>${fac(real, rmin, np.inf)}"
+        return f"{_rate(v, rmax)} & {fac(real, v, rmax)}"
+
+    for path in csvs:
+        d = pd.read_csv(path)
+        ladder = pd.read_csv(path.with_name(path.name.replace("adaptive_", "adaptive_ladder_", 1)))
+        plain = ladder_damage(ladder[ladder["plan"] == "plain"], list(members))
+        rmin = float(ladder["flows_per_h"].min())
+        key = "__".join(path.parent.name.split("__")[:2])
+        lines += [r"\midrule", rf"\multicolumn{{6}}{{l}}{{\emph{{{DIRECTION.get(key, key)}}}}} \\"]
+        attacks = d.drop_duplicates(["day", "attack"])
+        for _, a in attacks.iterrows():
+            name = ATTACK_NAMES.get(a["attack"], a["attack"])
+            if (attacks["attack"] == a["attack"]).sum() > 1:
+                name += f" ({a['day'][:3].title()}.)"
+            real, rmax = float(a["real_flows_per_h"]), float(a["rmax_flows_per_h"])
+            p = float(plain.get((a["day"], a["attack"]), np.nan))
+            c = d[(d["day"] == a["day"]) & (d["attack"] == a["attack"]) & (d["detector"] == cert)]
+            cv = float(c["certified_flows_per_h"].iloc[0]) if len(c) else np.nan
+            lines.append(f"{name} & {_rate(real, np.inf)} & {cell(real, p, rmin, rmax)} & "
+                         f"{cell(real, cv, rmin, rmax)} \\\\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    return "\n".join(lines) + "\n"
+
+
 # Runs of ``evaluation.adaptive`` made before minimal requests were restricted to TCP
 # (commit 77efc73) also shrank UDP floods, whose bytes are their harm. For those attacks a
 # plan with minimal requests is the same plan without them, so its rows are dropped.
@@ -624,7 +670,8 @@ def curves_figure(points: pd.DataFrame, x: str = "entity_alarms_per_hour",
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("table", choices=["h1", "summary", "ablation", "frontier", "frontier_system",
-                                       "adaptive", "curves", "query", "budgets", "intervals"])
+                                       "frontier_budget", "adaptive", "curves", "query", "budgets",
+                                       "intervals"])
     ap.add_argument("--csv", type=Path, nargs="*", default=[], help="frontier or adaptive CSVs")
     ap.add_argument("--data-out", type=Path, default=None)
     ap.add_argument("--detectors", nargs="*", default=None)
@@ -664,6 +711,10 @@ def main() -> None:
         return
     if args.table == "frontier":
         args.out.write_text(frontier_table(args.csv, args.data_out))
+        print(args.out.read_text())
+        return
+    if args.table == "frontier_budget":
+        args.out.write_text(frontier_budget_table(args.csv))
         print(args.out.read_text())
         return
     if args.table == "adaptive":

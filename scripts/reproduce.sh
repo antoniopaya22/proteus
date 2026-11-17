@@ -100,7 +100,7 @@ stage_cert() {  # sec:evaluation:cert and the appendix checks of the certificate
   done
 }
 
-stage_frontier() {  # tab:frontier, fig:frontier: real victim, then the busiest service.
+stage_frontier() {  # Frontier per detector (FPR 1e-3) at the real victim and at the busiest service.
   while read -r train test dir tag; do
     for m in proteus proteus_cert proteus_cert_r proteus2; do
       run $O/frontier_r2_${m}_$tag.log $PY proteus.evaluation.frontier_exp --run $dir \
@@ -111,7 +111,7 @@ stage_frontier() {  # tab:frontier, fig:frontier: real victim, then the busiest 
   done < <(pairs)
 }
 
-stage_adaptive() {  # tab:adaptive: fixed plans on a grid of rates, at the operating point.
+stage_adaptive() {  # tab:adaptive, tab:frontier: fixed plans on a grid of rates, at the operating point.
   local m="proteus proteus_cert_r proteus_free rate_rules_sel"
   local c="--certify proteus_cert_r --alarm-budget 0.5"
   run $O/adaptive_r2g_18_17_b0.5.log $PY proteus.evaluation.adaptive --run $A --extra-runs ${A}_p2 ${A}_sel \
