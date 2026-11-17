@@ -34,6 +34,8 @@ COMMANDS: dict[str, tuple[str, str]] = {
                         "pilot: window-fidelity detector as the uncertified complement"),
     "query-attack": ("proteus.evaluation.query_attack",
                      "black-box query attacker in the traffic space"),
+    "injection": ("proteus.evaluation.injection",
+                  "the attacks of the test network against many real victims"),
     "poisoning": ("proteus.evaluation.poisoning", "poisoning of the per-entity baselines"),
     "alarms": ("proteus.evaluation.alarms", "explained alarms per entity on real traffic"),
     "feedback": ("proteus.evaluation.feedback", "feedback of shell alerts into the core"),
