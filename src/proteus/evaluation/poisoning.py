@@ -35,6 +35,9 @@ from proteus.evaluation.frontier_exp import (
 BELOW = 0.95  # poisoning rate as a fraction of the current frontier (stays alert-free)
 
 
+_BUDGET_CACHE: dict = {}  # candidate flows of every day (h1.budget_threshold)
+
+
 def combined(models: dict, name: str):
     """``a+b``: maximum of already fitted monotone models (``MaxCore``, still monotone),
     e.g. the fast core plus the raw-count core, which bounds poisoning. ``a|b``: the
@@ -113,6 +116,9 @@ def main() -> None:
     ap.add_argument("--model", default="core_mono_dst_x",
                     help="a model of the run, or a+b for the maximum of several")
     ap.add_argument("--fpr", type=float, default=1e-3)
+    ap.add_argument("--alarm-budget", type=float, default=None,
+                    help="threshold at this many alarms per alerted entity and hour (the "
+                         "operating point) instead of at --fpr")
     ap.add_argument("--rounds", type=int, default=8)
     ap.add_argument("--caps", nargs="+", default=["none", "0.25"],
                     help="baseline growth caps per refresh (log1p units), 'none' = uncapped")
@@ -144,7 +150,13 @@ def main() -> None:
         base0 = baselines.for_day(day)
         if getattr(model, "local", False):  # calibrated per day on the other days' benign
             model.fit(local_benign(args.test, day, cols, rng))
-        thr = local_threshold(args.test, day, model, cols, args.fpr, rng)
+        if args.alarm_budget is None:
+            thr = local_threshold(args.test, day, model, cols, args.fpr, rng)
+        else:  # on the scale the frontier compares with (predict_proba)
+            thr = h1.budget_threshold(args.test, day, cols, model,
+                                      args.alarm_budget,
+                                      lambda X, m=model: m.predict_proba(X)[:, 1],
+                                      cache=_BUDGET_CACHE, key=f"{args.test}:{args.model}")
         for attack, sc, A in scenarios(flows, present):
             span = max((A["t_end"].max() - A["t_start"].min()).total_seconds(), 1.0)
             t0 = sc.start
@@ -175,7 +187,8 @@ def main() -> None:
                     levels = po.entity_levels(traffic, bcols, keys, t0, t1)
                     base = po.raise_baseline(base, levels, cap)
     out = pd.DataFrame(rows)
-    out.to_csv(args.run / f"poisoning_{args.model.replace('+', '_max_')}_{args.fpr:g}.csv",
+    label = f"{args.fpr:g}" if args.alarm_budget is None else f"b{args.alarm_budget:g}"
+    out.to_csv(args.run / f"poisoning_{args.model.replace('+', '_max_')}_{label}.csv",
                index=False)
     piv = out.pivot_table(index=["day", "attack", "cap"], columns="round",
                           values="flows_per_h").round(0)

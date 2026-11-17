@@ -190,6 +190,15 @@ def test_cross_network_run_end_to_end(world):
     assert sorted(a2["attack"].unique()) == ["dos_hulk", "portscan"] and len(a2) == 6
     assert a2[a2["attack"] == "dos_hulk"].reset_index(drop=True).equals(a1)
 
+    # Poisoning at the operating point: thresholds at an alarm budget, named b<budget>.
+    r = subprocess.run([sys.executable, "-m", "proteus.evaluation.poisoning", "--run", str(out),
+                        "--test", "net2", "--model", "proteus_cert_r", "--alarm-budget", "1",
+                        "--rounds", "1", "--caps", "none", "--rmax", "2", "--attacks", "dos_hulk"],
+                       cwd=world, env=env, capture_output=True, text=True, check=False)
+    assert r.returncode == 0, r.stderr[-2000:]
+    p = pd.read_csv(out / "poisoning_proteus_cert_r_b1.csv")
+    assert len(p) and (p["attack"] == "dos_hulk").all() and np.isfinite(p["threshold"]).all()
+
     again = _run(world, "--train", "net1", "--test", "net2", "--reuse", str(out),
                  "--models", "proteus", "--tag", "e2e_reuse")
     assert again.returncode == 0, again.stderr[-2000:]

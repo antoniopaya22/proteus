@@ -151,11 +151,11 @@ stage_ablation() {  # tab:ablation (proteus-K drops sub-core K).
   done < <(pairs)
 }
 
-stage_poisoning() {  # fig:poisoning: baselines raised over days.
-  run $O/poisoning_r2_certr_18_17.log $PY proteus.evaluation.poisoning --run $A --test cicids2017 \
-    --model proteus_cert_r --rounds 8 --caps none 0.25 0.1
-  run $O/poisoning_r2_18_17.log $PY proteus.evaluation.poisoning --run $A --test cicids2017 \
-    --model proteus --rounds 8 --caps none 0.1
+stage_poisoning() {  # tab:poisoning: baselines raised over days, at the operating point.
+  run $O/poisoning_r2_certr_18_17_b0.5.log $PY proteus.evaluation.poisoning --run $A --test cicids2017 \
+    --model proteus_cert_r --rounds 8 --caps none --alarm-budget 0.5
+  run $O/poisoning_r2_18_17_b0.5.log $PY proteus.evaluation.poisoning --run $A --test cicids2017 \
+    --model proteus --rounds 8 --caps none --alarm-budget 0.5
 }
 
 stage_budget() {  # tab:budget (randomised smoothing, the mechanism of BARS).
