@@ -26,6 +26,7 @@ from proteus.baselines.kitnet import KitNET
 from proteus.baselines.rate_rules import RateRules
 from proteus.core.certify import reuse_worst_case, slack, worst_case_features
 from proteus.core.combine import CalibratedMax, MaxCore
+from proteus.core.linear import MonotoneLogistic
 from proteus.core.verify import monotonicity_violations
 from proteus.evidence import baseline as bl
 from proteus.evidence.features import DEFAULT_TAUS, EVIDENCE_VERSION, build
@@ -543,11 +544,11 @@ def proteus_detectors(specs, rules, src_rules, raw, raw_of, cst) -> dict:
     # Pair excess over the service's busiest normal pair (PROTEUS_PAIRBASE=1).
     pair = pair + [k for k in specs if k.startswith("spair__") and k.endswith("__x")]
 
-    def calmax(parts, keep=lambda c: True, mono=True):
+    def calmax(parts, keep=lambda c: True, mono=True, make=hgb):
         parts = [[c for c in cols if keep(c)] for cols in parts]
         parts = [cols for cols in parts if cols]
         cols = list(dict.fromkeys(c for cs in parts for c in cs))
-        return cols, CalibratedMax(cols, [(cs, hgb(cst(cs) if mono else None)) for cs in parts])
+        return cols, CalibratedMax(cols, [(cs, make(cst(cs) if mono else None)) for cs in parts])
 
     peer = raw + [k for k in specs if k.endswith("__xp") and not k.startswith("shost__")]
     parts = [rules, src_rules, pair, peer if len(peer) > len(raw) else raw]
@@ -569,6 +570,9 @@ def proteus_detectors(specs, rules, src_rules, raw, raw_of, cst) -> dict:
         # The same four sub-cores without monotonicity constraints (price of
         # monotonicity for the combination itself, not only for one model).
         "proteus_free": calmax(parts, mono=False),
+        # The same four sub-cores as monotone linear models (non-negative logistic
+        # regression): what the trees add over the simplest monotone model.
+        "proteus_lin": calmax(parts, make=lambda c: MonotoneLogistic(monotonic_cst=c)),
     }
 
 
