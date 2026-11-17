@@ -37,7 +37,7 @@ DETECTOR_SETS = {
     # (of the certified one, the alerts certified also against connection reuse) and
     # the detectors it is compared with.
     "paper": [("proteus_pcr", r"\sysname"), ("proteus", "Fast"),
-              ("proteus_cert_r@certr", "Cert."), ("proteus_free", "Unc."),
+              ("proteus_cert_r@certr", "Certified"), ("proteus_free", "Unc."),
               ("rate_rules_local", "Rules"), ("rate_rules_sel", "Sel."),
               ("kitnet_local", "KitNET"), ("flow_clf", "Flow"), ("apollon", "Apollon")],
 }
@@ -494,7 +494,7 @@ CURVE_STYLE = {  # detector -> (legend, pgfplots style)
     "proteus_sys": (r"\sysname{} $\cup$ \sysname-cert", "color=pnavy, mark=square*"),
     "proteus_sys_r": ("system", "color=pnavy, mark=square, densely dashed"),
     "proteus_pcr": (r"\sysname", "color=pnavy, mark=square*, line width=1.1pt"),
-    "proteus_cert_r": ("reuse-safe sub-cores", "color=pgreen, mark=triangle*"),
+    "proteus_cert_r": (r"\sysname-cert", "color=pgreen, mark=triangle*"),
     "proteus2_sys": (r"\sysname-2 system", "color=pgreen, mark=triangle, densely dashed"),
     "rate_rules_local": ("rate thresholds", "color=porange, mark=o"),
     "rate_rules_sel": ("selected rate thresholds", "color=porange, mark=square, densely dashed"),
