@@ -93,8 +93,8 @@ datasets:
 
 At ten seconds the slack wipes out any evidence, so short scales cannot support a
 certificate. From ten minutes on, the slack is a modest shift. This is why
-**Proteus-cert** keeps only the scales of 600 s and more, while **Proteus** keeps all of
-them for speed (see [Monotone core](monotone-core.md#proteus-and-proteus-cert)).
+**Proteus-cert** keeps only the scales of 600 s and more, while **Proteus-fast** keeps
+all of them for speed (see [Monotone core](monotone-core.md#proteus-fast-and-proteus-cert)).
 
 The defender controls $\Delta$: lowering the exporter's active timeout shrinks the slack
 at every scale.

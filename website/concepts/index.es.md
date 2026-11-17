@@ -117,18 +117,24 @@ decaimiento, por origen, de las sondas bloqueadas que el atacante no puede retir
 ataque por consultas que necesita muchas sondas contra la capa lanza, por tanto, una
 alerta sobre su propio origen.
 
-## Tres detectores, una familia de modelos
+## Dos detectores, un sistema
 
-| Detector | Evidencia | Escalas de tiempo | Función |
-|---|---|---|---|
-| **Proteus** | todos los contadores conservados | todas (de 10 s a 6 h) | Detección rápida; sus alertas rara vez están certificadas, porque la holgura es grande en escalas cortas. |
-| **Proteus-cert** | todos los contadores conservados | 10 minutos o más | Suelo certificado: sus alertas certificadas resisten cualquier combinación de operaciones gratuitas. |
-| **Proteus-cert-R** | solo bytes de carga y recuentos distintos | 10 minutos o más | Sus alertas certificadas resisten además la reutilización de conexiones, que baja los recuentos por conexión. |
+| Detector | Nombre del modelo | Evidencia | Escalas de tiempo | Función |
+|---|---|---|---|---|
+| **Proteus-fast** | `proteus` | todos los contadores conservados | todas (de 10 s a 6 h) | Detección rápida y cobertura. Sus alertas rara vez están certificadas, porque la holgura es grande en escalas cortas. |
+| **Proteus-cert** | `proteus_cert_r` | solo bytes de carga y recuentos distintos | 10 minutos o más | El suelo certificado: sus alertas certificadas resisten cualquier combinación de operaciones gratuitas y la reutilización de conexiones. |
 
-Los tres son máximos calibrados de cuatro subnúcleos del mismo tipo. Un despliegue los
-combina: el detector de todas las escalas por rapidez y los otros dos como garantía.
-Como cada detector añade sus propias falsas alarmas, la combinación se calibra a un
-presupuesto de alarmas y no cada miembro a su propia tasa.
+Los dos son máximos calibrados de cuatro subnúcleos del mismo tipo, y Proteus lanza una
+alerta cuando lo hace cualquiera de ellos (`proteus_pcr` en la evaluación). Fallan en
+sitios distintos: la reutilización de conexiones baja los recuentos por conexión en los
+que se apoya el detector rápido, y los escaneos pequeños y breves terminan antes de que
+las escalas largas los noten. Como cada detector añade sus propias falsas alarmas, el
+sistema se calibra a un presupuesto de alarmas y no cada miembro a su propia tasa.
+
+El código conserva además las variantes con las que compara la evaluación:
+`proteus_cert` (las escalas largas sobre todos los contadores conservados, cuyo
+certificado no resiste la reutilización de conexiones) y `proteus2` (evidencia a salvo
+de la reutilización en todas las escalas).
 
 ## Relación con Apollon
 

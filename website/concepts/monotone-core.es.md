@@ -78,18 +78,19 @@ distribuciones de puntuación del tráfico benigno difieren demasiado. La red de
 entrenamiento sirve para aprender la *forma* de los subnúcleos; la red de prueba decide
 dónde cortar. Los mismos datos de calibración ajustan las $F_i$ del máximo calibrado.
 
-## Proteus y Proteus-cert
+## Proteus-fast y Proteus-cert
 
-Los mismos cuatro subnúcleos se entrenan dos veces, con escalas de tiempo distintas:
+Los mismos cuatro subnúcleos se entrenan dos veces, con escalas de tiempo y evidencia
+distintas:
 
-| Detector | Escalas de tiempo | Comportamiento |
-|---|---|---|
-| `proteus` | 10 s, 60 s, 600 s, 1 h, 6 h | Reacciona rápido a las ráfagas. Las características de escala corta conllevan una holgura de certificación grande, así que muchas de sus alertas no están certificadas. |
-| `proteus_cert` | 600 s, 1 h, 6 h | Reacciona más despacio, pero su holgura es pequeña, así que sus alertas suelen ser certificables. |
+| Detector | Nombre del modelo | Escalas de tiempo | Evidencia | Comportamiento |
+|---|---|---|---|---|
+| Proteus-fast | `proteus` | 10 s, 60 s, 600 s, 1 h, 6 h | todos los contadores conservados | Reacciona rápido a las ráfagas. Las características de escala corta conllevan una holgura de certificación grande, así que pocas de sus alertas están certificadas. |
+| Proteus-cert | `proteus_cert_r` | 600 s, 1 h, 6 h | bytes de carga y recuentos distintos | Reacciona más despacio, pero su holgura es pequeña y la reutilización de conexiones no puede bajar su evidencia, así que sus alertas suelen estar certificadas. |
 
-Un despliegue ejecuta ambos: Proteus por rapidez y Proteus-cert como suelo certificado.
-La página [Certificado](certificate.md) explica por qué la escala de tiempo determina la
-holgura.
+Proteus ejecuta ambos y alerta cuando lo hace cualquiera: Proteus-fast por rapidez y
+cobertura, Proteus-cert como suelo certificado. La página [Certificado](certificate.md)
+explica por qué la escala de tiempo determina la holgura.
 
 ## Por qué la monotonía
 

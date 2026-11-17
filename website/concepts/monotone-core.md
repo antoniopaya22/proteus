@@ -72,17 +72,18 @@ score distributions of benign traffic differ too much. The training network is u
 learn the *shape* of the sub-cores; the test network decides where to cut. The same
 calibration data fits the $F_i$ of the calibrated maximum.
 
-## Proteus and Proteus-cert
+## Proteus-fast and Proteus-cert
 
-The same four sub-cores are trained twice, with different time scales:
+The same four sub-cores are trained twice, with different time scales and evidence:
 
-| Detector | Time scales | Behaviour |
-|---|---|---|
-| `proteus` | 10 s, 60 s, 600 s, 1 h, 6 h | Reacts quickly to bursts. Short-scale features carry a large certification slack, so many of its alerts are not certified. |
-| `proteus_cert` | 600 s, 1 h, 6 h | Slower to react, but its slack is small, so its alerts are usually certifiable. |
+| Detector | Model name | Time scales | Evidence | Behaviour |
+|---|---|---|---|---|
+| Proteus-fast | `proteus` | 10 s, 60 s, 600 s, 1 h, 6 h | every conserved counter | Reacts quickly to bursts. Short-scale features carry a large certification slack, so few of its alerts are certified. |
+| Proteus-cert | `proteus_cert_r` | 600 s, 1 h, 6 h | payload bytes and distinct counts | Slower to react, but its slack is small and connection reuse cannot lower its evidence, so its alerts are usually certified. |
 
-A deployment runs both: Proteus for timeliness, Proteus-cert as the certified floor.
-The [Certificate](certificate.md) page explains why the time scale decides the slack.
+Proteus runs both and alerts when either does: Proteus-fast for timeliness and
+coverage, Proteus-cert as the certified floor. The [Certificate](certificate.md) page
+explains why the time scale decides the slack.
 
 ## Why monotonicity
 

@@ -224,7 +224,7 @@ union alerts on a flow when any of its members does.
 ```bash
 python -m proteus.evaluation.unions --test cicids2017 \
     --alerts experiments/outputs/h1/<run with alerts> \
-    --union sys=proteus,proteus_cert,proteus_cert_r \
+    --union sys=proteus,proteus_cert_r \
     --out experiments/outputs/h1/<run>_unions
 ```
 

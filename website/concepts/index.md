@@ -112,18 +112,23 @@ flow, that blocked flow becomes evidence against its source: a per-source decaye
 of blocked probes that the attacker cannot take back. A query attack that needs many
 probes against the shell therefore raises an alert on its own source.
 
-## Three detectors, one model family
+## Two detectors, one system
 
-| Detector | Evidence | Time scales | Role |
-|---|---|---|---|
-| **Proteus** | every conserved counter | all (10 s to 6 h) | Fast detection; its alerts are rarely certified, because the slack is large at short scales. |
-| **Proteus-cert** | every conserved counter | 10 minutes and more | Certified floor: its certified alerts survive any combination of free operations. |
-| **Proteus-cert-R** | payload bytes and distinct counts only | 10 minutes and more | Its certified alerts also survive connection reuse, which lowers per-connection counts. |
+| Detector | Model name | Evidence | Time scales | Role |
+|---|---|---|---|---|
+| **Proteus-fast** | `proteus` | every conserved counter | all (10 s to 6 h) | Fast detection and coverage. Its alerts are rarely certified, because the slack is large at short scales. |
+| **Proteus-cert** | `proteus_cert_r` | payload bytes and distinct counts only | 10 minutes and more | The certified floor: its certified alerts survive any combination of free operations and connection reuse. |
 
-All three are calibrated maxima of four sub-cores of the same kind. A deployment
-combines them: the all-scale detector for timeliness and the other two as the
-guarantee. Because every detector adds its own false alarms, the combination is
-calibrated to an alarm budget rather than each member to its own rate.
+Both are calibrated maxima of four sub-cores of the same kind, and Proteus raises an
+alert when either does (`proteus_pcr` in the evaluation). The two fail in different
+places: connection reuse lowers the per-connection counts that the fast detector leans
+on, and small, quick scans are over before the long time scales notice. Because each
+detector adds its own false alarms, the system is calibrated to an alarm budget rather
+than each member to its own rate.
+
+The code also keeps the variants that the evaluation compares with: `proteus_cert`
+(the long scales on every conserved counter, whose certificate does not survive
+connection reuse) and `proteus2` (reuse-safe evidence on every scale).
 
 ## Relation to Apollon
 

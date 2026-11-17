@@ -32,6 +32,10 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- The system is the union of two detectors: Proteus-fast (`proteus`, every time scale)
+  and Proteus-cert (`proteus_cert_r`, long scales on the evidence that connection reuse
+  cannot lower), evaluated as `proteus_pcr`. Documentation, tables and scripts follow;
+  the earlier certified detector on every conserved counter stays as a comparison.
 - `scripts/reproduce.sh` and `scripts/paper_tables.sh` rewritten for the current
   experiments: new stages (`baselines`, `systems`, `cert`, `query`, `robustness`), a dry
   run (`DRY=1`) that prints every command, and tables generated from any copy of the

@@ -101,8 +101,8 @@ usado en los datasets CIC:
 A diez segundos la holgura borra cualquier evidencia, así que las escalas cortas no
 pueden sostener un certificado. A partir de diez minutos, la holgura es un
 desplazamiento modesto. Por eso **Proteus-cert** conserva solo las escalas de 600 s o
-más, mientras que **Proteus** las conserva todas por rapidez (consulta
-[Núcleo monótono](monotone-core.md#proteus-y-proteus-cert)).
+más, mientras que **Proteus-fast** las conserva todas por rapidez (consulta
+[Núcleo monótono](monotone-core.md#proteus-fast-y-proteus-cert)).
 
 El defensor controla $\Delta$: reducir el tiempo de espera activo del exportador reduce
 la holgura en todas las escalas.

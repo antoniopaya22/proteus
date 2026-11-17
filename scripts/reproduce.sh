@@ -214,7 +214,7 @@ stage_packets() {  # sec:evaluation:packets. Needs the CIC-IDS-2017 Friday pcap 
 
 stage_cost() {  # Deployment and cost (sec:evaluation:cost).
   run $O/cost_r2.log $PY proteus.evaluation.cost --run $A --test cicids2017 \
-    --day wednesday --models proteus proteus_cert core_mono_dst_x
+    --day wednesday --models proteus proteus_cert_r core_mono_dst_x
 }
 
 stage_tables() {
