@@ -22,8 +22,71 @@ Antonio pide iterar hasta la máxima nota posible. Protocolo:
 | Ronda | Fecha | Nota | Veredicto | Objeciones principales |
 |---|---|---|---|---|
 | 0 | 2026-11-15 | 5/10 | revisión mayor | reutilización de conexiones fuera del certificado; valor frente a reglas de tasa no establecido; criterio de detección vacío; sistema no evaluado como conjunto; atacante adaptativo débil; calibración optimista y una semilla; comparaciones indirectas; trabajo relacionado; presentación de cuaderno |
+| 1 (diagnóstico, a mitad de ronda) | 2026-11-17 | 4/10 | revisión mayor | los bytes de carga no se conservan respecto al daño (peticiones mínimas) y el atacante nunca lo prueba; cifras de cabecera a presupuesto 0,5 y robustez a FPR 10⁻³; evaluación adversaria en un solo sentido y sobre víctimas sin carga; ventaja frente a reglas y núcleo sin restricciones dentro del ruido; sin intervalos ni semillas; calibración con etiquetas; líneas base propias; el sistema evaluado no incluye la capa por flujo; título y resumen prometen de más; 13 900 palabras |
 
 La ronda 1 son las fases A–E de abajo.
+
+### Revisión de diagnóstico del 2026-11-17 (pedida por Antonio; no cuenta como la revisión de la ronda)
+
+Nota **4/10**. Con todos los pendientes (`\todo`) entregados en línea con lo mostrado el revisor
+esperaría **5,5–6**; resolviendo además las objeciones 1, 2, 4, 5 y 7, **7–8**. Reconoce como puntos
+fuertes la garantía sobre operaciones, la frontera de daño, la franqueza y que casi todas las cifras
+cuadran con las tablas. Objeciones, por gravedad, y qué hacemos con cada una:
+
+- [ ] **O1. Los bytes de carga no se conservan respecto al daño.** Una inundación o una fuerza bruta
+      puede encoger cada petición (GET mínimo, menos cabeceras) sin perder efecto, y Proteus-cert se
+      apoya en bytes y recuentos distintos; en un DoS de un origen los recuentos distintos valen 1.
+      Todos nuestros planes rellenan hacia arriba. Además, «los bytes no cambian con la reutilización»
+      es falso con saludo de aplicación por conexión (TLS, SSH) o compresión de cabeceras (HTTP/2).
+      **Válida y grave: es un hueco del argumento, no de la redacción.** Hacer: operador «petición
+      mínima» (bytes de carga por petición hasta un suelo por protocolo) en `adaptive`, `query_attack`
+      y la frontera; medir el daño; declarar el supuesto de bytes de la reutilización como A5; ajustar
+      el texto («nada gratuito ayuda») a lo que salga.
+- [ ] **O2. Un solo punto de operación.** Cabecera a presupuesto 0,5 (1,35 y 0,26 alarmas); frontera,
+      daño, consultas, envenenamiento, comparación y cobertura certificada a FPR 10⁻³ (4,10 y 8,48). A
+      10⁻⁴ el atacante conserva el 21 %. **Válida.** Hacer: umbrales de presupuesto en `adaptive`,
+      `query_attack`, `frontier_exp` y `poisoning`, y repetir a presupuesto 0,5; cobertura certificada
+      (8/11 y 6/13; ningún escaneo de 2018 ni las inundaciones HTTP distribuidas) en el resumen.
+- [ ] **O3. Un sentido y víctimas sin carga.** 17 → 18 en cola. El «servicio con tráfico» tiene 227
+      flujos/h; pide carga realista (10⁴–10⁶ flujos/h). Proteus-cert satura en 2018 (7,28 alarmas a
+      las dos FPR; 0,08 a todo presupuesto). Hacer: lo de la cola, más un experimento con carga
+      sintética sobre la víctima.
+- [ ] **O4. La ventaja medida está dentro del ruido.** 5,8 % frente a 9,2 % (reglas) y 10 % (sin
+      restricciones); compuestos 0,42 y 0,41; la diferencia sale de dos escaneos, y en cuatro de cinco
+      DoS los competidores dejan menos. Nueve ataques, una red, una semilla. «But not under an adaptive
+      attacker» solo vale para las reglas con selección. **Válida.** Hacer: semillas y 17 → 18; decir en
+      el resumen que las reglas sobre todos los rasgos son casi igual de robustas y que lo que aporta
+      Proteus es la garantía y las alarmas; no vender más.
+- [ ] **O5. Sin soporte estadístico.** La discusión cita intervalos de Wilson y bootstrap que no están
+      en el paper. La comparación con Apollon y la capa por flujo se apoya en 79 flujos. Hacer:
+      intervalos en tabla (ya los calcula `tables summary`) o quitar las frases; ampliar el experimento
+      de la capa por flujo o suavizar la motivación.
+- [ ] **O6. Calibración con etiquetas y días futuros; diseño ajustado en las dos redes de prueba.**
+      Hacer: `prior_none` (en cola), y evaluar el sistema final, congelado, en UGR'16 y CTU-13; llevar
+      al resumen las alarmas en tráfico real.
+- [ ] **O7. Líneas base de construcción propia.** KitNET con nuestros contadores, «BARS»
+      reimplementado, ninguna defensa de la tabla 1 con su código. Hacer lo viable: Kitsune tal como
+      se publicó sobre paquetes (hay pcap de CIC-IDS-2017) y declarar el resto; comparar el núcleo sin
+      restricciones con Proteus-fast de forma coherente.
+- [ ] **O8. El sistema evaluado no es el descrito.** La decisión final es capa por flujo ∪ núcleo,
+      pero «Proteus» en las tablas es fast ∪ cert, sin la capa (23 y 140 alarmas sola). Hacer: definir
+      Proteus sin la capa o evaluarla dentro; decirlo.
+- [ ] **O9. Huecos del modelo de amenaza.** Atacante con conocimiento completo sin instanciar; reparto
+      entre 100 orígenes archivado como «costoso» aunque deja pasar ataques; exportación estable en
+      dirección sin declarar; el jitter viola A2 tal como está escrito; Δ de UGR'16, CTU-13 y UNSW sin
+      dar; «sin respuesta» en NetFlow unidireccional sin explicar. Hacer: declarar y precisar.
+- [ ] **O10. Título, extensión y pulido.** «Certified robustness to adversarial evasion» promete de
+      más para una garantía sobre operaciones aditivas que cubre 14 de 24 campañas; 13 900 palabras;
+      la sección de tráfico real parece un cuaderno.
+- [ ] **Discrepancias (23).** Corregir todas: daño certificado de LOIC-HTTP en `tab:adaptive` (204k)
+      frente a la frontera (164 536); dos columnas «Cert.» con significados distintos (1,73 / 6,13
+      frente a 3,01 / 7,28); frases que no cuadran con sus tablas (escaneos que «para antes»
+      Proteus-fast, mejor puntuación de alarmas 0,75 frente a 0,76, «29 veces», recall de la capa por
+      flujo «por debajo de 0,1», «ningún variante a nivel de paquete quitó una alerta certificada»
+      cuando ese ataque no se certifica); textos antiguos (cuatro días de prueba, 13 frente a 12 días
+      de UGR'16, bots «dos o tres órdenes por debajo»); «todo detector se enfrenta al mismo atacante»;
+      una evaluación extra frente a dos en el algoritmo; 119 frente a 152 contadores; bytes
+      «forward» frente a «payload»; leyenda de la figura; la nota de la bibliografía.
 
 ### Revista destino (decidido con Antonio el 2026-11-16)
 
