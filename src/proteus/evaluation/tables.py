@@ -239,6 +239,42 @@ def ablation_table(runs: list[Path], fpr: float, base: str = "proteus") -> str:
     return "\n".join(lines) + "\n"
 
 
+def ablation_pair_table(runs: list[Path], fpr: float,
+                        bases: tuple[str, ...] = ("proteus", "proteus_cert_r"),
+                        heads: tuple[str, ...] = (r"\sysname-fast", r"\sysname-cert")) -> str:
+    """The ablation of both detectors of the system side by side, one block per
+    direction: campaigns detected (volumetric and scans / other) and false alarms per
+    alerted entity and hour, for each detector and the same without each sub-core.
+    ``runs`` may hold several runs per direction (one per detector)."""
+    from proteus.evaluation.bench import detection_alarms
+
+    n = len(bases)
+    lines = [r"\begin{tabular}{l" + "rrr" * n + "}", r"\toprule",
+             "& " + " & ".join(rf"\multicolumn{{3}}{{c}}{{{h}}}" for h in heads) + r" \\",
+             "".join(rf"\cmidrule(lr){{{2 + 3 * i}-{4 + 3 * i}}}" for i in range(n)),
+             "Variant" + " & Vol. & Other & Alarms" * n + r" \\"]
+    by_dir: dict[str, list[Path]] = {}
+    for run in runs:
+        by_dir.setdefault("__".join(run.name.split("__")[:2]), []).append(run)
+    for key, group in by_dir.items():
+        d = detection_alarms(group, fpr)
+        lines += [r"\midrule", rf"\multicolumn{{{1 + 3 * n}}}{{l}}{{\emph{{{DIRECTION.get(key, key)}}}}} \\"]
+        for k, label in [(None, "All sub-cores")] + [(k, f"without {s}") for k, s in enumerate(SUBCORES)]:
+            cells = []
+            for b in bases:
+                m = b if k is None else f"{b}-{k}"
+                if m not in d.index:
+                    cells += ["--"] * 3
+                    continue
+                r = d.loc[m]
+                a = r.get("entity_alarms_per_hour", np.nan)
+                a = r["alarms_per_hour"] if not np.isfinite(a) else a
+                cells += [f"{r['det_volumetric']:.2f}", f"{r['det_other']:.2f}", f"{a:.2f}"]
+            lines.append(f"{label} & " + " & ".join(cells) + r" \\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    return "\n".join(lines) + "\n"
+
+
 BUDGET_ROWS = [("entity", 0.5, "Budget 0.5"), ("entity", 1.0, "Budget 1"), ("entity", 3.0, "Budget 3"),
                ("entity", 10.0, "Budget 10"), ("local", 1e-3, r"FPR $10^{-3}$"),
                ("local", 1e-4, r"FPR $10^{-4}$")]
@@ -669,7 +705,7 @@ def curves_figure(points: pd.DataFrame, x: str = "entity_alarms_per_hour",
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("table", choices=["h1", "summary", "ablation", "frontier", "frontier_system",
+    ap.add_argument("table", choices=["h1", "summary", "ablation", "ablation_pair", "frontier", "frontier_system",
                                        "frontier_budget", "adaptive", "curves", "query", "budgets",
                                        "intervals"])
     ap.add_argument("--csv", type=Path, nargs="*", default=[], help="frontier or adaptive CSVs")
@@ -728,6 +764,10 @@ def main() -> None:
     if args.table == "frontier_system":
         members = ("proteus", "proteus_cert_r") if args.set == "paper" else ("proteus", "proteus_cert")
         args.out.write_text(frontier_system_table(args.runs, args.fpr, args.data_out, members))
+        print(args.out.read_text())
+        return
+    if args.table == "ablation_pair":
+        args.out.write_text(ablation_pair_table(args.runs, args.fpr))
         print(args.out.read_text())
         return
     if args.table == "ablation":

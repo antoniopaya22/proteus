@@ -290,3 +290,28 @@ def test_frontier_at_the_budget_takes_the_plain_plan_of_the_system_and_the_certi
     assert hulk[2:] == ["300", "17", "1.0k", "5.0"]
     udp = next(x for x in lines if x.startswith("DDoS LOIC-UDP")).rstrip(" \\").split(" & ")
     assert udp[2] == "$<$4" and udp[4] == "$<$4"  # alerted at every rate of the grid
+
+
+def test_ablation_pair_puts_both_detectors_of_a_direction_on_one_row(tmp_path):
+    import pandas as pd
+
+    from proteus.evaluation.tables import ablation_pair_table
+
+    runs = []
+    for tag, models in (("r2_ablation", (("proteus", 1, 1.75), ("proteus-3", 0, 1.82))),
+                        ("r2_ablation_r", (("proteus_cert_r", 1, 3.0),))):
+        run = tmp_path / f"csecicids2018__cicids2017__loo_labels__{tag}"
+        run.mkdir()
+        rows, fa = [], []
+        for model, hulk, ent in models:
+            rows.append({"model": model, "threshold": "local", "target_fpr": 1e-3, "day": "wed",
+                         "attack": "dos_hulk", "flows": 100, "detected": hulk, "alarms_per_hour": 60.0})
+            fa.append({"model": model, "threshold": "local", "target_fpr": 1e-3,
+                       "alarms_per_hour": 60.0, "entity_alarms_per_hour": ent})
+        pd.DataFrame(rows).to_csv(run / "campaigns.csv", index=False)
+        pd.DataFrame(fa).to_csv(run / "false_alarms.csv", index=False)
+        runs.append(run)
+    table = ablation_pair_table(runs, 1e-3)
+    assert table.count(r"\emph{2018$\to$2017}") == 1
+    assert r"All sub-cores & 1.00 & nan & 1.75 & 1.00 & nan & 3.00 \\" in table
+    assert r"without raw destination & 0.00 & nan & 1.82 & -- & -- & -- \\" in table

@@ -65,12 +65,9 @@ csvs=$(files $A/adaptive_b0.5_g30.csv $B/adaptive_b0.5_g16.csv)
 csvs=$(files $A/query_attack_b0.5_all.csv $B/query_attack_b0.5_all.csv)
 [ -n "$csvs" ] && $PY proteus.evaluation.tables query --set paper --csv $csvs --out $T/query.tex > /dev/null
 
-# Sub-core ablations (tab:ablation).
-runs=$(exists ${A}_ablation ${B}_ablation)
-[ -n "$runs" ] && $PY proteus.evaluation.tables ablation --runs $runs --out $T/ablation.tex > /dev/null
-runs=$(exists ${A}_ablation_r ${B}_ablation_r)
-[ -n "$runs" ] && $PY proteus.evaluation.tables ablation --base proteus_cert_r --runs $runs \
-  --out $T/ablation_cert.tex > /dev/null
+# Sub-core ablation of both detectors (tab:ablation).
+runs=$(exists ${A}_ablation ${A}_ablation_r ${B}_ablation ${B}_ablation_r)
+[ -n "$runs" ] && $PY proteus.evaluation.tables ablation_pair --runs $runs --out $T/ablation.tex > /dev/null
 
 # Comparison of defences (tab:bench), one file per direction: the defences the adaptive
 # attacker was run against (Apollon and the per-flow classifier are compared in tab:h1
