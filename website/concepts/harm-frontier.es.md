@@ -105,7 +105,17 @@ atribuible, maximizada sobre:
   flujos partidos, señuelos, puertos de origen nuevos);
 - **mimetismo**: relleno y paquetes insertados hasta que cada flujo de ataque alcanza la
   mediana de paquetes en sentido directo y de bytes por paquete del tráfico benigno de
-  la víctima, solo añadiendo, nunca quitando.
+  la víctima, solo añadiendo, nunca quitando;
+- **reutilización de conexiones**: 20 peticiones por conexión, lo que baja todos los
+  contadores por conexión;
+- **ráfagas**: los flujos de cada minuto se envían en sus seis primeros segundos;
+- reutilización y ráfagas juntas;
+- los mismos planes con **peticiones mínimas**: cada petición TCP lleva los menos bytes
+  de carga que permite su servicio (18 en HTTP, 24 en FTP, 500 en SSH). Ningún
+  certificado cubre esto (supuesto A5); se presenta aparte.
+
+El sistema solo calla cuando callan sus dos detectores, a la misma tasa y con el mismo
+plan, y cada detector está en su punto de operación (0,5 alarmas por hora).
 
 Las tasas se recorren en una rejilla geométrica, sin suponer monotonía en la tasa: al
 atacante le basta con una tasa silenciosa, y los detectores sin estructura monótona no
@@ -124,8 +134,8 @@ real no se limita a esa lista, así que Proteus se evalúa también contra uno q
 
 - **Qué sabe.** Nada del detector: ni el modelo, ni los umbrales, ni qué mide.
 - **Qué controla.** La forma de su propio tráfico (relleno, paquetes insertados,
-  partición de flujos, señuelos, puertos de origen, peticiones por conexión, ráfagas y,
-  como opción costosa, el número de orígenes) y su ritmo.
+  partición de flujos, señuelos, puertos de origen, peticiones por conexión, ráfagas, peticiones mínimas
+  y, como opción costosa, el número de orígenes) y su ritmo.
 - **Qué observa.** Un bit por intento: si alguno de sus flujos fue alertado.
 
 Busca el ritmo más alto que pase, porque el ritmo es el daño. Primero tantea por
