@@ -404,23 +404,13 @@ body { background: var(--sand); }
   .lp-hero .lp-strip { margin-top: clamp(1rem, 2.4vh, 2.4rem); }
   .lp-foot { scroll-snap-align: end; }
   .lp-sec.is-tall, .lp-hero.is-tall { scroll-snap-stop: normal; justify-content: flex-start; }
-  /* The walkthrough is the tallest block: tighten it on the landing page. */
-  #walkthrough .lp-split { margin-bottom: .3rem; align-items: end; }
+  /* The walkthrough is the tallest block: a shorter heading leaves it the room. */
+  #walkthrough .lp-split { margin-bottom: .2rem; align-items: end; }
   #walkthrough .lp-h2 { font-size: clamp(1.7rem, 3.1vw, 2.7rem); }
   #walkthrough .lp-tag { margin-bottom: .8rem; }
-  #walkthrough .lp-text { font-size: .92rem; }
-  #walkthrough .wt-story { padding: .6rem .9rem; }
-  #walkthrough .wt-panel { padding: .55rem .8rem; }
-  #walkthrough .wt-sub { margin-bottom: .35rem; }
-  #walkthrough .wt-feat li, #walkthrough .wt-bars li { padding: .16rem 0; }
-  #walkthrough .wt-verdict { margin-top: .45rem; padding: .35rem .7rem; }
-  #walkthrough .wt-legend { margin-top: .25rem; }
-  #walkthrough .wt-ctl { padding-bottom: .6rem; }
-  #walkthrough .wt { margin: .6rem 0 0; }
-  #walkthrough .wt-stage svg { max-height: 84px; }
-  #walkthrough .wt-text { min-height: 3em; margin: .5rem 0 .6rem; font-size: .92rem; }
-  #walkthrough .wt-panels { padding-top: .4rem; padding-bottom: .5rem; }
+  #walkthrough .lp-text { font-size: .95rem; }
+  #walkthrough .wt { margin: .9rem 0 0; font-size: 1.14rem; }
+  #walkthrough .wt-stage svg { max-height: 132px; }
   #walkthrough .wt-note { display: none; }
-  #walkthrough .wt-own { padding-bottom: .2rem; }
 }
 @media (prefers-reduced-motion: reduce) { html { scroll-snap-type: none; } }

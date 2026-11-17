@@ -6,31 +6,31 @@
   var ES = (document.documentElement.lang || "en").slice(0, 2) === "es";
   var T = ES ? {
     tabs: { flood: "Inundación HTTP", scan: "Escaneo de puertos", single: "Ataque de una conexión" },
-    flowTitle: "Detector por conexión", flowSub: "juzga cada conexión por separado",
-    evTitle: "Proteus", evSub: "lleva la cuenta de lo que recibe cada máquina",
-    last: "Última conexión del atacante", bpp: "bytes por paquete", pk: "paquetes", dur: "duración",
-    attack: "ATAQUE", benign: "BENIGNA", none: "sin tráfico del atacante", alert: "ALERTA",
-    quiet: "SIN ALERTA", cert: "certificada", evaded: "evadido",
-    rate: "Ritmo del ataque", real: "ritmo real", strength: "Fuerza del ataque",
+    flowTitle: "Detector por conexión", flowSub: "Juzga cada conexión por separado, por su aspecto:",
+    looks: ["tamaño de los paquetes", "número de paquetes", "duración"],
+    evTitle: "Proteus", evSub: "Lleva la cuenta de los últimos 10 minutos y la compara con lo normal.",
+    sees: "Ve el ataque", fooled: "Engañado por el disfraz", none: "Sin tráfico del atacante",
+    alert: "Alerta", quiet: "Sin alerta", cert: "certificada",
+    rate: "Ritmo del ataque", strength: "Fuerza del ataque",
     pad: "Rellenar paquetes", decoy: "Tráfico señuelo", split: "Partir conexiones",
-    normal: "lo normal", thr: "umbral", step: "Paso", of: "de", prev: "← Anterior", next: "Siguiente paso →",
-    again: "Volver a empezar ↺", own: "O prueba tú: mueve el ritmo y los disfraces",
+    normal: "lo normal", thr: "línea de alerta", step: "Paso", of: "de", prev: "← Anterior", next: "Siguiente paso →",
+    again: "Volver a empezar ↺", own: "Prueba tú: cambia el ritmo y los disfraces",
     play: "▶ Reproducir todo", pause: "❚❚ Pausar", note: "Ilustración con cifras inventadas, no datos medidos.",
-    up: "sube", attacker: "atacante", clients: "clientes", server: "servidor web", net: "red interna",
+    attacker: "atacante", clients: "clientes", server: "servidor web", net: "red interna",
     other: "otros destinos", host: "máquina que escanea", unit: "conexiones/s", probes: "sondas/s"
   } : {
     tabs: { flood: "HTTP flood", scan: "Port scan", single: "One-connection attack" },
-    flowTitle: "Per-connection detector", flowSub: "judges each connection on its own",
-    evTitle: "Proteus", evSub: "keeps a tally of what each machine receives",
-    last: "Attacker's last connection", bpp: "bytes per packet", pk: "packets", dur: "duration",
-    attack: "ATTACK", benign: "BENIGN", none: "no attacker traffic", alert: "ALERT",
-    quiet: "NO ALERT", cert: "certified", evaded: "evaded",
-    rate: "Attack rate", real: "real rate", strength: "Attack strength",
+    flowTitle: "Per-connection detector", flowSub: "Judges each connection on its own, by how it looks:",
+    looks: ["packet size", "number of packets", "duration"],
+    evTitle: "Proteus", evSub: "Keeps a tally of the last 10 minutes and compares it with normal.",
+    sees: "Sees the attack", fooled: "Fooled by the disguise", none: "No attacker traffic",
+    alert: "Alert", quiet: "No alert", cert: "certified",
+    rate: "Attack rate", strength: "Attack strength",
     pad: "Pad packets", decoy: "Decoy traffic", split: "Split connections",
-    normal: "normal", thr: "threshold", step: "Step", of: "of", prev: "← Back", next: "Next step →",
-    again: "Start again ↺", own: "Or try it yourself: move the rate and the disguises",
+    normal: "normal", thr: "alert line", step: "Step", of: "of", prev: "← Back", next: "Next step →",
+    again: "Start again ↺", own: "Try it yourself: change the rate and the disguises",
     play: "▶ Play all", pause: "❚❚ Pause", note: "Illustration with made-up figures, not measured data.",
-    up: "up", attacker: "attacker", clients: "clients", server: "web server", net: "internal network",
+    attacker: "attacker", clients: "clients", server: "web server", net: "internal network",
     other: "other destinations", host: "scanning host", unit: "connections/s", probes: "probes/s"
   };
 
@@ -39,13 +39,11 @@
     flood: {
       max: 40, real: 30, unit: T.unit, left: [T.clients, T.attacker], right: T.server,
       counters: [
-        { label: ES ? "conexiones al servidor · 10 s" : "connections to the server · 10 s", tau: 10, base: 1, thr: 8,
+        { label: ES ? "conexiones al servidor" : "connections to the server", tau: 600, base: 1, thr: 4,
           f: function (s) { return 1 + s.rate * (s.split ? 3 : 1); } },
-        { label: ES ? "conexiones al servidor · 10 min" : "connections to the server · 10 min", tau: 600, base: 1, thr: 4,
-          f: function (s) { return 1 + s.rate * (s.split ? 3 : 1); } },
-        { label: ES ? "bytes al servidor · 10 min" : "bytes to the server · 10 min", tau: 600, base: 1, thr: 4,
+        { label: ES ? "bytes que recibe el servidor" : "bytes the server receives", tau: 600, base: 1, thr: 4,
           f: function (s) { return 1 + s.rate * (s.pad ? 1.9 : 0.25); } },
-        { label: ES ? "destinos del atacante · 10 min" : "attacker's destinations · 10 min", tau: 600, base: 1, thr: 6,
+        { label: ES ? "destinos a los que llama el atacante" : "destinations the attacker contacts", tau: 600, base: 1, thr: 6,
           f: function (s) { return s.rate > 0 ? 1 + (s.decoy ? 9 : 0) : 0; } }
       ],
       flow: function (s) { return s.rate <= 0 ? "none" : (s.pad ? "benign" : "attack"); },
@@ -66,13 +64,11 @@
     scan: {
       max: 40, real: 25, unit: T.probes, left: [T.host], right: T.net,
       counters: [
-        { label: ES ? "destinos contactados · 1 min" : "destinations contacted · 1 min", tau: 60, base: 1, thr: 6,
+        { label: ES ? "destinos a los que llama" : "destinations it contacts", tau: 600, base: 1, thr: 4,
           f: function (s) { return 1 + s.rate * 2 + (s.decoy ? 6 : 0); } },
-        { label: ES ? "destinos contactados · 10 min" : "destinations contacted · 10 min", tau: 600, base: 1, thr: 4,
-          f: function (s) { return 1 + s.rate * 2 + (s.decoy ? 6 : 0); } },
-        { label: ES ? "conexiones sin respuesta · 10 min" : "unanswered connections · 10 min", tau: 600, base: 1, thr: 4,
+        { label: ES ? "conexiones que nadie contesta" : "connections nobody answers", tau: 600, base: 1, thr: 4,
           f: function (s) { return 1 + s.rate * 1.6; } },
-        { label: ES ? "bytes enviados · 10 min" : "bytes sent · 10 min", tau: 600, base: 1, thr: 9,
+        { label: ES ? "bytes que envía" : "bytes it sends", tau: 600, base: 1, thr: 9,
           f: function (s) { return 1 + s.rate * (s.pad ? 0.9 : 0.05); } }
       ],
       flow: function (s) { return s.rate <= 0 ? "none" : (s.pad ? "benign" : "attack"); },
@@ -93,11 +89,11 @@
     single: {
       max: 40, real: 20, unit: ES ? "intentos/min" : "attempts/min", left: [T.clients, T.attacker], right: T.server,
       counters: [
-        { label: ES ? "conexiones al servidor · 10 min" : "connections to the server · 10 min", tau: 600, base: 1, thr: 4,
+        { label: ES ? "conexiones al servidor" : "connections to the server", tau: 600, base: 1, thr: 4,
           f: function (s) { return 1 + s.rate * 0.004; } },
-        { label: ES ? "bytes al servidor · 10 min" : "bytes to the server · 10 min", tau: 600, base: 1, thr: 4,
+        { label: ES ? "bytes que recibe el servidor" : "bytes the server receives", tau: 600, base: 1, thr: 4,
           f: function (s) { return 1 + s.rate * 0.004; } },
-        { label: ES ? "intentos bloqueados del origen · 10 min" : "blocked attempts of the source · 10 min", tau: 600, base: 1, thr: 4,
+        { label: ES ? "intentos bloqueados del atacante" : "blocked attempts of the attacker", tau: 600, base: 1, thr: 4,
           f: function (s) { return 1 + (s.rate > 1 ? s.rate * 0.6 : 0); } }
       ],
       flow: function (s) { return s.rate <= 0 ? "none" : (s.pad ? "benign" : "attack"); },
@@ -132,52 +128,55 @@
 
     root.innerHTML = "";
     var tabs = el("div", "wt-tabs");
+    tabs.setAttribute("role", "tablist");
     Object.keys(SC).forEach(function (k) {
       var b = el("button", "wt-tab", T.tabs[k]);
       b.type = "button"; b.dataset.k = k;
       b.addEventListener("click", function () { load(k); });
       tabs.appendChild(b);
     });
+    var story = el("div", "wt-story",
+      "<div class='wt-head'><p class='wt-step'></p><ol class='wt-prog'></ol></div>" +
+      "<p class='wt-text' aria-live='polite'></p>" +
+      "<div class='wt-nav'><button type='button' data-n='1' class='wt-next'>" + T.next + "</button>" +
+      "<button type='button' data-n='-1' class='wt-back'>" + T.prev + "</button>" +
+      "<button type='button' data-n='play' class='wt-play'>" + T.play + "</button></div>");
+    var side = el("div", "wt-side");
+    side.appendChild(tabs); side.appendChild(story);
+
     var stage = el("div", "wt-stage",
       '<svg viewBox="0 0 600 150" role="img" aria-hidden="true">' +
-      '<path class="wt-wire" d="M120 45 C 260 45, 320 75, 470 75"/>' +
-      '<path class="wt-wire" d="M120 110 C 260 110, 320 75, 470 75"/>' +
-      '<path class="wt-wire wt-wire--decoy" d="M120 110 C 240 140, 360 140, 470 132"/>' +
+      '<path class="wt-wire" d="M150 40 C 280 40, 330 75, 440 75"/>' +
+      '<path class="wt-wire" d="M150 110 C 280 110, 330 75, 440 75"/>' +
+      '<path class="wt-wire wt-wire--decoy" d="M150 110 C 260 146, 360 146, 452 134"/>' +
       '<g class="wt-dots"></g>' +
-      '<g class="wt-node"><rect x="20" y="28" width="100" height="34" rx="8"/><text x="70" y="50" class="wt-l1"></text></g>' +
-      '<g class="wt-node wt-node--atk"><rect x="20" y="93" width="100" height="34" rx="8"/><text x="70" y="115" class="wt-l2"></text></g>' +
-      '<g class="wt-node wt-node--tgt"><rect x="470" y="52" width="110" height="46" rx="8"/><text x="525" y="80" class="wt-r"></text></g>' +
-      '<text x="525" y="136" class="wt-other">' + T.other + "</text></svg>");
+      '<g class="wt-node"><rect x="10" y="18" width="140" height="44" rx="10"/><text x="80" y="45" class="wt-l1"></text></g>' +
+      '<g class="wt-node wt-node--atk"><rect x="10" y="88" width="140" height="44" rx="10"/><text x="80" y="115" class="wt-l2"></text></g>' +
+      '<g class="wt-node wt-node--tgt"><rect x="440" y="48" width="150" height="54" rx="10"/><text x="515" y="80" class="wt-r"></text></g>' +
+      '<text x="515" y="139" class="wt-other">' + T.other + "</text></svg>" +
+      "<div class='wt-str'><span>" + T.strength + "</span><i><b></b></i><em></em></div>");
     var panels = el("div", "wt-panels");
     var pf = el("section", "wt-panel wt-flow",
       "<h4>" + T.flowTitle + "</h4><p class='wt-sub'>" + T.flowSub + "</p>" +
-      "<p class='wt-k'>" + T.last + "</p><ul class='wt-feat'>" +
-      "<li><span>" + T.bpp + "</span><b data-f='bpp'>–</b></li>" +
-      "<li><span>" + T.pk + "</span><b data-f='pk'>–</b></li>" +
-      "<li><span>" + T.dur + "</span><b data-f='dur'>–</b></li></ul>" +
-      "<p class='wt-verdict' data-v='flow'></p>");
+      "<ul class='wt-looks'>" + T.looks.map(function (x) { return "<li>" + x + "</li>"; }).join("") + "</ul>" +
+      "<p class='wt-verdict' data-v='flow'><i></i><span></span></p>");
     var pe = el("section", "wt-panel wt-ev",
       "<h4>" + T.evTitle + "</h4><p class='wt-sub'>" + T.evSub + "</p><ul class='wt-bars'></ul>" +
       "<p class='wt-legend'><i class='wt-lg wt-lg--n'></i>" + T.normal + "<i class='wt-lg wt-lg--t'></i>" + T.thr + "</p>" +
-      "<p class='wt-verdict' data-v='ev'></p>");
+      "<p class='wt-verdict' data-v='ev'><i></i><span></span></p>");
     panels.appendChild(pf); panels.appendChild(pe);
-    var ctl = el("div", "wt-ctl",
+    var ctl = el("details", "wt-own",
+      "<summary>" + T.own + "</summary><div class='wt-ctl'>" +
       "<label class='wt-rate'><span>" + T.rate + " <b data-o='rate'></b></span>" +
       "<input type='range' min='0' max='40' step='0.2' value='0'></label>" +
       "<div class='wt-tog'>" +
       ["pad", "decoy", "split"].map(function (k) {
         return "<label><input type='checkbox' data-t='" + k + "'><span>" + T[k] + "</span></label>";
-      }).join("") + "</div>" +
-      "<div class='wt-str'><span>" + T.strength + "</span><i><b></b></i><em></em></div>");
-    var story = el("div", "wt-story",
-      "<div class='wt-head'><ol class='wt-prog'></ol><p class='wt-step'></p></div>" +
-      "<p class='wt-text' aria-live='polite'></p>" +
-      "<div class='wt-nav'><button type='button' data-n='-1' class='wt-back'>" + T.prev + "</button>" +
-      "<button type='button' data-n='1' class='wt-next'>" + T.next + "</button>" +
-      "<button type='button' data-n='play' class='wt-play'>" + T.play + "</button></div>");
-    var own = el("p", "wt-own", T.own);
+      }).join("") + "</div></div>");
     var note = el("p", "wt-note", T.note);
-    [tabs, story, stage, panels, own, ctl, note].forEach(function (n) { root.appendChild(n); });
+    var scene = el("div", "wt-scene");
+    [stage, panels, ctl, note].forEach(function (n) { scene.appendChild(n); });
+    root.appendChild(side); root.appendChild(scene);
 
     var slider = ctl.querySelector("input[type=range]");
     var bars = pe.querySelector(".wt-bars");
@@ -199,7 +198,7 @@
       ctl.querySelector("[data-t=decoy]").parentNode.style.display = k === "single" ? "none" : "";
       bars.innerHTML = "";
       sc.counters.forEach(function (c) {
-        var li = el("li", "", "<span>" + c.label + "</span><i><b></b><u class='wt-n'></u><u class='wt-t'></u></i><em></em>");
+        var li = el("li", "", "<span>" + c.label + "</span><em></em><i><b></b><u class='wt-n'></u><u class='wt-t'></u></i>");
         bars.appendChild(li);
       });
       C = sc.counters.map(function (c) { return c.base * c.tau; });
@@ -249,23 +248,21 @@
         cert = cert || (c.tau >= 600 && ratio * Math.exp(-0.4) >= c.thr);
       });
       var fv = sc.flow(st), f = pf.querySelector("[data-v=flow]");
-      f.textContent = fv === "none" ? T.none : (fv === "attack" ? T.attack : T.benign + " · " + T.evaded);
+      f.lastChild.textContent = fv === "none" ? T.none : (fv === "attack" ? T.sees : T.fooled);
       f.className = "wt-verdict " + (fv === "attack" ? "is-alert" : fv === "benign" ? "is-miss" : "is-idle");
-      pf.querySelector("[data-f=bpp]").textContent = st.rate > 0 ? (st.pad ? "460" : "60") : "–";
-      pf.querySelector("[data-f=pk]").textContent = st.rate > 0 ? (st.split ? "3" : "8") : "–";
-      pf.querySelector("[data-f=dur]").textContent = st.rate > 0 ? (st.pad ? "1.9 s" : "0.2 s") : "–";
+      pf.classList.toggle("is-fooled", fv === "benign");
       var e = pe.querySelector("[data-v=ev]");
-      e.innerHTML = alert ? T.alert + (cert ? " <span>" + T.cert + "</span>" : "") : T.quiet;
+      e.lastChild.innerHTML = alert ? T.alert + (cert ? " <b>" + T.cert + "</b>" : "") : T.quiet;
       e.className = "wt-verdict " + (alert ? "is-alert" : "is-idle") + (cert ? " is-cert" : "");
       ctl.querySelector("[data-o=rate]").textContent = st.rate.toFixed(st.rate < 5 ? 1 : 0) + " " + sc.unit;
       var s = Math.min(1, st.rate / sc.real);
-      ctl.querySelector(".wt-str b").style.width = s * 100 + "%";
-      ctl.querySelector(".wt-str em").textContent = Math.round(s * 100) + "%";
+      stage.querySelector(".wt-str b").style.width = s * 100 + "%";
+      stage.querySelector(".wt-str em").textContent = Math.round(s * 100) + "%";
     }
 
-    /* simulated time: 12 s per animation tick, 10 ticks a second */
+    /* simulated time: one minute per animation tick, 10 ticks a second */
     function tick() {
-      var dt = 12;
+      var dt = 60;
       sc.counters.forEach(function (c, i) {
         var a = Math.exp(-dt / c.tau);
         C[i] = C[i] * a + c.f(st) * c.tau * (1 - a);
@@ -279,7 +276,7 @@
       function dot(pathIdx, cls) {
         var p = wires[pathIdx]; if (!p || p.style.display === "none") return;
         var d = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-        d.setAttribute("r", cls === "atk" && st.pad ? 4.2 : 3); d.setAttribute("class", "wt-dot wt-dot--" + cls);
+        d.setAttribute("r", cls === "atk" && st.pad ? 5.4 : 3.8); d.setAttribute("class", "wt-dot wt-dot--" + cls);
         dotLayer.appendChild(d); dots.push({ n: d, p: p, t: 0, len: p.getTotalLength(), v: 0.012 + Math.random() * 0.006 });
       }
       if (Math.random() < 0.35) dot(sc.left.length > 1 ? 0 : 1, "ok");

@@ -32,6 +32,9 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Website: the step-by-step walkthrough is simpler and easier to read (the story and
+  its one button on one side, the scene on the other, three tallies, larger type, manual
+  controls folded away).
 - The system is the union of two detectors: Proteus-fast (`proteus`, every time scale)
   and Proteus-cert (`proteus_cert_r`, long scales on the evidence that connection reuse
   cannot lower), evaluated as `proteus_pcr`. Documentation, tables and scripts follow;
