@@ -118,6 +118,13 @@ con campañas o vías más cortas?»).** Todo lo que queda se mide en el punto d
 - Paper: CTU-13 reescrito con el sistema final (§6.84); ataques por flujo y Apollon sin afirmar más de
   lo que soportan 79 flujos (objeción O5); discusión recortada. Cuerpo: 11 620 palabras.
 
+**Incidente (2026-11-17, 11:27 UTC):** el adaptativo de 2018 a presupuesto (`adaptb_1718`) llegó a 20 GB
+y la máquina se quedó sin memoria: el núcleo mató los dos trabajos paralelos de 2017 (`adaptb_1817`, en
+6 de 9 ataques, y `inj_1817`). El adaptativo solo escribía al final, así que se perdió su escalera.
+Arreglo (commit e115ecc): `adaptive` e `injection` guardan tras cada escenario y admiten `--resume`, y
+los trabajos de 2017 pasan a `~/tools/run2017.sh` (unidad `proteus-2017`, tope 10 GB): cada uno espera
+a que no haya ningún trabajo probando sobre 2018 y haya 12 GB libres, y se reintenta si lo matan.
+
 - [~] **Discrepancias (23).** Corregir todas: daño certificado de LOIC-HTTP en `tab:adaptive` (204k)
       frente a la frontera (164 536); dos columnas «Cert.» con significados distintos (1,73 / 6,13
       frente a 3,01 / 7,28); frases que no cuadran con sus tablas (escaneos que «para antes»
