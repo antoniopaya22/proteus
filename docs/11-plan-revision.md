@@ -39,7 +39,7 @@ esperaría **5,5–6**; resolviendo además las objeciones 1, 2, 4, 5 y 7, **7�
 fuertes la garantía sobre operaciones, la frontera de daño, la franqueza y que casi todas las cifras
 cuadran con las tablas. Objeciones, por gravedad, y qué hacemos con cada una:
 
-- [ ] **O1. Los bytes de carga no se conservan respecto al daño.** Una inundación o una fuerza bruta
+- [~] **O1. Los bytes de carga no se conservan respecto al daño.** (Medido: §6.85–6.91. El certificado sobre paquetes no lo arregla; se declara (A5) y se mide. Falta escribir la sección de daño con las cifras a presupuesto.) Una inundación o una fuerza bruta
       puede encoger cada petición (GET mínimo, menos cabeceras) sin perder efecto, y Proteus-cert se
       apoya en bytes y recuentos distintos; en un DoS de un origen los recuentos distintos valen 1.
       Todos nuestros planes rellenan hacia arriba. Además, «los bytes no cambian con la reutilización»

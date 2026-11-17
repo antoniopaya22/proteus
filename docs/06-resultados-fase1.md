@@ -2534,3 +2534,34 @@ de 11 (otros de 10, ninguno) y alarmas por entidad alertada y hora:
 - Sistema con el certificado sobre paquetes (`proteus_pcp`, presupuesto 0,5): 11+1 a 1,41, frente a
   11+3 a 1,35 con el de bytes. En detección no añade nada a Proteus-fast; su papel sería solo la
   robustez frente a peticiones mínimas (pendiente del adaptativo, 6 de 9 ataques).
+
+## 6.91 Atacante adaptativo a presupuesto 0,5, 2018 → 2017, con el certificado sobre paquetes (2026-11-17, 20:30)
+
+`adaptb_1817` (rejilla de 30; peticiones mínimas solo en TCP). Parte del ritmo real que conserva el
+atacante (media geométrica) y ataques que pasan a ritmo real, de 9; sistemas desde la escalera:
+
+| Detector | Planes gratuitos | Con peticiones mínimas |
+|---|---|---|
+| fast ∪ cert (bytes) | **11,1 %, 2** (SSH, FTP) | **17,0 %, 4** (+ Slowloris, Slowhttptest) |
+| fast ∪ cert (paquetes) | 17,8 %, 4 | 17,8 %, 4 |
+| fast ∪ cert (bytes) ∪ cert (paquetes) | 11,1 %, 2 | 17,0 %, 4 |
+| Proteus-fast | 17,8 %, 4 | 17,8 %, 4 |
+| Proteus-cert (bytes) | 32,1 %, 4 | 66,5 %, 7 |
+| Proteus-cert (paquetes) | 46,3 %, 5 | 46,3 %, 5 |
+| Reglas | 13,9 %, 3 | 25,7 %, 5 |
+| Reglas con selección | 61,3 %, 6 | igual |
+| Núcleo sin restricciones | 38,2 %, 6 | igual |
+| KitNET | 55,9 %, 7 | igual |
+
+- **El certificado sobre paquetes no aporta nada**: el sistema con él deja exactamente el daño de
+  Proteus-fast solo, y añadido como tercer detector no cambia nada. Lo que pasa con peticiones
+  mínimas son los DoS lentos (Slowloris, Slowhttptest), que mueven pocos paquetes y que ese detector
+  no ve. **No se adopta**; se conserva en el código como variante evaluada.
+- Con peticiones mínimas y reutilización el sistema pierde la protección del certificado de bytes y
+  queda en lo que deja Proteus-fast: los DoS lentos pasan a su ritmo real (16 300 flujos/h frente a
+  10 461 y 5 107); las inundaciones (Hulk, GoldenEye, LOIC-HTTP) siguen teniendo que ir 3 a 14 veces
+  más despacio.
+- **Aun así el sistema queda por delante de todos los demás en los dos modos**: 11 % frente a 14 % de
+  las reglas sin peticiones mínimas, y 17 % frente a 26 % con ellas (4 ataques pasan frente a 5).
+- Para el paper: el hueco de las peticiones pequeñas se declara y se mide; no es certificable con la
+  evidencia de flujo para ataques que mueven pocos paquetes por petición.
