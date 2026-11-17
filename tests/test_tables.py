@@ -227,3 +227,25 @@ def test_ladder_damage_leaves_minimal_requests_out_unless_asked():
     assert ladder_damage(ladder, ["proteus"])[key] == 300.0
     assert ladder_damage(ladder, ["proteus"], shrink=True)[key] == 4000.0
     assert ladder_damage(ladder, ["proteus"], costly=True)[key] == 900.0
+
+
+def test_intervals_at_an_alarm_budget_use_strict_detection_and_alarms_per_entity(tmp_path):
+    import pandas as pd
+
+    from proteus.evaluation.tables import intervals_table, summary_table
+
+    run = tmp_path / "csecicids2018__cicids2017__loo_labels__r2_pcr"
+    run.mkdir()
+    rows = [{"model": "proteus_pcr", "threshold": kind, "target_fpr": t, "day": day, "attack": a,
+             "flows": 10, "detected": 1, "detected_strict": k, "alarms_per_hour": 50.0,
+             "entity_alarms_per_hour": e}
+            for kind, t, shift in (("entity", 0.5, 0.0), ("local", 1e-3, 9.0))
+            for day, a, k, e in (("mon", "(none)", 0, 1.0 + shift), ("tue", "dos_hulk", 1, 2.0 + shift),
+                                 ("wed", "portscan", 0, 3.0 + shift))]
+    pd.DataFrame(rows).to_csv(run / "campaigns.csv", index=False)
+    s = summary_table([run], [], 0.5, kind="entity")
+    r = s.iloc[0]
+    assert (r["volumetric_detected"], r["volumetric_campaigns"], r["days"]) == (1, 2, 3)
+    assert abs(r["entity_alarms_per_hour"] - 2.0) < 1e-9 and r["entity_alarms_lo"] <= 2.0 <= r["entity_alarms_hi"]
+    table = intervals_table(s, [("proteus_pcr", "Proteus")])
+    assert "Proteus & 1/2 & [" in table and "& 2.00 & [" in table

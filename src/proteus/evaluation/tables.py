@@ -147,35 +147,64 @@ def bootstrap_mean(x: np.ndarray, n: int = 2000, seed: int = 0) -> tuple[float, 
 
 
 def summary_table(runs: list[Path], extra: list[Path], fpr: float,
-                  detectors=None) -> pd.DataFrame:
-    """Per detector and direction: campaigns detected (volumetric and scans / other)
-    with Wilson intervals, and alarms per hour with a bootstrap interval over days."""
+                  detectors=None, kind: str = "local") -> pd.DataFrame:
+    """Per detector and direction, at one threshold (``kind`` and its target: a local
+    FPR or an alarm budget): campaigns detected under the strict criterion (volumetric
+    and scans / other) with 95% Wilson intervals, and alarms per hour (per destination
+    and minute, and per alerted entity) with bootstrap intervals over the test days.
+    A detector is read from the first run that has it."""
     rows = []
     for run in runs:
         key = "__".join(run.name.split("__")[:2])
-        c = [pd.read_csv(run / "campaigns.csv")]
-        c += [pd.read_csv(e / "campaigns.csv") for e in extra if e.name.startswith(key)]
-        c = pd.concat(c)
-        c = c[(c["threshold"] == "local") & (c["target_fpr"] == fpr)]
+        dirs = [run] + [e for e in extra if e.name.startswith(key)]
+        c = pd.concat([pd.read_csv(d / "campaigns.csv").assign(_run=i) for i, d in enumerate(dirs)])
+        c = c[(c["threshold"] == kind) & np.isclose(c["target_fpr"], fpr)]
+        c = c[c["_run"] == c["model"].map(c.groupby("model")["_run"].min())]
+        det = "detected_strict" if "detected_strict" in c else "detected"
         for m, g in c.groupby("model"):
             if detectors and m not in detectors:
                 continue
             g = g.drop_duplicates(["day", "attack", "flows"])
-            per_day_all = g.drop_duplicates("day")["alarms_per_hour"]  # benign-only days too
+            days = g.drop_duplicates("day")  # benign-only days too
             g = g[g["attack"] != "(none)"]
             vol = g["attack"].str.startswith(VOLUMETRIC)
             row = {"direction": DIRECTION.get(key, key), "model": m}
             for part, sel in (("volumetric", vol), ("other", ~vol)):
-                k, n = int(g.loc[sel, "detected"].sum()), int(sel.sum())
+                k, n = int(g.loc[sel, det].sum()), int(sel.sum())
                 lo, hi = wilson(k, n)
                 row.update({f"{part}_detected": k, f"{part}_campaigns": n,
                             f"{part}_lo": lo, f"{part}_hi": hi})
-            per_day = per_day_all.to_numpy()
-            lo, hi = bootstrap_mean(per_day)
-            row.update({"alarms_per_hour": float(per_day.mean()), "alarms_lo": lo,
-                        "alarms_hi": hi, "days": len(per_day)})
+            for name, col in (("alarms", "alarms_per_hour"), ("entity_alarms", "entity_alarms_per_hour")):
+                if col not in days:
+                    continue
+                per_day = days[col].to_numpy(float)
+                lo, hi = bootstrap_mean(per_day)
+                row.update({f"{name}_per_hour": float(per_day.mean()), f"{name}_lo": lo,
+                            f"{name}_hi": hi})
+            row["days"] = len(days)
             rows.append(row)
     return pd.DataFrame(rows)
+
+
+def intervals_table(summary: pd.DataFrame, detectors: list[tuple[str, str]]) -> str:
+    """LaTeX table of ``summary_table``: per direction and detector, volumetric
+    campaigns and scans detected with their Wilson interval, and alarms per alerted
+    entity and hour with their bootstrap interval over days."""
+    lines = [r"\begin{tabular}{lrlrl}", r"\toprule",
+             r"Detector & \multicolumn{2}{c}{Campaigns detected} & \multicolumn{2}{c}{Alarms per entity and hour} \\"]
+    for direction, g in summary.groupby("direction", sort=False):
+        g = g.set_index("model")
+        lines += [r"\midrule", rf"\multicolumn{{5}}{{l}}{{\emph{{{direction}}}}} \\"]
+        for m, label in detectors:
+            if m not in g.index:
+                continue
+            r = g.loc[m]
+            lines.append(
+                f"{label} & {int(r['volumetric_detected'])}/{int(r['volumetric_campaigns'])} & "
+                f"[{r['volumetric_lo']:.2f}, {r['volumetric_hi']:.2f}] & "
+                f"{r['entity_alarms_per_hour']:.2f} & [{r['entity_alarms_lo']:.2f}, {r['entity_alarms_hi']:.2f}] \\\\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    return "\n".join(lines) + "\n"
 
 
 SUBCORES = ["destination", "source", "pair", "raw destination"]
@@ -581,7 +610,7 @@ def curves_figure(points: pd.DataFrame, x: str = "entity_alarms_per_hour",
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("table", choices=["h1", "summary", "ablation", "frontier", "frontier_system",
-                                       "adaptive", "curves", "query", "budgets"])
+                                       "adaptive", "curves", "query", "budgets", "intervals"])
     ap.add_argument("--csv", type=Path, nargs="*", default=[], help="frontier or adaptive CSVs")
     ap.add_argument("--data-out", type=Path, default=None)
     ap.add_argument("--detectors", nargs="*", default=None)
@@ -592,12 +621,20 @@ def main() -> None:
     ap.add_argument("--extra", type=Path, nargs="*", default=[],
                     help="runs with more detectors for the same direction (e.g. __cert)")
     ap.add_argument("--fpr", type=float, default=1e-3)
+    ap.add_argument("--alarm-budget", type=float, default=None,
+                    help="summary, intervals: at this alarm budget instead of --fpr")
     ap.add_argument("--out", type=Path, required=True)
     args = ap.parse_args()
     args.out.parent.mkdir(parents=True, exist_ok=True)
-    if args.table == "summary":
-        t = summary_table(args.runs, args.extra, args.fpr, args.detectors)
-        t.to_csv(args.out, index=False)
+    if args.table in ("summary", "intervals"):
+        kind, target = ("entity", args.alarm_budget) if args.alarm_budget else ("local", args.fpr)
+        t = summary_table(args.runs, args.extra, target, args.detectors, kind)
+        if args.table == "intervals":  # the paper's detectors and their names
+            args.out.write_text(intervals_table(t, BUDGET_PAPER))
+            if args.data_out:
+                t.to_csv(args.data_out, index=False)
+        else:
+            t.to_csv(args.out, index=False)
         print(t.round(3).to_string())
         return
     if args.table == "budgets":

@@ -39,6 +39,12 @@ $PY proteus.evaluation.tables curves \
   --detectors proteus_pcr proteus proteus_cert_r rate_rules_local rate_rules_sel proteus_free kitnet_local syn_cusum trw_svc \
   --data-out $T/curves.csv --out $T/curves.tex > /dev/null
 
+# Intervals at the operating point (tab:intervals): Wilson for campaigns, bootstrap over
+# test days for alarms.
+$PY proteus.evaluation.tables intervals --alarm-budget 0.5 \
+  --runs $(exists ${A}_pcr | head -1) $(exists ${B}c ${B}b | head -1) \
+  --extra $(both) $(exists ${A}_sel ${B}_p2) --data-out $T/intervals.csv --out $T/intervals.tex > /dev/null
+
 # Confidence intervals (campaigns: Wilson; alarms: bootstrap over days).
 $PY proteus.evaluation.tables summary --runs $(both) --extra $(exists $MORE) \
   --detectors proteus_pcr proteus proteus_cert_r@certr proteus_free rate_rules_local rate_rules_sel kitnet_local flow_clf apollon \
