@@ -23,6 +23,7 @@ Antonio pide iterar hasta la máxima nota posible. Protocolo:
 |---|---|---|---|---|
 | 0 | 2026-11-15 | 5/10 | revisión mayor | reutilización de conexiones fuera del certificado; valor frente a reglas de tasa no establecido; criterio de detección vacío; sistema no evaluado como conjunto; atacante adaptativo débil; calibración optimista y una semilla; comparaciones indirectas; trabajo relacionado; presentación de cuaderno |
 | 1 (diagnóstico, a mitad de ronda) | 2026-11-17 | 4/10 | revisión mayor | los bytes de carga no se conservan respecto al daño (peticiones mínimas) y el atacante nunca lo prueba; cifras de cabecera a presupuesto 0,5 y robustez a FPR 10⁻³; evaluación adversaria en un solo sentido y sobre víctimas sin carga; ventaja frente a reglas y núcleo sin restricciones dentro del ruido; sin intervalos ni semillas; calibración con etiquetas; líneas base propias; el sistema evaluado no incluye la capa por flujo; título y resumen prometen de más; 13 900 palabras |
+| 1 (diagnóstico 2, a mitad de ronda) | 2026-11-17 22:00 | 5/10 | revisión mayor | puntos de operación mezclados (envenenamiento, consultas, ablación, servidor con carga, tab:h1 a FPR 10⁻³; la conclusión del envenenamiento no vale al presupuesto); el certificado cubre lo que menos importa y el título vende de más; novedad limitada frente a reglas; «daño» en flujos y no en servicio denegado; validez externa y ajuste sobre las redes de prueba; calibración con etiquetas (umbrales); comparación con alarmas reales distintas; atacantes aprendidos no ejecutados; certificado de reutilización sin prueba formal; (A4) demasiado fuerte; desalojo de estado; exportador del chequeo de paquetes; extensión |
 
 **Criterio de parada (Antonio, 2026-11-17):** cuando los resultados y la funcionalidad estén a nivel de
 un 8, se para de añadir experimentos y se hace una revisión a fondo del paper: coherencia de principio a
@@ -149,6 +150,45 @@ publicado sin garantía.
       de UGR'16, bots «dos o tres órdenes por debajo»); «todo detector se enfrenta al mismo atacante»;
       una evaluación extra frente a dos en el algoritmo; 119 frente a 152 contadores; bytes
       «forward» frente a «payload»; leyenda de la figura; la nota de la bibliografía.
+
+### Revisión de diagnóstico 2 (2026-11-17 22:00, pedida por Antonio; no cuenta como la de la ronda)
+
+Nota **5/10** (sube de 4). Con los `\todo` entregados, ~6; con además las prioridades 1–5, ~7.
+Reconoce: lema correcto, tabla de supuestos ejemplar, franqueza, evaluación adversaria en espacio
+de tráfico, frontera como métrica operativa, reproducibilidad. Casillas:
+
+- [ ] **R2-1. Un solo punto de operación.** Envenenamiento, atacante por consultas (`qab_*` en cola),
+      ablación, servidor con carga (inyección `inj_1817` en marcha) y una tabla por ataque al
+      presupuesto; o umbral en cada pie y ninguna comparación entre umbrales (D3–D7). La conclusión
+      del envenenamiento (escaneo del jueves acotado por Proteus-cert) no vale al presupuesto: medir
+      cuánto mueve el envenenamiento a Proteus-fast al presupuesto.
+- [ ] **R2-2. Afirmaciones a la medida del certificado.** Título/resumen/conclusión: «aditivas»;
+      cobertura certificada y fronteras certificadas al presupuesto junto a la detección; D1, D9;
+      «held on every real campaign» → lo probado.
+- [ ] **R2-3. Evaluación congelada en datos no vistos.** UGR'16 al presupuesto con Proteus-cert
+      (`ugr*_nox` en cola), semillas en 17 → 18 (en cola); explicar la saturación de Proteus-cert en
+      CTU-13.
+- [ ] **R2-4. Daño en servicio.** Degradación del servicio en la frontera para los DoS HTTP (réplica
+      contra un servidor real o modelo de concurrencia); víctimas con carga realista (inyección).
+- [ ] **R2-5. Líneas base que aíslen el modelo.** Modelo monótono simple (lineal no negativo) en la
+      misma arquitectura; Whisper o HyperVision si es viable; robustez a alarmas reales iguales
+      (unión calibrada al mismo presupuesto realizado).
+- [ ] **R2-6. Un atacante aprendido publicado** en espacio de tráfico (NetMasquerade si hay código;
+      máquina con GPU).
+- [ ] **R2-7. Rigor.** Enunciado y prueba formal del certificado de reutilización con ρ definido;
+      matizar (A4) y las entradas «exact» de la tabla de operaciones por detector; nombrar el
+      exportador del chequeo de paquetes (y repetir con otro); desalojo de estado en el modelo de
+      amenaza.
+- [ ] **R2-8. Forma.** ~10k palabras (a suplementario: CIC-DDoS-2019, UNSW-NB15, Kitsune en paquetes,
+      contador de realimentación, BARS, METIS); renombrar la métrica de alarmas y quizá los detectores;
+      «Cert.» frente a «Certified».
+- [ ] **R2-9. Discrepancias D1–D16** (cifras): D1 cobertura 10 frente a 14; D2 clasificador por flujo
+      4 de 4; D3/D4 consultas frente a planes; D5 «equals» solo en 17 → 18; D6/D7 envenenamiento;
+      D8 LOIC-UDP >887; D9 filas sin cota certificada; D10 nombres viejos (UNSW, CIC-DDoS, CTU-SME-11);
+      D11 12 frente a 13 días; D12 TRW/CUSUM; D13 párrafo del servidor con carga; D14 semilla 1,57;
+      D15 balance; D16 «significativo».
+- [ ] **R2-10. Menores.** METIS (autocita en revisión, λ = 3 sin sensibilidad); frase de alarmas del
+      resumen; «three seeds» solo en un sentido.
 
 ### Revista destino (decidido con Antonio el 2026-11-16)
 
