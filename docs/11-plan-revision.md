@@ -24,6 +24,12 @@ Antonio pide iterar hasta la máxima nota posible. Protocolo:
 | 0 | 2026-11-15 | 5/10 | revisión mayor | reutilización de conexiones fuera del certificado; valor frente a reglas de tasa no establecido; criterio de detección vacío; sistema no evaluado como conjunto; atacante adaptativo débil; calibración optimista y una semilla; comparaciones indirectas; trabajo relacionado; presentación de cuaderno |
 | 1 (diagnóstico, a mitad de ronda) | 2026-11-17 | 4/10 | revisión mayor | los bytes de carga no se conservan respecto al daño (peticiones mínimas) y el atacante nunca lo prueba; cifras de cabecera a presupuesto 0,5 y robustez a FPR 10⁻³; evaluación adversaria en un solo sentido y sobre víctimas sin carga; ventaja frente a reglas y núcleo sin restricciones dentro del ruido; sin intervalos ni semillas; calibración con etiquetas; líneas base propias; el sistema evaluado no incluye la capa por flujo; título y resumen prometen de más; 13 900 palabras |
 
+**Criterio de parada (Antonio, 2026-11-17):** cuando los resultados y la funcionalidad estén a nivel de
+un 8, se para de añadir experimentos y se hace una revisión a fondo del paper: coherencia de principio a
+fin, que cada sección tenga sentido y cuadre con las demás, cifras y nombres consistentes, extensión
+de revista, y que tenga gancho y sea interesante. Un rechazo de Computers & Security por la moratoria
+de IA/ML es aceptable: se envía entonces a otra revista.
+
 La ronda 1 son las fases A–E de abajo.
 
 ### Revisión de diagnóstico del 2026-11-17 (pedida por Antonio; no cuenta como la revisión de la ronda)
