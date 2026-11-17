@@ -32,6 +32,8 @@ project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Title of the manuscript, and with it the landing page, the citation and the README:
+  "Certifying Network Intrusion Alerts against Adversarial Traffic Manipulation".
 - Website: the step-by-step walkthrough is simpler and easier to read (the story and
   its one button on one side, the scene on the other, three tallies, larger type, manual
   controls folded away).

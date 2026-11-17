@@ -1,6 +1,6 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it as below. A paper is in preparation."
-title: "Proteus: Certified Network Intrusion Detection from Conserved Traffic Evidence"
+title: "Proteus: Certifying Network Intrusion Alerts against Adversarial Traffic Manipulation"
 type: software
 license: Apache-2.0
 version: 0.1.0
