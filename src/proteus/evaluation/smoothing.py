@@ -116,7 +116,9 @@ def main() -> None:
                              "proteus_certified": float(proteus_cert.mean())})
                 print(rows[-1], flush=True)
     out = pd.DataFrame(rows)
-    out.to_csv(args.run / "smoothing_vs_free_ops.csv", index=False)
+    # One file per certified detector compared (the default keeps the plain name).
+    suffix = "" if args.certified == "proteus_cert" else f"_{args.certified}"
+    out.to_csv(args.run / f"smoothing_vs_free_ops{suffix}.csv", index=False)
     print(out.round(3).to_string())
 
 
