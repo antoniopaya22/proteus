@@ -72,8 +72,10 @@ runs=$(exists ${A}_ablation_r ${B}_ablation_r)
 [ -n "$runs" ] && $PY proteus.evaluation.tables ablation --base proteus_cert_r --runs $runs \
   --out $T/ablation_cert.tex > /dev/null
 
-# Comparison of defences (tab:bench), one file per direction.
-DEF="proteus_pcr proteus proteus_cert_r@certr proteus_free rate_rules_local rate_rules_sel kitnet_local flow_clf apollon"
+# Comparison of defences (tab:bench), one file per direction: the defences the adaptive
+# attacker was run against (Apollon and the per-flow classifier are compared in tab:h1
+# and against the attacks on per-flow detection).
+DEF="proteus_pcr proteus proteus_cert_r@certr proteus_free rate_rules_local rate_rules_sel kitnet_local"
 for pair in "A:18_17:g30" "B:17_18:g16"; do
   IFS=: read -r run tag grid <<< "$pair"; R=${!run}
   h1=$(exists ${R}_pcr ${R}c ${R}b $R ${R}_sel ${R}_p2 ${R}_kitnet ${R}_apollon)

@@ -56,7 +56,7 @@ stage_h1() {  # tab:h1, tab:h1-1e-4, fig:curves: detection across networks, both
 stage_baselines() {  # The detectors Proteus is compared with (tab:detectors).
   while read -r train test dir tag; do
     run $O/run_${tag}_r2_kitnet.log $PY proteus.evaluation.h1 --train $train --test $test --reuse $dir \
-      --models kitnet_local --tag r2_kitnet
+      --models kitnet_local $BUD --tag r2_kitnet
     run $O/run_${tag}_r2_sel.log $PY proteus.evaluation.h1 --train $train --test $test \
       --models rate_rules_sel $BUD --tag r2_sel
     run $O/run_${tag}_r2_apollon.log $PY proteus.evaluation.h1 --train $train --test $test \
