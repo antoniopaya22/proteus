@@ -192,7 +192,7 @@ def intervals_table(summary: pd.DataFrame, detectors: list[tuple[str, str]]) -> 
     campaigns and scans detected with their Wilson interval, and alarms per alerted
     entity and hour with their bootstrap interval over days."""
     lines = [r"\begin{tabular}{lrlrl}", r"\toprule",
-             r"Detector & \multicolumn{2}{c}{Campaigns detected} & \multicolumn{2}{c}{Alarms per entity and hour} \\"]
+             r"Detector & \multicolumn{2}{c}{Campaigns detected} & \multicolumn{2}{c}{Entity alarms per hour} \\"]
     for direction, g in summary.groupby("direction", sort=False):
         g = g.set_index("model")
         lines += [r"\midrule", rf"\multicolumn{{5}}{{l}}{{\emph{{{direction}}}}} \\"]
@@ -417,10 +417,16 @@ ADAPTIVE_PAPER = [("proteus+proteus_cert_r", r"\sysname", "union"),
                   ("kitnet_local", "KitNET", "adaptive_flows_per_h")]
 
 
+GRID_MIN_FLOWS_PER_H = 3.6  # the lowest rate the attackers try (10^-3 flows per second)
+
+
 def _rate(v: float, rmax: float) -> str:
-    """Compact flows/h: 614, 1.2k, 15k; the highest rate tried as >=720k."""
+    """Compact flows/h: 614, 1.2k, 15k; the highest rate tried as >=720k; no quiet rate
+    at all (0) as below the lowest rate tried."""
     if not np.isfinite(v):
         return "--"
+    if v == 0:
+        return rf"$<${GRID_MIN_FLOWS_PER_H:.0f}"
     ge = r"$\geq$" if v >= rmax else ""
     if v < 1000:
         return f"{ge}{v:.0f}"
@@ -708,7 +714,7 @@ def curves_figure(points: pd.DataFrame, x: str = "entity_alarms_per_hour",
              r"\begin{groupplot}[group style={group size=2 by 1, horizontal sep=1.4cm},",
              r"  width=0.5\textwidth, height=5.6cm, xmode=log,",
              r"  every axis/.append style={font=\sffamily\scriptsize},",
-             r"  xlabel={alarms per alerted entity and hour}, grid=major,",
+             r"  xlabel={entity alarms per hour}, grid=major,",
              r"  grid style={draw=pgreyL}, axis line style={draw=pgrey}, tick style={draw=pgrey},",
              r"  every axis plot/.append style={line width=0.8pt, mark size=1.5pt},",
              r"  legend style={draw=none, fill=none, font=\sffamily\tiny, cells={anchor=west}}]"]
