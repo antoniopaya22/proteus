@@ -182,7 +182,9 @@ de tráfico, frontera como métrica operativa, reproducibilidad. Casillas:
 - [ ] **R2-8. Forma.** ~10k palabras (a suplementario: CIC-DDoS-2019, UNSW-NB15, Kitsune en paquetes,
       contador de realimentación, BARS, METIS); renombrar la métrica de alarmas y quizá los detectores;
       «Cert.» frente a «Certified».
-- [ ] **R2-9. Discrepancias D1–D16** (cifras): D1 cobertura 10 frente a 14; D2 clasificador por flujo
+- [~] **R2-9. Discrepancias D1–D16** (hechas D1, D2, D5, D8, D9, D10, D11, D12, D13, D16; UNSW-NB15
+      fuera del paper; CIC-DDoS-2019 con r2; envenenamiento al presupuesto encolado: `poib_*` en
+      `run2017p.sh`; quedan D3/D4 con `qab_*`, D6/D7 con `poib_*`, D14, D15) (cifras): D1 cobertura 10 frente a 14; D2 clasificador por flujo
       4 de 4; D3/D4 consultas frente a planes; D5 «equals» solo en 17 → 18; D6/D7 envenenamiento;
       D8 LOIC-UDP >887; D9 filas sin cota certificada; D10 nombres viejos (UNSW, CIC-DDoS, CTU-SME-11);
       D11 12 frente a 13 días; D12 TRW/CUSUM; D13 párrafo del servidor con carga; D14 semilla 1,57;
