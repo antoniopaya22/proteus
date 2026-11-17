@@ -315,3 +315,28 @@ def test_ablation_pair_puts_both_detectors_of_a_direction_on_one_row(tmp_path):
     assert table.count(r"\emph{2018$\to$2017}") == 1
     assert r"All sub-cores & 1.00 & nan & 1.75 & 1.00 & nan & 3.00 \\" in table
     assert r"without raw destination & 0.00 & nan & 1.82 & -- & -- & -- \\" in table
+
+
+def test_h1_table_at_an_alarm_budget_reads_the_entity_rows(tmp_path):
+    import pandas as pd
+
+    from proteus.evaluation import tables
+
+    run = tmp_path / "csecicids2018__cicids2017__loo_labels__r2c"
+    run.mkdir()
+    s = [{"model": "proteus", "target_fpr": t, "threshold": k, "attack": "dos_hulk", "campaigns": 1,
+          "detected": d, "detected_strict": d, "flow_recall": r, "median_ttd_s": 10.0}
+         for t, k, d, r in ((1e-3, "local", 1, 0.9), (0.5, "entity", 0, 0.0))]
+    f = [{"model": "proteus", "target_fpr": t, "threshold": k, "alarms_per_hour": a,
+          "entity_alarms_per_hour": a} for t, k, a in ((1e-3, "local", 4.1), (0.5, "entity", 1.35))]
+    pd.DataFrame(s).to_csv(run / "summary.csv", index=False)
+    pd.DataFrame(f).to_csv(run / "false_alarms.csv", index=False)
+    saved = list(tables.DETECTORS)
+    tables.DETECTORS[:] = tables.DETECTOR_SETS["paper"]
+    try:
+        budget = tables.h1_table([run], [], 0.5, entity_alarms=True, kind="entity")
+        fpr = tables.h1_table([run], [], 1e-3, entity_alarms=True)
+    finally:
+        tables.DETECTORS[:] = saved
+    assert "DoS Hulk & 0/1 (0.00)" in budget and "1.35" in budget
+    assert "DoS Hulk & 1/1 (0.90)" in fpr and "4.10" in fpr

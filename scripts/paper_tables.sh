@@ -23,11 +23,11 @@ both() { local a b; a=$(exists ${A}c); b=$(exists ${B}c); echo ${a:-$(exists ${A
 # runs (per-flow classifier), selected rate thresholds, KitNET and Apollon.
 MORE="${A}_pcr $A $B ${A}_sel ${B}_p2 ${A}_kitnet ${B}_kitnet ${A}_apollon ${B}_apollon"
 
-# Detection across networks (tab:h1, tab:h1-1e-4).
-for f in 1e-3 1e-4; do
-  $PY proteus.evaluation.tables h1 --set paper --fpr $f --runs $(both) \
-    --extra $(exists $MORE) --out $T/h1_$f.tex > /dev/null
-done
+# Detection across networks: at the operating point (tab:h1) and at FPR 1e-3 (tab:h1-fpr).
+$PY proteus.evaluation.tables h1 --set paper --alarm-budget 0.5 --runs $(both) \
+  --extra $(exists $MORE) --out $T/h1_b0.5.tex > /dev/null
+$PY proteus.evaluation.tables h1 --set paper --fpr 1e-3 --runs $(both) \
+  --extra $(exists $MORE) --out $T/h1_1e-3.tex > /dev/null
 
 # Every threshold evaluated (tab:budgets): the system first where a run has it.
 $PY proteus.evaluation.tables budgets --runs $(exists ${A}_pcr | head -1) $(exists ${B}c ${B}b | head -1) \

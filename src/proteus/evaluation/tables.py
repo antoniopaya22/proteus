@@ -60,7 +60,8 @@ DIRECTION = {"csecicids2018__cicids2017": r"2018$\to$2017",
              "cicids2017__csecicids2018": r"2017$\to$2018"}
 
 
-def _load(runs: list[Path], extra: list[Path]) -> dict[str, tuple[pd.DataFrame, pd.DataFrame]]:
+def _load(runs: list[Path], extra: list[Path],
+          kind: str = "local") -> dict[str, tuple[pd.DataFrame, pd.DataFrame]]:
     out = {}
     for run in runs:
         key = "__".join(run.name.split("__")[:2])
@@ -71,8 +72,8 @@ def _load(runs: list[Path], extra: list[Path]) -> dict[str, tuple[pd.DataFrame, 
                 s.append(pd.read_csv(e / "summary.csv"))
                 f.append(pd.read_csv(e / "false_alarms.csv"))
         s, f = pd.concat(s), pd.concat(f)
-        s = s[s["threshold"] == "local"].drop_duplicates(["model", "target_fpr", "attack"])
-        f = f[f["threshold"] == "local"].drop_duplicates(["model", "target_fpr"])
+        s = s[s["threshold"] == kind].drop_duplicates(["model", "target_fpr", "attack"])
+        f = f[f["threshold"] == kind].drop_duplicates(["model", "target_fpr"])
         out[key] = (s, f)
     return out
 
@@ -86,11 +87,11 @@ def _cell(row: pd.Series | None) -> str:
 
 
 def h1_table(runs: list[Path], extra: list[Path], fpr: float,
-             entity_alarms: bool = False) -> str:
+             entity_alarms: bool = False, kind: str = "local") -> str:
     """One block of rows per direction, one column per detector. ``entity_alarms``:
     alarms per alerted entity and ten-minute window first, then per (destination,
-    minute)."""
-    data = _load(runs, extra)
+    minute). ``kind`` "entity": ``fpr`` is an alarm budget (the operating point)."""
+    data = _load(runs, extra, kind)
     present = set().union(*(set(s["model"]) for s, _ in data.values()))
     dets = [d for d in DETECTORS if d[0] in present]  # detectors without a run: no column
     lines = [r"\begin{tabular}{l" + "r" * len(dets) + "}", r"\toprule",
@@ -775,8 +776,9 @@ def main() -> None:
         print(args.out.read_text())
         return
     DETECTORS[:] = DETECTOR_SETS[args.set]
-    args.out.write_text(h1_table(args.runs, args.extra, args.fpr,
-                                 entity_alarms=args.set in ("r2", "paper")))
+    kind, target = ("entity", args.alarm_budget) if args.alarm_budget else ("local", args.fpr)
+    args.out.write_text(h1_table(args.runs, args.extra, target,
+                                 entity_alarms=args.set in ("r2", "paper"), kind=kind))
     print(args.out.read_text())
 
 
