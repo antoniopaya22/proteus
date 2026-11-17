@@ -59,6 +59,9 @@ stage_baselines() {  # The detectors Proteus is compared with (tab:detectors).
       --models kitnet_local $BUD --tag r2_kitnet
     run $O/run_${tag}_r2_sel.log $PY proteus.evaluation.h1 --train $train --test $test \
       --models rate_rules_sel $BUD --tag r2_sel
+    # The same sub-cores as monotone linear models: what the trees add.
+    run $O/run_${tag}_r2_lin.log $PY proteus.evaluation.h1 --train $train --test $test \
+      --models proteus_lin $BUD --tag r2_lin
     run $O/run_${tag}_r2_apollon.log $PY proteus.evaluation.h1 --train $train --test $test \
       --models apollon flow_clf $BUD --tag r2_apollon
     run $O/run_classic_${test}_r2.log $PY proteus.evaluation.classic --test $test $BUD --tag r2

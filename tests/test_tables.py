@@ -340,3 +340,28 @@ def test_h1_table_at_an_alarm_budget_reads_the_entity_rows(tmp_path):
         tables.DETECTORS[:] = saved
     assert "DoS Hulk & 0/1 (0.00)" in budget and "1.35" in budget
     assert "DoS Hulk & 1/1 (0.90)" in fpr and "4.10" in fpr
+
+
+def test_injection_summary_needs_every_member_of_the_system_quiet_per_victim(tmp_path):
+    import pandas as pd
+
+    from proteus.evaluation.tables import injection_summary
+
+    run = tmp_path / "csecicids2018__cicids2017__loo_labels__r2"
+    run.mkdir()
+    victims = [("v1", 1.0), ("v2", 50.0), ("v3", 500.0)]
+    rows = [{"day": "wed", "attack": "dos_hulk", "victim": v, "background_flows_per_h": bg,
+             "detector": "proteus", "real_flows_per_h": 1000.0} for v, bg in victims]
+    pd.DataFrame(rows).to_csv(run / "injection_b0.5_v16.csv", index=False)
+    quiet = {("v1", "proteus"): 2000.0, ("v1", "proteus_cert_r"): 100.0,
+             ("v2", "proteus"): 2000.0, ("v2", "proteus_cert_r"): 2000.0,
+             ("v3", "proteus"): 10.0, ("v3", "proteus_cert_r"): 2000.0}
+    ladder = [{"day": "wed", "attack": "dos_hulk", "victim": v, "detector": m, "plan": "plain",
+               "flows_per_h": r, "detected": r > quiet[(v, m)]}
+              for v, _ in victims for m in ("proteus", "proteus_cert_r")
+              for r in (10.0, 100.0, 1000.0, 2000.0)]
+    pd.DataFrame(ladder).to_csv(run / "injection_ladder_b0.5_v16.csv", index=False)
+    t = injection_summary(run / "injection_b0.5_v16.csv").set_index("detector")
+    # The system passes only on v2 (1000 and 2000 quiet for both); v1 keeps 100, v3 10.
+    assert t.loc["System", "passes"] == 1 / 3
+    assert abs(t.loc["System", "share"] - (0.1 * 1.0 * 0.01) ** (1 / 3)) < 1e-9

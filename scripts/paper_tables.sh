@@ -65,6 +65,10 @@ csvs=$(files $A/adaptive_b0.5_g30.csv $B/adaptive_b0.5_g16.csv)
 csvs=$(files $A/query_attack_b0.5_all.csv $B/query_attack_b0.5_all.csv)
 [ -n "$csvs" ] && $PY proteus.evaluation.tables query --set paper --csv $csvs --out $T/query.tex > /dev/null
 
+# Every attack injected into other victims of its day, at the operating point (text).
+csvs=$(files $A/injection_b0.5_v16.csv)
+[ -n "$csvs" ] && $PY proteus.evaluation.tables injection --csv $csvs --out $T/injection.csv > /dev/null
+
 # Sub-core ablation of both detectors (tab:ablation).
 runs=$(exists ${A}_ablation ${A}_ablation_r ${B}_ablation ${B}_ablation_r)
 [ -n "$runs" ] && $PY proteus.evaluation.tables ablation_pair --runs $runs --out $T/ablation.tex > /dev/null

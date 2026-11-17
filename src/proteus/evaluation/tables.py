@@ -542,22 +542,56 @@ def without_udp_shrink(ladder: pd.DataFrame) -> pd.DataFrame:
 
 
 def ladder_damage(ladder: pd.DataFrame, members: list[str], costly: bool = False,
-                  shrink: bool = False) -> pd.Series:
+                  shrink: bool = False, keys: tuple[str, ...] = ("day", "attack")) -> pd.Series:
     """Damage of a union of detectors from the ladder of ``evaluation.adaptive``: the
     highest rate (flows/h) of each (day, attack) at which some plan leaves every member
     quiet. ``costly``: plans that spread the attack over sources count too. ``shrink``:
     so do the plans with minimal requests."""
     d = without_udp_shrink(ladder)
     d = d[d["detector"].isin(members)]
-    q = (d.groupby(["day", "attack", "plan", "flows_per_h"])
+    q = (d.groupby([*keys, "plan", "flows_per_h"])
          .agg(det=("detected", "max"), n=("detector", "nunique")).reset_index())
     q = q[(q["n"] == len(set(members))) & ~q["det"].astype(bool)]
     if not costly:
         q = q[~q["plan"].str.startswith("spread")]
     if not shrink:
         q = q[~q["plan"].str.startswith("shrink")]
-    every = ladder.drop_duplicates(["day", "attack"]).set_index(["day", "attack"]).index
-    return q.groupby(["day", "attack"])["flows_per_h"].max().reindex(every).fillna(0.0)
+    every = ladder.drop_duplicates(list(keys)).set_index(list(keys)).index
+    return q.groupby(list(keys))["flows_per_h"].max().reindex(every).fillna(0.0)
+
+
+INJECTION = [("System", ("proteus", "proteus_cert_r"), False),
+             ("System, min.", ("proteus", "proteus_cert_r"), True),
+             ("Rules", ("rate_rules_local",), False), ("Rules, min.", ("rate_rules_local",), True),
+             ("Unc.", ("proteus_free",), False), ("KitNET", ("kitnet_local",), False),
+             ("Sel.", ("rate_rules_sel",), False)]
+
+
+def injection_summary(csv: Path, floor: float | None = None) -> pd.DataFrame:
+    """The injection study (``evaluation.injection``): for every detector (or union),
+    the share of attack-victim pairs that pass at their real rate and the geometric
+    mean of the share of the real rate the attacker keeps (capped at 1; damage below
+    the lowest rate tried counts as that rate), overall and per third of victim load."""
+    a = pd.read_csv(csv)
+    ladder = pd.read_csv(csv.with_name(csv.name.replace("injection_", "injection_ladder_", 1)))
+    keys = ("day", "attack", "victim")
+    info = a.drop_duplicates(list(keys)).set_index(list(keys))
+    lo = floor if floor is not None else float(ladder["flows_per_h"].min())
+    load = pd.qcut(info["background_flows_per_h"].rank(method="first"), 3,
+                   labels=["low", "mid", "high"])
+    rows = []
+    for name, members, shrink in INJECTION:
+        if not set(members) <= set(ladder["detector"]):
+            continue
+        d = ladder_damage(ladder, list(members), shrink=shrink, keys=keys).reindex(info.index).fillna(0.0)
+        keep = np.clip(np.maximum(d, lo) / info["real_flows_per_h"], None, 1.0)
+        row = {"detector": name, "pairs": len(d),
+               "passes": float((d >= info["real_flows_per_h"]).mean()),
+               "share": float(np.exp(np.log(keep).mean()))}
+        for g in ("low", "mid", "high"):
+            row[f"share_{g}"] = float(np.exp(np.log(keep[load == g]).mean()))
+        rows.append(row)
+    return pd.DataFrame(rows)
 
 
 QUERY = [("proteus", "Proteus"), ("proteus_sys_r", "System"), ("proteus_cert_r", "Cert.-R"),
@@ -707,7 +741,7 @@ def curves_figure(points: pd.DataFrame, x: str = "entity_alarms_per_hour",
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("table", choices=["h1", "summary", "ablation", "ablation_pair", "frontier", "frontier_system",
-                                       "frontier_budget", "adaptive", "curves", "query", "budgets",
+                                       "frontier_budget", "adaptive", "curves", "query", "budgets", "injection",
                                        "intervals"])
     ap.add_argument("--csv", type=Path, nargs="*", default=[], help="frontier or adaptive CSVs")
     ap.add_argument("--data-out", type=Path, default=None)
@@ -749,6 +783,11 @@ def main() -> None:
     if args.table == "frontier":
         args.out.write_text(frontier_table(args.csv, args.data_out))
         print(args.out.read_text())
+        return
+    if args.table == "injection":
+        t = injection_summary(args.csv[0])
+        t.to_csv(args.out, index=False)
+        print(t.round(3).to_string())
         return
     if args.table == "frontier_budget":
         args.out.write_text(frontier_budget_table(args.csv))
