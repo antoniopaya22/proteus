@@ -2405,3 +2405,30 @@ escenario 3 trae 57 «campañas» de un flujo).
   14–133 sondas/min si el escaneo dura seis horas y a 25–145 si dura una; los bots van a 5–36.
 - Llevado al paper (sección de tráfico real, CTU-13), sin las cifras v1/v3 de antes (núcleo de un
   solo modelo entrenado en CIC-IDS-2017, «27 de 181 sospechosos», «9,3 alarmas»).
+
+## 6.85 Atacante a presupuesto 0,5 con peticiones mínimas, 2018 → 2017: primeros tres ataques (2026-11-17, 11:20)
+
+`adaptb_1817` (rejilla de 30; flujos/h sin alerta; «libre» = mejor plan gratuito; «mín.» = con
+peticiones mínimas; certificado = Proteus-cert frente a operaciones gratuitas y reutilización).
+
+| Ataque (real) | Detector | Tal cual | Libre | Mín. | Certificado |
+|---|---|---|---|---|---|
+| SSH (1 541) | Proteus-fast | 856 | 24 830 (reuse) | 24 830 | — |
+| | Proteus-cert | 3 027 | 3 027 | 10 700 | 3 027 |
+| | Reglas | 16 300 | 16 300 | 57 619 | — |
+| FTP (3 910) | Proteus-fast | 369 | 16 300 | 16 300 | — |
+| | Proteus-cert | 37 825 | 37 825 | 203 681 | 57 619 |
+| | Reglas | 1 304 | 24 830 | 24 830 | — |
+| Hulk (518 525) | Proteus-fast | 1 304 | 37 825 | 37 825 | — |
+| | Proteus-cert | 10 700 | 10 700 | **203 681** | 16 300 |
+| | Reglas | 1 304 | 7 024 | 24 830 | — |
+
+- **La objeción O1 es real.** Con peticiones mínimas el daño contra Proteus-cert sube de 3,5 a 19 veces
+  (Hulk de 10 700 a 203 681): su evidencia son bytes de carga, y una inundación puede encogerlos
+  sin perder efecto. Proteus-fast, que cuenta conexiones, no gana nada con ellas; pierde con la
+  reutilización. Cada detector cubre lo que el otro no: el daño del sistema saldrá de la escalera
+  (plan común a los dos), cuando termine la ejecución.
+- En el paper: la premisa pasa a decir «no puede enviar menos *peticiones*»; supuesto (A5) del
+  certificado de reutilización (las peticiones conservan su carga; falla al encogerlas o al ahorrar un
+  saludo TLS/SSH), y una fila nueva en la tabla de operaciones («peticiones más pequeñas: medido, no
+  certificado»). Web actualizada igual.
