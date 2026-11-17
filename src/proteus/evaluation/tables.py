@@ -446,13 +446,26 @@ def adaptive_table(csvs: list[Path], columns: list[tuple[str, str, str]] | None 
     return "\n".join(lines) + "\n"
 
 
+# Runs of ``evaluation.adaptive`` made before minimal requests were restricted to TCP
+# (commit 77efc73) also shrank UDP floods, whose bytes are their harm. For those attacks a
+# plan with minimal requests is the same plan without them, so its rows are dropped.
+UDP_ATTACKS = ("ddos_loic_udp",)
+
+
+def without_udp_shrink(ladder: pd.DataFrame) -> pd.DataFrame:
+    """The ladder without the plans with minimal requests of UDP attacks."""
+    bad = ladder["attack"].isin(UDP_ATTACKS) & ladder["plan"].str.startswith("shrink")
+    return ladder[~bad]
+
+
 def ladder_damage(ladder: pd.DataFrame, members: list[str], costly: bool = False,
                   shrink: bool = False) -> pd.Series:
     """Damage of a union of detectors from the ladder of ``evaluation.adaptive``: the
     highest rate (flows/h) of each (day, attack) at which some plan leaves every member
     quiet. ``costly``: plans that spread the attack over sources count too. ``shrink``:
     so do the plans with minimal requests."""
-    d = ladder[ladder["detector"].isin(members)]
+    d = without_udp_shrink(ladder)
+    d = d[d["detector"].isin(members)]
     q = (d.groupby(["day", "attack", "plan", "flows_per_h"])
          .agg(det=("detected", "max"), n=("detector", "nunique")).reset_index())
     q = q[(q["n"] == len(set(members))) & ~q["det"].astype(bool)]

@@ -251,3 +251,15 @@ def test_intervals_at_an_alarm_budget_use_strict_detection_and_alarms_per_entity
     assert abs(r["entity_alarms_per_hour"] - 2.0) < 1e-9 and r["entity_alarms_lo"] <= 2.0 <= r["entity_alarms_hi"]
     table = intervals_table(s, [("proteus_pcr", "Proteus")])
     assert "Proteus & 1/2 & [" in table and "& 2.00 & [" in table
+
+
+def test_minimal_requests_are_ignored_for_udp_floods():
+    import pandas as pd
+
+    from proteus.evaluation.tables import ladder_damage
+
+    ladder = pd.DataFrame([
+        {"day": "tue", "attack": "ddos_loic_udp", "detector": "proteus", "plan": plan,
+         "flows_per_h": rate, "detected": rate > quiet}
+        for plan, quiet in (("plain", 40.0), ("shrink", 4000.0)) for rate in (40.0, 4000.0)])
+    assert ladder_damage(ladder, ["proteus"], shrink=True)[("tue", "ddos_loic_udp")] == 40.0
