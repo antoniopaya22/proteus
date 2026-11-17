@@ -2204,3 +2204,28 @@ inundaciones y en el 64 % de las del escaneo. Llevado al apéndice del paper (`t
 Paper, hecho en esta pasada con los nombres nuevos: RQ3 (comprobación del certificado: Proteus-cert
 certifica en la ventana los cuatro DoS y un escaneo; Proteus-fast solo Hulk), apéndice del
 temporizador (recall certificado 0,712 / 0,711 / 0,707) y del arrastre entre campañas.
+
+## 6.77 Envenenamiento contra el detector certificado actual, 2018 → 2017 (2026-11-17, 04:20)
+
+`poi_certr` (Proteus-cert-R, ocho días al 95 % de la frontera; con y sin tope de crecimiento):
+
+| Ataque (real) | Día 0 | Día 8 sin tope | Techo (línea base infinita) |
+|---|---|---|---|
+| SSH (1 541) | 2 379 | 2 379 | 2 379 |
+| FTP (3 910) | 38 534 | 38 534 | 38 534 |
+| Hulk (518 525) | 7 570 | 7 570 | 7 570 |
+| GoldenEye (44 976) | 5 372 | 5 372 | 5 372 |
+| Slowloris (10 461) | 2 611 | 2 611 | 2 611 |
+| Slowhttptest (5 107) | 2 464 | 2 464 | 2 464 |
+| Escaneo jue. (10 418) | 31 | 563 | 563 |
+| Escaneo vie. (107 850) | 84 | 313 | 313 |
+| LOIC-HTTP (290 167) | 87 599 | 87 599 | 87 599 |
+
+- Más estable aún que el detector certificado antiguo (donde Hulk y GoldenEye subían una vez): solo
+  se mueven los dos escaneos, hasta su techo, 18 y 345 veces por debajo de la campaña real.
+- En el paper: la subsección pasa a una tabla (`tab:poisoning`) y se quitan la figura y el núcleo de
+  un solo modelo anterior a r2 (no eran resultados r2) y la discusión del tope, que ya no hace falta.
+  Falta la fila de Proteus-fast (`poi_prot`, esperando el cerrojo).
+- Generador: `tables adaptive --set paper` saca el daño del sistema (de la escalera), sus dos
+  detectores, el daño certificado y las comparaciones (sin restricciones, reglas, reglas con
+  selección, KitNET).
