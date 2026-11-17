@@ -109,7 +109,9 @@ recogen en el [Modelo de amenaza](threat-model.md).
 Algunos ataques no dejan huella agregada: una única petición de explotación o una
 inyección SQL en una sola conexión parecen, a nivel de flujo, una petición benigna.
 Proteus los cubre con un clasificador por flujo convencional, la *capa*, que no tiene
-garantía. La decisión final es la disyunción de las alertas de la capa y del núcleo.
+garantía. Un despliegue puede sumar sus alertas a las del núcleo; en una red en la que
+no se entrenó lanza demasiadas falsas alarmas para funcionar sin supervisión, así que
+la evaluación la mide aparte y «Proteus» significa allí los dos detectores del núcleo.
 
 La capa se acopla al núcleo en un sentido. Cuando se ejecuta en línea y bloquea un
 flujo, ese flujo bloqueado se convierte en evidencia contra su origen: un recuento con

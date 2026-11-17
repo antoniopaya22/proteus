@@ -179,11 +179,17 @@ benign traffic. Its damage is the highest rate at which no attacker flow raises 
 attributable alert. Rates are scanned on a geometric grid, without assuming monotonicity
 in the rate, so detectors without guarantees are evaluated fairly.
 
+Besides the free operations it tries structured plans: connection reuse, bursts, both,
+the same with *minimal requests* (as few payload bytes as the service allows: free for
+the attacker, but it lowers evidence, so no certificate covers it and it is reported
+apart) and the same spread over 100 sources (reported apart as well).
+
 ```bash
 PROTEUS_EVIDENCE=v3 python -m proteus.evaluation.adaptive \
-    --run experiments/outputs/h1/csecicids2018__cicids2017__loo_labels__v3 \
-    --test cicids2017 --models proteus proteus_cert core_free_dst_b \
-    --local rate_rules_local kitnet_local --certify proteus_cert --grid 20
+    --run experiments/outputs/h1/csecicids2018__cicids2017__loo_labels__r2 \
+    --test cicids2017 --models proteus proteus_cert_r proteus_free \
+    --local rate_rules_local kitnet_local --certify proteus_cert_r \
+    --alarm-budget 0.5 --grid 30
 ```
 
 | Option | Meaning |
@@ -192,11 +198,13 @@ PROTEUS_EVIDENCE=v3 python -m proteus.evaluation.adaptive \
 | `--extra-runs` | More runs of the same direction to take models from |
 | `--local` | Unsupervised detectors fitted per day on local benign traffic |
 | `--certify` | Detectors for which the certified frontier is also reported |
+| `--fpr`, `--alarm-budget` | Operating point: a local false-positive rate, or thresholds at that many alarms per hour (the output files are then named `b<budget>`) |
 | `--variants` | Random free-operation variants per rate |
 | `--grid`, `--rmin`, `--rmax` | Geometric grid of rates |
 | `--attacks` | Restrict to some attack types |
 
-Outputs: `adaptive_<fpr>.csv` and `adaptive_ladder_<fpr>.csv` in the run directory.
+Outputs: `adaptive_<fpr>.csv` (columns for the free plans, for those with minimal
+requests and for those that spread) and `adaptive_ladder_<fpr>.csv` in the run directory.
 
 ## `query_attack`
 
@@ -206,13 +214,16 @@ only whether it was alerted (see [Harm frontier](../concepts/harm-frontier.md#th
 ```bash
 PROTEUS_EVIDENCE=v3 python -m proteus.evaluation.query_attack \
     --run experiments/outputs/h1/csecicids2018__cicids2017__loo_labels__r2 \
-    --test cicids2017 --targets proteus proteus_sys_r rate_rules_local \
-    --budget 150 --costly
+    --test cicids2017 --targets proteus proteus_cert_r rate_rules_local \
+    --union pcr=proteus,proteus_cert_r --alarm-budget 0.5 --budget 150 --shrink --costly
 ```
 
-Options: `--targets` (detectors or unions of detectors), `--budget` (queries per target
-and scenario), `--grid`, `--rmin`, `--rmax`, `--costly` (also spread over sources),
-`--attacks`, `--days`, `--fpr`, `--seed`, `--tag`. Results: `query_attack_<fpr>.csv` and
+Options: `--targets` (detectors), `--union NAME=A,B` (a target that is quiet only when
+every member is), `--budget` (queries per target and scenario), `--grid`, `--rmin`,
+`--rmax`, `--shrink` (one more search that may send minimal requests), `--costly` (one
+more that may spread over sources), `--alarm-budget` (thresholds at that many alarms per
+hour instead of `--fpr`), `--attacks`, `--days`, `--seed`, `--tag`. After the searches of
+a scenario, the shapes found against each target are replayed against the others. Results: `query_attack_<fpr>.csv` and
 `query_attack_trace_<fpr>.csv` in the run directory.
 
 ## `unions`
@@ -383,10 +394,13 @@ Options: `--h1` (run directories; the first wins for a repeated model), `--adapt
 
 Writes the LaTeX tables of the manuscript, and CSV data for the figures, from the
 outputs above. The first argument selects the table: `h1`, `summary`, `ablation`,
-`frontier`, `frontier_system`, `adaptive`, `query` or `curves`.
+`frontier`, `frontier_system`, `adaptive`, `query`, `curves`, `budgets` (every threshold
+evaluated) or `intervals` (Wilson and bootstrap intervals at an alarm budget). `--set
+paper` selects the columns of the manuscript: the system, its two detectors and the
+detectors it is compared with.
 
 ```bash
-python -m proteus.evaluation.tables h1 --set r2 --fpr 1e-3 \
+python -m proteus.evaluation.tables h1 --set paper --fpr 1e-3 \
     --runs experiments/outputs/h1/csecicids2018__cicids2017__loo_labels__r2c \
            experiments/outputs/h1/cicids2017__csecicids2018__loo_labels__r2c \
     --extra experiments/outputs/h1/csecicids2018__cicids2017__loo_labels__r2_kitnet \

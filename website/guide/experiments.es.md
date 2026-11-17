@@ -184,11 +184,18 @@ atacante lanza una alerta atribuible. Las tasas se recorren en una rejilla geom�
 sin suponer monotonía en la tasa, de modo que los detectores sin garantías se evalúan
 de forma justa.
 
+Además de las operaciones gratuitas prueba planes estructurados: reutilización de
+conexiones, ráfagas, ambas, lo mismo con *peticiones mínimas* (los menos bytes de carga
+que admite el servicio: gratis para el atacante, pero baja evidencia, así que ningún
+certificado lo cubre y se informa aparte) y lo mismo repartido entre 100 orígenes
+(también aparte).
+
 ```bash
 PROTEUS_EVIDENCE=v3 python -m proteus.evaluation.adaptive \
-    --run experiments/outputs/h1/csecicids2018__cicids2017__loo_labels__v3 \
-    --test cicids2017 --models proteus proteus_cert core_free_dst_b \
-    --local rate_rules_local kitnet_local --certify proteus_cert --grid 20
+    --run experiments/outputs/h1/csecicids2018__cicids2017__loo_labels__r2 \
+    --test cicids2017 --models proteus proteus_cert_r proteus_free \
+    --local rate_rules_local kitnet_local --certify proteus_cert_r \
+    --alarm-budget 0.5 --grid 30
 ```
 
 | Opción | Significado |
@@ -197,12 +204,14 @@ PROTEUS_EVIDENCE=v3 python -m proteus.evaluation.adaptive \
 | `--extra-runs` | Otras ejecuciones de la misma dirección de las que tomar modelos |
 | `--local` | Detectores no supervisados ajustados por día sobre el tráfico benigno local |
 | `--certify` | Detectores para los que se informa también de la frontera certificada |
+| `--fpr`, `--alarm-budget` | Punto de operación: una tasa local de falsos positivos, o umbrales a ese número de alarmas por hora (los ficheros de salida se llaman entonces `b<presupuesto>`) |
 | `--variants` | Variantes aleatorias con operaciones gratuitas por tasa |
 | `--grid`, `--rmin`, `--rmax` | Rejilla geométrica de tasas |
 | `--attacks` | Restringir a algunos tipos de ataque |
 
-Resultados: `adaptive_<fpr>.csv` y `adaptive_ladder_<fpr>.csv` en el directorio de la
-ejecución.
+Resultados: `adaptive_<fpr>.csv` (columnas para los planes gratuitos, para los de
+peticiones mínimas y para los que reparten) y `adaptive_ladder_<fpr>.csv` en el
+directorio de la ejecución.
 
 ## `query_attack`
 
@@ -212,13 +221,17 @@ fue alertado (véase [Frontera de daño](../concepts/harm-frontier.md#el-atacant
 ```bash
 PROTEUS_EVIDENCE=v3 python -m proteus.evaluation.query_attack \
     --run experiments/outputs/h1/csecicids2018__cicids2017__loo_labels__r2 \
-    --test cicids2017 --targets proteus proteus_sys_r rate_rules_local \
-    --budget 150 --costly
+    --test cicids2017 --targets proteus proteus_cert_r rate_rules_local \
+    --union pcr=proteus,proteus_cert_r --alarm-budget 0.5 --budget 150 --shrink --costly
 ```
 
-Opciones: `--targets` (detectores o uniones de detectores), `--budget` (consultas por
-objetivo y escenario), `--grid`, `--rmin`, `--rmax`, `--costly` (también repartirse entre
-orígenes), `--attacks`, `--days`, `--fpr`, `--seed`, `--tag`. Resultados:
+Opciones: `--targets` (detectores), `--union NOMBRE=A,B` (un objetivo que solo calla
+cuando callan todos sus miembros), `--budget` (consultas por objetivo y escenario),
+`--grid`, `--rmin`, `--rmax`, `--shrink` (una búsqueda más que puede enviar peticiones
+mínimas), `--costly` (otra que puede repartirse entre orígenes), `--alarm-budget`
+(umbrales a ese número de alarmas por hora en vez de `--fpr`), `--attacks`, `--days`,
+`--seed`, `--tag`. Tras las búsquedas de un escenario, las formas halladas contra cada
+objetivo se vuelven a probar contra los demás. Resultados:
 `query_attack_<fpr>.csv` y `query_attack_trace_<fpr>.csv` en el directorio de la ejecución.
 
 ## `unions`
@@ -396,10 +409,13 @@ primero), `--adaptive`, `--fpr`, `--detectors`, `--out`.
 
 Escribe las tablas LaTeX del manuscrito, y los datos CSV de las figuras, a partir de los
 resultados anteriores. El primer argumento selecciona la tabla: `h1`, `summary`,
-`ablation`, `frontier`, `frontier_system`, `adaptive`, `query` o `curves`.
+`ablation`, `frontier`, `frontier_system`, `adaptive`, `query`, `curves`, `budgets` (todos los umbrales
+evaluados) o `intervals` (intervalos de Wilson y bootstrap a un presupuesto de alarmas).
+`--set paper` elige las columnas del manuscrito: el sistema, sus dos detectores y los
+detectores con los que se compara.
 
 ```bash
-python -m proteus.evaluation.tables h1 --set r2 --fpr 1e-3 \
+python -m proteus.evaluation.tables h1 --set paper --fpr 1e-3 \
     --runs experiments/outputs/h1/csecicids2018__cicids2017__loo_labels__r2c \
            experiments/outputs/h1/cicids2017__csecicids2018__loo_labels__r2c \
     --extra experiments/outputs/h1/csecicids2018__cicids2017__loo_labels__r2_kitnet \

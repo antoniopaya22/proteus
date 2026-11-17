@@ -104,8 +104,10 @@ The assumptions behind all of this, and what lies outside them, are listed in th
 
 Some attacks leave no aggregate footprint: a single exploit request or an SQL injection
 in one connection looks, at the flow level, like a benign request. Proteus covers them
-with a conventional per-flow classifier, the *shell*, which has no guarantee. The final
-decision is the disjunction of shell and core alerts.
+with a conventional per-flow classifier, the *shell*, which has no guarantee. A
+deployment can add its alerts to those of the core; in a network it was not trained on
+it raises too many false alarms to run unattended, so the evaluation measures it on its
+own and "Proteus" there means the two detectors of the core.
 
 The shell is coupled to the core in one direction. When it runs inline and blocks a
 flow, that blocked flow becomes evidence against its source: a per-source decayed count
