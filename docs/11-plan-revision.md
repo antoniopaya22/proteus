@@ -125,6 +125,15 @@ Arreglo (commit e115ecc): `adaptive` e `injection` guardan tras cada escenario y
 los trabajos de 2017 pasan a `~/tools/run2017.sh` (unidad `proteus-2017`, tope 10 GB): cada uno espera
 a que no haya ningún trabajo probando sobre 2018 y haya 12 GB libres, y se reintenta si lo matan.
 
+**O7, Kitsune tal como se publicó (2026-11-17, commit f8d7dd1):** extractor AfterImage sobre paquetes
+(115 rasgos, cinco λ) y KitNET entrenado con los primeros 100 000 paquetes del viernes de CIC-IDS-2017,
+umbral al presupuesto de 0,5 alarmas/h sobre la hora benigna siguiente; detección de las campañas del
+día y las campañas de 172.16.0.1 (escaneo, LOIC) repetidas con las operaciones gratuitas a nivel de
+paquete del chequeo del certificado y con mimetismo. Encolado (`kitsune_fri`, unidad
+`proteus-kitsune`, misma espera de memoria). Responde a «KitNET con nuestros contadores» y da la
+comparación directa en paquetes: certificado (que se sostuvo en esas variantes) frente a detector
+publicado sin garantía.
+
 - [~] **Discrepancias (23).** Corregir todas: daño certificado de LOIC-HTTP en `tab:adaptive` (204k)
       frente a la frontera (164 536); dos columnas «Cert.» con significados distintos (1,73 / 6,13
       frente a 3,01 / 7,28); frases que no cuadran con sus tablas (escaneos que «para antes»
