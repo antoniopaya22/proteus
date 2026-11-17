@@ -76,7 +76,10 @@ Añadir eventos nunca reduce la evidencia, y el núcleo es monótono, así que "
 lanza una alerta atribuible" es monótono en $r$. Una búsqueda binaria entre $r_{\min}$
 y $r_{\max}$ encuentra entonces la frontera exactamente, hasta la resolución elegida. Si
 incluso $r_{\min}$ genera alerta, la frontera se indica como inferior a $r_{\min}$; si
-$r_{\max}$ pasa desapercibida, como superior a $r_{\max}$.
+$r_{\max}$ pasa desapercibida, como superior a $r_{\max}$. Para el sistema, que alerta cuando lo hace
+cualquiera de sus dos detectores, el paper lee la frontera en la rejilla de ritmos del
+atacante adaptativo, en el punto de operación de 0,5 alarmas por hora: el ritmo más alto
+al que el ataque, enviado tal como se ejecutó, deja callados a los dos detectores.
 
 ## Cómo leer una frontera
 

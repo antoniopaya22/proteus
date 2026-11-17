@@ -72,7 +72,10 @@ Adding events never lowers evidence, and the core is monotone, so "the attack ra
 attributable alert" is monotone in $r$. A binary search between $r_{\min}$ and
 $r_{\max}$ then finds the frontier exactly, up to the chosen resolution. If even
 $r_{\min}$ alerts, the frontier is reported as below $r_{\min}$; if $r_{\max}$ stays
-silent, as above $r_{\max}$.
+silent, as above $r_{\max}$. For the system, which alerts when either of its two
+detectors does, the paper reads the frontier on the grid of rates of the adaptive
+attacker, at the operating point of 0.5 alarms per hour: the highest rate at which the
+attack, sent as it ran, leaves both detectors quiet.
 
 ## How to read a frontier
 
