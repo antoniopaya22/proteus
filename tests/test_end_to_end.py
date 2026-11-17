@@ -153,16 +153,20 @@ def test_cross_network_run_end_to_end(world):
                         "--test", "net2", "--targets", "proteus", "rate_rules_local",
                         "--union", "both=proteus,rate_rules_local", "--local", "rate_rules_local",
                         "--attacks", "dos_hulk", "--days", "day1", "--budget", "12", "--grid", "10",
-                        "--rmax", "2", "--costly", "--tag", "e2e"],
+                        "--rmax", "2", "--costly", "--shrink", "--alarm-budget", "1", "--tag", "e2e"],
                        cwd=world, env=env, capture_output=True, text=True, check=False)
     assert r.returncode == 0, r.stderr[-2000:]
-    q = pd.read_csv(out / "query_attack_0.001_e2e.csv")
-    assert len(q) == 6 and (q["query_flows_per_h"] >= q["search_flows_per_h"]).all()
-    for costly in (False, True):
-        d = q[q["costly"] == costly].set_index("target")["query_flows_per_h"]
-        assert d["both"] <= min(d["proteus"], d["rate_rules_local"])
-    free = q[~q["costly"]].set_index("target")["query_flows_per_h"]
-    assert (q[q["costly"]].set_index("target")["query_flows_per_h"] >= free).all()
+    # Thresholds at an alarm budget (the operating point), and three searches per target:
+    # free operations, those with minimal requests, those with more sources.
+    q = pd.read_csv(out / "query_attack_b1_e2e.csv")
+    assert len(q) == 9 and (q["query_flows_per_h"] >= q["search_flows_per_h"]).all()
+    mode = np.where(q["costly"], "costly", np.where(q["shrink"], "shrink", "free"))
+    for m in ("free", "shrink", "costly"):
+        d = q[mode == m].set_index("target")["query_flows_per_h"]
+        assert d["both"] <= min(d["proteus"], d["rate_rules_local"]), m
+    free = q[mode == "free"].set_index("target")["query_flows_per_h"]
+    for m in ("shrink", "costly"):
+        assert (q[mode == m].set_index("target")["query_flows_per_h"] >= free).all(), m
 
     again = _run(world, "--train", "net1", "--test", "net2", "--reuse", str(out),
                  "--models", "proteus", "--tag", "e2e_reuse")

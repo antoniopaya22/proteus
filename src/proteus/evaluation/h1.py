@@ -794,6 +794,29 @@ def entity_threshold(tops: list[tuple], hours: float, budget: float) -> float:
     return float(np.nextafter(g[allowed], np.inf))
 
 
+def budget_threshold(test: str, day: Path, cols: list[str], model, budget: float) -> float:
+    """Threshold of ``model`` for an alarm budget on ``day``, as the main evaluation
+    sets it: the lowest that gives at most ``budget`` alarms per hour, an alarm being a
+    (destination host, minute) with a clean flow at or above it, over the clean benign
+    traffic of the other days of the network (the top 1% of their scores). The
+    attackers use it to face a detector at its operating point."""
+    tops, hours = [], 0.0
+    for d in days(test):
+        if d == day:
+            continue
+        ev, _ = evidence_b(test, d, columns=["dst_ip", "t_start", "t_end", "clean"])
+        clean = ev["clean"].to_numpy()
+        key = pd.util.hash_array(ev["dst_ip"].astype(str).to_numpy()).astype(np.uint64)[clean]
+        minute = (ev["t_start"].astype("int64") // 60_000_000).to_numpy().astype(np.uint64)[clean]
+        hours += (ev["t_end"].max() - ev["t_start"].min()).total_seconds() / 3600
+        del ev
+        sc = np.concatenate([score(model, X) for X in score_batches(cache_parts(test, d), cols)])[clean]
+        cut = np.quantile(sc, 0.99) if len(sc) else np.inf
+        hi = sc >= cut
+        tops.append((sc[hi], key[hi], minute[hi]))
+    return entity_threshold(tops, hours, budget)
+
+
 def select_rule_features(X: pd.DataFrame, y: np.ndarray, k: int) -> list[str]:
     """The ``k`` features that best separate attack from benign flows on their own
     (area under the ROC curve of each feature as a score), on the training network."""

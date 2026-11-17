@@ -96,6 +96,26 @@ def add_decoys(df: pd.DataFrame, n: int, rng: np.random.Generator, src_ips, dst_
     return pd.concat([out, rows[out.columns]], ignore_index=True)
 
 
+# Fewest payload bytes that a request of each service can carry (destination port ->
+# bytes): an HTTP/1.0 request line, a USER and a PASS command, the smallest SSH key
+# exchange and one authentication attempt. Other services are left as they are.
+MIN_REQUEST_BYTES = {80: 18, 8080: 18, 21: 24, 22: 500}
+
+
+def shrink_requests(df: pd.DataFrame, sel: np.ndarray,
+                    floors: dict[int, int] | None = None) -> pd.DataFrame:
+    """Send the request of each selected flow with as few payload bytes as its service
+    allows (``floors``, by destination port; default ``MIN_REQUEST_BYTES``). The number
+    of requests, connections and packets does not change, so the attack does the same
+    work: unlike padding, this lowers evidence, and no certificate covers it."""
+    floors = MIN_REQUEST_BYTES if floors is None else floors
+    out = _with_ids(df)
+    floor = out.loc[sel, "dst_port"].map(floors)
+    cur = out.loc[sel, "fwd_bytes"]
+    out.loc[sel, "fwd_bytes"] = np.minimum(cur, floor.fillna(cur)).astype(cur.dtype)
+    return out
+
+
 def split_flows(df: pd.DataFrame, sel: np.ndarray, parts: int,
                 rng: np.random.Generator) -> pd.DataFrame:
     """Split each selected flow into up to ``parts`` consecutive flows with new source

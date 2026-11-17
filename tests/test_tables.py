@@ -211,3 +211,19 @@ def test_budget_table_counts_campaigns_and_takes_a_detector_from_the_first_run_t
     assert cells[1:3] == ["3+1 (1.35)", "3+0 (1.01)"]  # the first run wins for proteus
     assert cells[3] == "--" and cells[5] == "2+1 (5.28)"
     assert "Budget 1 & -- & --" in table
+
+
+def test_ladder_damage_leaves_minimal_requests_out_unless_asked():
+    import pandas as pd
+
+    from proteus.evaluation.tables import ladder_damage
+
+    ladder = pd.DataFrame([
+        {"day": "wed", "attack": "dos_hulk", "detector": "proteus", "plan": plan,
+         "flows_per_h": rate, "detected": rate > quiet}
+        for plan, quiet in (("reuse", 300.0), ("shrink+reuse", 4000.0), ("spread", 900.0))
+        for rate in (300.0, 900.0, 4000.0)])
+    key = ("wed", "dos_hulk")
+    assert ladder_damage(ladder, ["proteus"])[key] == 300.0
+    assert ladder_damage(ladder, ["proteus"], shrink=True)[key] == 4000.0
+    assert ladder_damage(ladder, ["proteus"], costly=True)[key] == 900.0

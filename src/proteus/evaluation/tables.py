@@ -416,16 +416,20 @@ def adaptive_table(csvs: list[Path], columns: list[tuple[str, str, str]] | None 
     return "\n".join(lines) + "\n"
 
 
-def ladder_damage(ladder: pd.DataFrame, members: list[str], costly: bool = False) -> pd.Series:
+def ladder_damage(ladder: pd.DataFrame, members: list[str], costly: bool = False,
+                  shrink: bool = False) -> pd.Series:
     """Damage of a union of detectors from the ladder of ``evaluation.adaptive``: the
     highest rate (flows/h) of each (day, attack) at which some plan leaves every member
-    quiet. ``costly``: plans that spread the attack over sources count too."""
+    quiet. ``costly``: plans that spread the attack over sources count too. ``shrink``:
+    so do the plans with minimal requests."""
     d = ladder[ladder["detector"].isin(members)]
     q = (d.groupby(["day", "attack", "plan", "flows_per_h"])
          .agg(det=("detected", "max"), n=("detector", "nunique")).reset_index())
     q = q[(q["n"] == len(set(members))) & ~q["det"].astype(bool)]
     if not costly:
         q = q[~q["plan"].str.startswith("spread")]
+    if not shrink:
+        q = q[~q["plan"].str.startswith("shrink")]
     every = ladder.drop_duplicates(["day", "attack"]).set_index(["day", "attack"]).index
     return q.groupby(["day", "attack"])["flows_per_h"].max().reindex(every).fillna(0.0)
 
@@ -437,11 +441,14 @@ QUERY_PAPER = [("pcr", r"\sysname"), ("proteus", "Fast"), ("proteus_cert_r", "Ce
                ("rate_rules_local", "Rules"), ("rate_rules_sel", "Sel.")]
 
 
-def query_table(csvs: list[Path], targets: list[tuple[str, str]] | None = None) -> str:
+def query_table(csvs: list[Path], targets: list[tuple[str, str]] | None = None,
+                shrink: bool = False) -> str:
     """Damage under the query attacker: the highest rate (flows/h) at which an attempt
     passed without an alert, per target; one block per direction. Bold: the attack
     passes at its real rate. s: only by spreading over sources (the costly search). c:
-    the largest attack tried was reached, so the figure is a lower bound."""
+    the largest attack tried was reached, so the figure is a lower bound. With
+    ``shrink`` the table is that of the searches that may send minimal requests
+    instead of those that may spread (m: only with minimal requests)."""
     targets = targets or QUERY
     n = len(targets)
     lines = [r"\begin{tabular}{l" + "r" * (n + 1) + "}", r"\toprule",
@@ -462,14 +469,17 @@ def query_table(csvs: list[Path], targets: list[tuple[str, str]] | None = None) 
                 if t.empty:
                     cells.append("--")
                     continue
-                free = t.loc[~t["costly"].astype(bool), "query_flows_per_h"].max()
-                best = t["query_flows_per_h"].max()  # the costly search includes the free one
+                costly = t["costly"].astype(bool)
+                small = t["shrink"].astype(bool) if "shrink" in t else pd.Series(False, index=t.index)
+                free = t.loc[~costly & ~small, "query_flows_per_h"].max()
+                # Every search starts from the free one, so it reports at least as much.
+                best = t.loc[~costly if shrink else ~small, "query_flows_per_h"].max()
                 free = 0.0 if not np.isfinite(free) else float(free)
                 c = _rate(float(best), float(t["rmax_flows_per_h"].iloc[0]))
                 if best >= a["real_flows_per_h"]:
                     c = rf"\textbf{{{c}}}"
                 if best > free:
-                    c += r"$^s$"
+                    c += r"$^m$" if shrink else r"$^s$"
                 if "capped" in t and t["capped"].astype(bool).any():
                     c += r"$^c$"
                 cells.append(c)

@@ -249,3 +249,19 @@ def test_split_without_the_reset_column_matches_the_reference():
     got = op.split_flows(x, attacker(x), 3, np.random.default_rng(7))
     want = _split_reference(x, attacker(x), 3, np.random.default_rng(7))
     pd.testing.assert_frame_equal(got, want, check_dtype=False)
+
+
+def test_shrink_requests_only_lowers_payload_bytes_of_known_services():
+    x = flows(np.random.default_rng(0))
+    x.loc[x.index[:3], "fwd_bytes"] = 5  # already below the smallest request
+    sel = attacker(x)
+    y = op.shrink_requests(x, sel)
+    assert (y["fwd_bytes"] <= x["fwd_bytes"]).all() and (y.loc[~sel, "fwd_bytes"] == x.loc[~sel, "fwd_bytes"]).all()
+    for port, floor in op.MIN_REQUEST_BYTES.items():
+        m = sel & (x["dst_port"] == port).to_numpy()
+        if m.any():
+            assert (y.loc[m, "fwd_bytes"] == np.minimum(x.loc[m, "fwd_bytes"], floor)).all()
+    other = sel & ~x["dst_port"].isin(list(op.MIN_REQUEST_BYTES)).to_numpy()
+    assert (y.loc[other, "fwd_bytes"] == x.loc[other, "fwd_bytes"]).all()
+    for c in ("fwd_pkts", "bwd_pkts", "bwd_bytes", "duration_us"):
+        assert (y[c] == x[c]).all(), c  # the same requests, connections and packets

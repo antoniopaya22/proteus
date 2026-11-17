@@ -3,6 +3,7 @@ import pandas as pd
 
 from proteus.evaluation.query_attack import (
     CHOICES,
+    MODES,
     Shape,
     apply,
     mutate,
@@ -136,3 +137,25 @@ def test_shape_pool_offers_free_shapes_and_the_own_shape_when_it_went_further_el
     assert shape_pool(spread, found) == [("b", Shape(sources=100), 11), ("a", Shape(reuse=20), 9)]
     # The free search takes no shape that spreads, nor its own shape from a worse search.
     assert shape_pool(free, found) == []
+
+
+def test_modes_keep_minimal_requests_and_sources_apart():
+    rng = np.random.default_rng(0)
+    for _ in range(60):
+        free = mutate(Shape(), rng)
+        assert free.sources == 1 and not free.shrink
+        small = mutate(Shape(), rng, keys=MODES["shrink"])
+        assert small.sources == 1
+        spread = mutate(Shape(), rng, costly=True)
+        assert not spread.shrink
+    assert any(mutate(Shape(), rng, keys=MODES["shrink"]).shrink for _ in range(60))
+
+
+def test_shape_pool_does_not_offer_minimal_requests_to_a_search_that_may_not_use_them():
+    def entry(target, shrink, shape, index):
+        return {"row": {"target": target, "costly": False, "shrink": shrink}, "shape": shape, "index": index}
+
+    free = entry("a", False, Shape(reuse=20), 5)
+    small = entry("a", True, Shape(reuse=20, shrink=True), 9)
+    assert shape_pool(free, [free, small]) == []
+    assert shape_pool(small, [free, small]) == [("a", Shape(reuse=20), 5)]

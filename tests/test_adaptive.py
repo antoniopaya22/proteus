@@ -47,11 +47,12 @@ def test_structured_plans_touch_only_the_attack_flows():
     df["t_end"] = df["t_start"] + pd.to_timedelta(df["duration_us"], unit="us")
     df["orig_id"] = np.arange(n)
     bytes_atk = df.loc[df["_atk"], "fwd_bytes"].sum()
-    for plan, (k, srcs, _) in STRUCTURED.items():
+    for plan, (k, srcs, _, shrink) in STRUCTURED.items():
         v = structured(df, plan, np.random.default_rng(0))
         bg, atk = v[~v["_atk"]], v[v["_atk"]]
         assert len(bg) == 100 and (bg["src_ip"] == "10.0.0.5").all(), plan
-        assert atk["fwd_bytes"].sum() == bytes_atk, plan       # payload is never reduced
+        # Payload is reduced only by the plans that send minimal requests.
+        assert (atk["fwd_bytes"].sum() < bytes_atk) == shrink, plan
         assert (len(atk) < 200) == (k > 1), plan
         assert (atk["src_ip"].nunique() > 1) == (srcs > 1), plan
         assert v["t_end"].is_monotonic_increasing, plan

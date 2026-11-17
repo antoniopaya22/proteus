@@ -16,7 +16,10 @@ alerted, maximised over
   forward packets and bytes per packet of the victim's benign traffic (only adding,
   never removing),
 * structured plans (``STRUCTURED``): connection reuse (20 requests per connection),
-  bursts (the same mean rate sent in the first tenth of every minute) and both, and
+  bursts (the same mean rate sent in the first tenth of every minute) and both,
+* the same plans with minimal requests (``operators.shrink_requests``: as few payload
+  bytes as the service allows). It costs the attacker nothing and lowers evidence, so
+  no certificate covers it; it is reported apart (``shrink_flows_per_h``), and
 * the same plans spread over 100 sources, a costly operation reported apart
   (``spread_flows_per_h``).
 
@@ -52,16 +55,22 @@ from proteus.evaluation.poisoning import combined, local_benign
 
 STOP_AFTER = 2  # stop scanning once every detector alerts on every variant this many rates
 REUSE_K, SOURCES, PULSE = 20, 100, (60.0, 0.1)
-# name -> (requests per connection, sources, bursts); sources > 1 is a costly operation
-STRUCTURED = {"reuse": (REUSE_K, 1, False), "pulse": (1, 1, True),
-              "reuse+pulse": (REUSE_K, 1, True), "spread": (1, SOURCES, False),
-              "spread+reuse": (REUSE_K, SOURCES, False), "spread+pulse": (1, SOURCES, True)}
+# name -> (requests per connection, sources, bursts, minimal requests); sources > 1 is
+# a costly operation
+STRUCTURED = {"reuse": (REUSE_K, 1, False, False), "pulse": (1, 1, True, False),
+              "reuse+pulse": (REUSE_K, 1, True, False),
+              "shrink": (1, 1, False, True), "shrink+reuse": (REUSE_K, 1, False, True),
+              "shrink+reuse+pulse": (REUSE_K, 1, True, True),
+              "spread": (1, SOURCES, False, False), "spread+reuse": (REUSE_K, SOURCES, False, False),
+              "spread+pulse": (1, SOURCES, True, False)}
 
 
 def structured(df: pd.DataFrame, plan: str, rng: np.random.Generator) -> pd.DataFrame:
     """One structured plan applied to the attack flows of ``df`` (column ``_atk``)."""
-    k, n, bursts = STRUCTURED[plan]
+    k, n, bursts, shrink = STRUCTURED[plan]
     out = df
+    if shrink:
+        out = op.shrink_requests(out, out["_atk"].to_numpy())
     if bursts:
         out = op.pulse(out, out["_atk"].to_numpy(), *PULSE)
     if n > 1:
@@ -102,9 +111,10 @@ def mimic(df: pd.DataFrame, bg: pd.DataFrame) -> pd.DataFrame:
 
 
 def day_models(test: str, day: Path, dets: dict, local: list[str], fpr: float,
-               rng: np.random.Generator) -> tuple[dict, dict[str, float]]:
+               rng: np.random.Generator, budget: float | None = None) -> tuple[dict, dict[str, float]]:
     """Detectors as deployed on one test day: the local ones fitted on clean benign
-    traffic of the other days, and every threshold at ``fpr`` on that same traffic."""
+    traffic of the other days, and every threshold at ``fpr`` on that same traffic,
+    or, with ``budget``, at that many alarms per hour (``h1.budget_threshold``)."""
     models, thr = {}, {}
     for n, (cols, m) in dets.items():
         ref = local_benign(test, day, cols, rng)
@@ -113,8 +123,16 @@ def day_models(test: str, day: Path, dets: dict, local: list[str], fpr: float,
         if not hasattr(m, "predict_proba"):
             m = Scored(m)
         models[n] = (cols, m)
-        thr[n] = float(np.quantile(m.predict_proba(ref)[:, 1], 1 - fpr, method="higher"))
+        if budget is None:
+            thr[n] = float(np.quantile(m.predict_proba(ref)[:, 1], 1 - fpr, method="higher"))
+        else:
+            thr[n] = h1.budget_threshold(test, day, cols, m, budget)
     return models, thr
+
+
+def threshold_label(fpr: float, budget: float | None) -> str:
+    """How the output files name the operating point: the FPR, or ``b<budget>``."""
+    return f"{fpr:g}" if budget is None else f"b{budget:g}"
 
 
 class Oracle:
@@ -184,6 +202,8 @@ def main() -> None:
                     help="unsupervised detectors fitted per day on local benign traffic")
     ap.add_argument("--certify", nargs="*", default=["core_cert"])
     ap.add_argument("--fpr", type=float, default=1e-3)
+    ap.add_argument("--alarm-budget", type=float, default=None,
+                    help="thresholds at this many alarms per hour instead of --fpr")
     ap.add_argument("--variants", type=int, default=4, help="random free-operation variants")
     ap.add_argument("--grid", type=int, default=20)
     ap.add_argument("--rmin", type=float, default=1e-3)
@@ -218,7 +238,7 @@ def main() -> None:
         if not present:
             continue
         base = baselines.for_day(day)
-        models, thr = day_models(args.test, day, dets, args.local, args.fpr, rng)
+        models, thr = day_models(args.test, day, dets, args.local, args.fpr, rng, args.alarm_budget)
         for attack, sc, A in scenarios(flows, present):
             span = max((A["t_end"].max() - A["t_start"].min()).total_seconds(), 1.0)
             full = nested_attack(sc, args.rmax, np.random.default_rng(args.seed))
@@ -229,6 +249,7 @@ def main() -> None:
             noisy = oracle.noisy
             best = {n: {"rate": 0.0, "plan": None} for n in models}
             spread = {n: {"rate": 0.0, "plan": None} for n in models}
+            shrunk = {n: {"rate": 0.0, "plan": None} for n in models}
             plain = {n: 0.0 for n in models}
             cert = {n: 0.0 for n in args.certify if n in models}
             streak = {n: 0 for n in models}  # consecutive rates where every variant alerts
@@ -271,10 +292,12 @@ def main() -> None:
                         ladder.append({"day": day.stem, "attack": attack, "detector": n,
                                        "plan": plan, "flows_per_h": float(r) * 3600,
                                        "detected": not quiet, "assumed": False})
-                        costly = plan.startswith("spread")
-                        if quiet and r > spread[n]["rate"]:
+                        costly, small = plan.startswith("spread"), plan.startswith("shrink")
+                        if quiet and not small and r > spread[n]["rate"]:
                             spread[n] = {"rate": float(r), "plan": plan}
-                        if quiet and not costly and r > best[n]["rate"]:
+                        if quiet and not costly and r > shrunk[n]["rate"]:
+                            shrunk[n] = {"rate": float(r), "plan": plan}
+                        if quiet and not costly and not small and r > best[n]["rate"]:
                             best[n] = {"rate": float(r), "plan": plan}
                         if quiet and plan == "plain":
                             plain[n] = max(plain[n], float(r))
@@ -291,14 +314,17 @@ def main() -> None:
                              "best_plan": best[n]["plan"],
                              "spread_flows_per_h": spread[n]["rate"] * 3600,
                              "spread_plan": spread[n]["plan"],
+                             "shrink_flows_per_h": shrunk[n]["rate"] * 3600,
+                             "shrink_plan": shrunk[n]["plan"],
                              "certified_flows_per_h": cert[n] * 3600 if n in cert else np.nan,
                              "rmax_flows_per_h": args.rmax * 3600})
                 print(rows[-1], flush=True)
     out = pd.DataFrame(rows)
     tag = f"_{args.tag}" if args.tag else ""
-    out.to_csv(args.run / f"adaptive_{args.fpr:g}{tag}.csv", index=False)
+    label = threshold_label(args.fpr, args.alarm_budget)
+    out.to_csv(args.run / f"adaptive_{label}{tag}.csv", index=False)
     # Dose ladder (METIS-style): detection at every rate and variant.
-    pd.DataFrame(ladder).to_csv(args.run / f"adaptive_ladder_{args.fpr:g}{tag}.csv", index=False)
+    pd.DataFrame(ladder).to_csv(args.run / f"adaptive_ladder_{label}{tag}.csv", index=False)
     print(out.pivot_table(index=["day", "attack"], columns="detector",
                           values="adaptive_flows_per_h").round(0).to_string())
 

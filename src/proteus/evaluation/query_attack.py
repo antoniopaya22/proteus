@@ -45,7 +45,7 @@ import pandas as pd
 from proteus.attacks import operators as op
 from proteus.core.frontier import nested_attack
 from proteus.evaluation import h1
-from proteus.evaluation.adaptive import Oracle, day_models
+from proteus.evaluation.adaptive import Oracle, day_models, threshold_label
 from proteus.evaluation.frontier_exp import ATTACKS, FLOW_COLS, Baselines, scenarios
 from proteus.evaluation.poisoning import combined
 
@@ -66,20 +66,29 @@ class Shape:
     duty: float = 1.0  # share of every period in which flows are sent (1 = no bursts)
     period: float = 60.0  # burst period in seconds
     sources: int = 1  # sources the flows are spread over (costly when > 1)
+    shrink: bool = False  # minimal requests: as few payload bytes as the service allows
 
 
 CHOICES: dict[str, tuple] = {
     "pad": (0, 40, 400, 1400), "ins": (0, 1, 5, 20), "split": (1, 2, 5),
     "split_frac": (0.0, 0.05, 0.2, 1.0), "decoys": (0, 100, 1000), "ports": (False, True),
     "reuse": (1, 2, 5, 20, 100), "duty": (1.0, 0.5, 0.1), "period": (10.0, 60.0, 300.0),
-    "sources": (1, 10, 100),
+    "sources": (1, 10, 100), "shrink": (False, True),
 }
-FREE = tuple(k for k in CHOICES if k != "sources")
+# Costless to the attacker and additive (or re-timing): what the certificates cover.
+FREE = tuple(k for k in CHOICES if k not in ("sources", "shrink"))
 
 
-def mutate(shape: Shape, rng: np.random.Generator, costly: bool = False) -> Shape:
-    """A neighbour of ``shape``: one or two parameters redrawn from their choices."""
-    keys = list(CHOICES if costly else FREE)
+# What each search may change: the free operations; those and minimal requests; those
+# and the number of sources.
+MODES = {"free": FREE, "shrink": (*FREE, "shrink"), "costly": (*FREE, "sources")}
+
+
+def mutate(shape: Shape, rng: np.random.Generator, costly: bool = False,
+           keys: tuple[str, ...] | None = None) -> Shape:
+    """A neighbour of ``shape``: one or two parameters (of ``keys``; default the free
+    ones, with the sources if ``costly``) redrawn from their choices."""
+    keys = list(keys or MODES["costly" if costly else "free"])
     out = shape
     while out == shape:
         for k in rng.choice(keys, size=int(rng.integers(1, 3)), replace=False):
@@ -92,6 +101,8 @@ def apply(df: pd.DataFrame, shape: Shape, victim: str, port: int,
           rng: np.random.Generator) -> pd.DataFrame:
     """The traffic ``df`` (attacker flows marked ``_atk``) sent with ``shape``."""
     out = df
+    if shape.shrink:
+        out = op.shrink_requests(out, out["_atk"].to_numpy())
     if shape.duty < 1.0:
         out = op.pulse(out, out["_atk"].to_numpy(), shape.period, shape.duty)
     if shape.sources > 1:
@@ -117,7 +128,7 @@ def apply(df: pd.DataFrame, shape: Shape, victim: str, port: int,
 
 
 def search(quiet: Callable[[Shape, int], bool], n_rates: int, budget: int,
-           rng: np.random.Generator, costly: bool = False,
+           rng: np.random.Generator, costly: bool = False, keys: tuple[str, ...] | None = None,
            start: Shape | None = None) -> dict:
     """Highest rate index answered quiet within ``budget`` queries.
 
@@ -160,7 +171,7 @@ def search(quiet: Callable[[Shape, int], bool], n_rates: int, budget: int,
             hi = mid
     best_i, trace = lo, [{"queries": used, "index": lo, "shape": asdict(best)}]
     while used < budget and best_i < n_rates - 1:
-        cand = mutate(best, rng, costly)
+        cand = mutate(best, rng, costly, keys)
         if ask(cand, best_i + 1):
             best, best_i = cand, climb(cand, best_i + 1)
             trace.append({"queries": used, "index": best_i, "shape": asdict(best)})
@@ -222,8 +233,11 @@ def shape_pool(own: dict, found: list[dict]) -> list[tuple[str, Shape, int]]:
     free shape)."""
     best: dict[str, tuple[str, Shape, int]] = {}
     for g in found:
-        if g is own or g["index"] < 0 or not (own["row"]["costly"] or g["shape"].sources == 1):
+        if g is own or g["index"] < 0:
             continue
+        if (g["shape"].sources > 1 and not own["row"]["costly"]) or (
+                g["shape"].shrink and not own["row"].get("shrink", False)):
+            continue  # a shape that uses what this search may not
         key = json.dumps(asdict(g["shape"]))
         if key not in best or g["index"] > best[key][2]:
             best[key] = (g["row"]["target"], g["shape"], g["index"])
@@ -282,6 +296,10 @@ def main() -> None:
                     help="window of the window-fidelity detector, when it is a target or a member")
     ap.add_argument("--max-flows", type=int, default=None,
                     help="largest attack tried, in flows (higher rates count as alerted)")
+    ap.add_argument("--shrink", action="store_true",
+                    help="also search with minimal requests, which no certificate covers (reported apart)")
+    ap.add_argument("--alarm-budget", type=float, default=None,
+                    help="thresholds at this many alarms per hour instead of --fpr")
     ap.add_argument("--costly", action="store_true",
                     help="also let the attacker spread over sources (reported apart)")
     ap.add_argument("--no-transfer", action="store_true",
@@ -311,9 +329,9 @@ def main() -> None:
     def save() -> pd.DataFrame:
         """Results so far (written after every scenario: a long run can be cut short)."""
         out = pd.DataFrame(rows)
-        out.to_csv(args.run / f"query_attack_{args.fpr:g}{tag}.csv", index=False)
-        pd.DataFrame(traces).to_csv(args.run / f"query_attack_trace_{args.fpr:g}{tag}.csv",
-                                    index=False)
+        label = threshold_label(args.fpr, args.alarm_budget)
+        out.to_csv(args.run / f"query_attack_{label}{tag}.csv", index=False)
+        pd.DataFrame(traces).to_csv(args.run / f"query_attack_trace_{label}{tag}.csv", index=False)
         return out
 
     for day in h1.days(args.test):
@@ -325,7 +343,7 @@ def main() -> None:
         if not present:
             continue
         base = baselines.for_day(day)
-        models, thr = day_models(args.test, day, dets, args.local, args.fpr, rng)
+        models, thr = day_models(args.test, day, dets, args.local, args.fpr, rng, args.alarm_budget)
         if wf is not None:
             models[WF], thr[WF] = ([], wf[day]), float("nan")
         for attack, sc, A in scenarios(flows, present):
@@ -335,20 +353,23 @@ def main() -> None:
             found: list[dict] = []  # one per search of this scenario
             for target, ms in members.items():
                 free_shape = None
-                for costly in ([False, True] if args.costly else [False]):
+                modes = ["free"] + (["shrink"] if args.shrink else []) + (["costly"] if args.costly else [])
+                for mode in modes:
+                    costly, shrink = mode == "costly", mode == "shrink"
                     sent: dict[int, int] = {}
                     quiet = submit(full, sc, oracle, rates, args.rmax, list(ms), sent,
                                    args.max_flows)
-                    # The search with sources starts from the best free shape; the
-                    # transfer pass below then keeps it from reporting less than the free one.
+                    # The searches with more freedom start from the best free shape; the
+                    # transfer pass below then keeps them from reporting less than the free one.
                     res = search(quiet, len(rates), args.budget,
-                                 np.random.default_rng(args.seed + 1), costly=costly,
+                                 np.random.default_rng(args.seed + 1), keys=MODES[mode],
                                  start=free_shape)
-                    free_shape = res["shape"] if not costly else free_shape
+                    free_shape = res["shape"] if mode == "free" else free_shape
                     ok = res["index"] >= 0 and sent.get(res["index"], 0) > 0
                     rate = float(rates[res["index"]]) if ok else 0.0
                     rows.append({"day": day.stem, "attack": attack, "target": target,
-                                 "costly": costly, "threshold_fpr": args.fpr,
+                                 "costly": costly, "shrink": shrink, "threshold_fpr": args.fpr,
+                                 "alarm_budget": args.alarm_budget,
                                  "real_flows_per_h": len(A) / span * 3600,
                                  "query_flows_per_h": rate * 3600,
                                  "queries": res["queries"], "capped": bool(sent.get(-1)),
@@ -359,7 +380,7 @@ def main() -> None:
                                   "shape": res["shape"], "members": list(ms)})
                     print(rows[-1], flush=True)
                     traces += [{"day": day.stem, "attack": attack, "target": target,
-                                "costly": costly, "queries": t["queries"],
+                                "costly": costly, "shrink": shrink, "queries": t["queries"],
                                 "flows_per_h": (float(rates[t["index"]]) * 3600
                                                 if t["index"] >= 0 else 0.0),
                                 "shape": json.dumps(t["shape"])} for t in res["trace"]]
@@ -378,12 +399,12 @@ def main() -> None:
                     f["row"]["shape_from"] = next(n for n, s, _ in pool if s == res["shape"])
                     f["index"], f["shape"] = res["index"], res["shape"]  # for the next pools
                     print("  transfer", {k: f["row"][k] for k in (
-                        "attack", "target", "costly", "search_flows_per_h",
+                        "attack", "target", "costly", "shrink", "search_flows_per_h",
                         "query_flows_per_h", "shape_from")}, flush=True)
             save()
     out = save()
     if len(out):
-        print(out.pivot_table(index=["day", "attack"], columns=["target", "costly"],
+        print(out.pivot_table(index=["day", "attack"], columns=["target", "costly", "shrink"],
                               values="query_flows_per_h").round(0).to_string())
 
 
