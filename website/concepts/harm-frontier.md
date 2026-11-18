@@ -104,8 +104,9 @@ attributable alert, maximised over:
 - **mimicry**: padding and inserted packets until each attack flow reaches the median
   forward packets and bytes per packet of the victim's benign traffic, only adding,
   never removing;
-- **connection reuse**: 20 requests per connection, which lowers every per-connection
-  counter;
+- **connection reuse**: up to 20 requests per connection, one after another, within each
+  service's limit (SSH 6 attempts, FTP 3); connections open at the same time cannot be
+  merged, so a slow denial of service gains nothing from it;
 - **bursts**: each minute's flows sent in its first six seconds;
 - reuse and bursts together;
 - the same plans with **minimal requests**: every TCP request carries the fewest

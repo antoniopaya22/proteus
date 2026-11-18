@@ -109,8 +109,9 @@ atribuible, maximizada sobre:
 - **mimetismo**: relleno y paquetes insertados hasta que cada flujo de ataque alcanza la
   mediana de paquetes en sentido directo y de bytes por paquete del tráfico benigno de
   la víctima, solo añadiendo, nunca quitando;
-- **reutilización de conexiones**: 20 peticiones por conexión, lo que baja todos los
-  contadores por conexión;
+- **reutilización de conexiones**: hasta 20 peticiones por conexión, una tras otra, dentro
+  del límite de cada servicio (SSH 6 intentos, FTP 3); las conexiones abiertas a la vez no
+  se pueden fusionar, así que un DoS lento no gana nada con ella;
 - **ráfagas**: los flujos de cada minuto se envían en sus seis primeros segundos;
 - reutilización y ráfagas juntas;
 - los mismos planes con **peticiones mínimas**: cada petición TCP lleva los menos bytes
