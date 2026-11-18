@@ -53,7 +53,7 @@ def pick_victims(flows: pd.DataFrame, port: int | None, proto: int, n: int,
     (destination host, total flows). Fewer when there are fewer candidates."""
     attacked = set(flows.loc[flows["is_attack"], "dst_ip"]) | set(
         flows.loc[flows["is_attack"], "src_ip"])
-    b = flows[(flows["family"] == "benign") & (flows["proto"] == proto)
+    b = flows[flows["family"].isin(h1.NOT_MALICIOUS) & (flows["proto"] == proto)
               & ~flows["dst_ip"].isin(attacked)]
     if port is not None:
         b = b[b["dst_port"] == port]
@@ -73,7 +73,7 @@ def scenario(flows: pd.DataFrame, template: pd.DataFrame, victim: str, port: int
              proto: int, window_s: float, n_sources: int, scan: bool) -> Scenario:
     """The attack aimed at ``victim``: its real traffic (all of it, as in
     ``frontier_exp``) around the middle of its benign activity, one hour on each side."""
-    bg = flows[(flows["dst_ip"].astype(str) == victim) & (flows["family"] == "benign")]
+    bg = flows[(flows["dst_ip"].astype(str) == victim) & flows["family"].isin(h1.NOT_MALICIOUS)]
     start = bg["t_start"].min() + (bg["t_end"].max() - bg["t_start"].min()) / 2
     lo, hi = start - pd.Timedelta(hours=1), start + pd.Timedelta(seconds=window_s + 3600)
     bg = bg[(bg["t_end"] >= lo) & (bg["t_start"] <= hi)].drop(columns=["attack", "family", "is_attack"])
@@ -148,6 +148,9 @@ def main() -> None:
     ap.add_argument("--attacks", nargs="*", default=None)
     ap.add_argument("--days", nargs="*", default=None)
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--templates", default=None,
+                    help="take the attacks from this dataset's campaigns and inject them into "
+                         "the test network (e.g. CIC attacks into UGR'16)")
     ap.add_argument("--tag", default="")
     ap.add_argument("--resume", action="store_true",
                     help="keep the (victim, attack) pairs already in the output files and skip them")
@@ -181,18 +184,31 @@ def main() -> None:
         pd.DataFrame(rows).to_csv(out_rows, index=False)
         pd.DataFrame(ladders).to_csv(out_ladder, index=False)
 
+    want = args.attacks or ATTACKS
+    foreign = {}  # attack -> its first campaign in the template dataset
+    if args.templates:
+        for tday in h1.days(args.templates):
+            tf = pd.read_parquet(tday, columns=FLOW_COLS)
+            for a in want:
+                if a not in foreign and (tf["is_attack"] & (tf["attack"] == a)).any():
+                    foreign[a] = tf[tf["is_attack"] & (tf["attack"] == a)].copy()
+            del tf
+        print(f"templates from {args.templates}: {sorted(foreign)}", flush=True)
+
     for day in h1.days(args.test):
         if args.days and day.stem not in args.days:
             continue
         flows = pd.read_parquet(day, columns=FLOW_COLS)
-        want = args.attacks or ATTACKS
-        present = [a for a in want if (flows["is_attack"] & (flows["attack"] == a)).any()]
+        if args.templates:
+            present = sorted(foreign)
+        else:
+            present = [a for a in want if (flows["is_attack"] & (flows["attack"] == a)).any()]
         if not present:
             continue
         base = baselines.for_day(day)
         models, thr = day_models(args.test, day, dets, args.local, args.fpr, rng, args.alarm_budget)
         for attack in present:
-            A = flows[flows["is_attack"] & (flows["attack"] == attack)]
+            A = foreign[attack] if args.templates else flows[flows["is_attack"] & (flows["attack"] == attack)]
             real_victim = A["dst_ip"].mode().iloc[0]
             A = A[A["dst_ip"] == real_victim]
             port, proto = int(A["dst_port"].mode().iloc[0]), int(A["proto"].mode().iloc[0])

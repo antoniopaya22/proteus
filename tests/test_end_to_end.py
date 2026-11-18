@@ -200,6 +200,19 @@ def test_cross_network_run_end_to_end(world):
     p = pd.read_csv(out / "poisoning_proteus_cert_r_b1.csv")
     assert len(p) and (p["attack"] == "dos_hulk").all() and np.isfinite(p["threshold"]).all()
 
+    # The attacks of one network injected into the victims of another (--templates).
+    r = subprocess.run([sys.executable, "-m", "proteus.evaluation.injection", "--run", str(out),
+                        "--test", "net2", "--templates", "net1", "--models", "proteus",
+                        "--local", "rate_rules_local", "--certify", "--attacks", "dos_hulk",
+                        "--days", "day0", "--victims", "2", "--grid", "4", "--rmax", "2",
+                        "--window", "600", "--plans", "plain", "reuse", "--alarm-budget", "1",
+                        "--tag", "foreign"],
+                       cwd=world, env=env, capture_output=True, text=True, check=False)
+    assert r.returncode == 0, r.stderr[-2000:]
+    assert "templates from net1: ['dos_hulk']" in r.stdout
+    inj = pd.read_csv(out / "injection_b1_foreign.csv")
+    assert len(inj) and set(inj["attack"]) == {"dos_hulk"} and inj["victim"].nunique() >= 1
+
     again = _run(world, "--train", "net1", "--test", "net2", "--reuse", str(out),
                  "--models", "proteus", "--tag", "e2e_reuse")
     assert again.returncode == 0, again.stderr[-2000:]
