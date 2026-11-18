@@ -2718,3 +2718,20 @@ Presupuesto 0,5, 18 → 17 (vol.+otros, alarmas por entidad y hora):
 (23 867 → 24 080, +1 %; techo 137 539), que ya pasa a Proteus-cert a su ritmo real. SSH 3 114, FTP
 52 339, Hulk 11 847, GoldenEye 8 439, Slowloris 3 965, Slowhttptest 3 710, escaneo del viernes 9 648,
 LOIC-HTTP 378 661 (todos iguales en el día 8 y en el techo). En el paper; falta `poib_prot`.
+
+### 6.103 Semilla 2 en 17 → 18 y atacante por consultas al presupuesto en 18 → 17
+
+- Semillas 17 → 18: 12, 13 y 12 de 13 a 0,26, 0,32 y 0,26 (reglas: 13 a 1,31, 1,09, 1,37). En el paper
+  y en el resumen («12–13 de 13 con 0,26–0,32, tres semillas»).
+- `qab_1817` (150 consultas, presupuesto 0,5): parte del ritmo que conserva (media geométrica) y pasan:
+
+| Objetivo | Libre | Peticiones mínimas | Más orígenes |
+|---|---|---|---|
+| Sistema | 11,1 %, 2 | 22,3 %, 5 | 16,4 %, 2 |
+| Proteus-fast | 22,3 %, 5 | 22,3 %, 5 | 22,3 %, 5 |
+| Proteus-cert | 37,2 %, 3 | 76,2 %, 6 | 76,2 %, 6 |
+| Reglas | 16,4 %, 2 | 32,9 %, 5 | 16,4 %, 2 |
+| Reglas con selección | 87,1 %, 7 | igual | igual |
+
+La búsqueda confirma los planes para el sistema (11,1 % igual); con peticiones mínimas encuentra algo
+más (22 % frente a 17 %). Falta `qab_1718` (en marcha).
