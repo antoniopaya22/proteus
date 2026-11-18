@@ -2735,3 +2735,53 @@ LOIC-HTTP 378 661 (todos iguales en el día 8 y en el techo). En el paper; falta
 
 La búsqueda confirma los planes para el sistema (11,1 % igual); con peticiones mínimas encuentra algo
 más (22 % frente a 17 %). Falta `qab_1718` (en marcha).
+
+### 6.104 Análisis de alternativas (2026-11-18): tres mediciones y un error del modelo de atacante
+
+Pedido por Antonio («otra forma de obtener mejores resultados»). Guiones en el scratchpad
+(`an2.py`, `an3.py`), ejecutados en la VM con tope de memoria.
+
+**a) El operador de reutilización es físicamente inconsistente.** `operators.reuse_connections` fusiona
+`k` flujos *consecutivos por inicio*, aunque se solapen en el tiempo: convierte `k` conexiones
+simultáneas en una. En HTTP/1.x una conexión atiende una petición a la vez, y en un DoS lento el daño
+son las conexiones abiertas a la vez, así que esa fusión divide el daño entre `k`. Reducción físicamente
+posible de registros = min(k, Δ/duración): Slowloris/Slowhttptest (84–93 s) 1,3; GoldenEye (20–30 s) 4–6;
+LOIC-HTTP (7 y 23 s) 18 y 5; Hulk/HOIC (0,1–0,7 s) 20+; SSH ≤ 6 (MaxAuthTries), FTP ≤ 3. Usábamos 20
+para todos (100 en el atacante por consultas). Recontando la escalera existente solo con planes
+admisibles (horquilla: sin y con reutilización ×20 en GoldenEye y fuerza bruta):
+
+| Parte del ritmo que conserva, ataques que pasan | Ahora | Físico | Ahora, pet. mín. | Físico, pet. mín. |
+|---|---|---|---|---|
+| Sistema 18 → 17 | 11,1 %, 2 | 4,8–8,0 %, 0–2 | 17,0 %, 4 | 5,5–10,1 %, 0–2 |
+| Reglas 18 → 17 | 13,9 %, 3 | 9,7–12,6 %, 2–3 | 25,7 %, 5 | 11,2–17,5 %, 2–3 |
+| Sistema 17 → 18 | 7,1 %, 2 | 5,6–6,6 %, 2 | 18,0 %, 4 | 16,6–18,0 %, 4 |
+| Reglas 17 → 18 | 15,3 %, 5 | 9,9–14,1 %, 3–4 | 15,3 %, 5 | 9,9–14,1 %, 3–4 |
+
+«Los DoS lentos pasan con peticiones mínimas» era un artefacto en 18 → 17 (Slowloris 16 300 → 562
+flujos/h; Slowhttptest 16 300 → 856) y es real en 17 → 18 (Slowloris pasa solo con peticiones mínimas:
+Proteus-fast es débil allí y el de bytes cae). La estimación «~370 conexiones» del paper es errónea.
+**Hay que corregir el operador y rehacer adaptativo y consultas.**
+
+**b) La concurrencia separa ataques de tráfico benigno.** Conexiones TCP abiertas a la vez contra la
+víctima (media; pico): Slowloris 244/313 (370/456), Slowhttptest 120 (357), GoldenEye 374/217
+(1 629/950), Hulk 102/498, LOIC-HTTP 548/1 793 (957/6 814), HOIC 18 (441). LOIC-HTTP envía peticiones
+de 20 bytes: por eso el detector de bytes no lo ve, y es el ataque que Proteus pierde al presupuesto en
+2018. Pico benigno por host y ventana de 10 min en 2017: p99,9 = 24–30. Un solo umbral de concurrencia
+(dejando un día fuera, presupuesto 0,5): θ = 38–43, detecta los 5 DoS/DDoS de 2017 a 0,12–1,06
+alarmas/h. En redes con servidores cargados un umbral global no sirve (2018: 335; CTU-13: 200–600):
+hace falta envolvente por entidad. Síntoma en la víctima: durante los DoS lentos, el 80–100 % de las
+demás conexiones a la víctima (650–1 340 cada 10 min) quedan sin respuesta.
+
+**c) Prototipo sin etiquetas: cuatro contadores de daño con umbral global** (concurrencia por host,
+puertos distintos por host, flujos por par origen-servicio, bytes por host; ventanas de 10 min;
+umbrales con el benigno de los otros días; presupuesto total 0,5):
+
+| | Alarmas/h | Detecta (recall de flujos) |
+|---|---|---|
+| 2017 | 0,54 | Hulk, GoldenEye, Slowloris, Slowhttptest, LOIC-HTTP (1,00); escaneos (1,00 y 0,998); botnet, una infiltración. No: fuerza bruta SSH/FTP, web, Heartbleed |
+| 2018 | 0,64 | Hulk, GoldenEye, Slowloris, LOIC-HTTP, LOIC-UDP ×2, HOIC (1,00); escaneos (0,88 y 0,87); SSH (1,00); botnet (0,43). No: web, infiltración |
+
+Sin entrenamiento iguala la detección de Proteus (11+3 a 1,35; 12–13+1 a 0,26–0,32) y la de las reglas
+con menos alarmas. Cuenta por tipo de ataque y día, no por campaña; no se ha atacado.
+**Conclusión: en estos benchmarks la familia de modelo no es lo que limita; lo son la evidencia y lo
+que se mide.**
