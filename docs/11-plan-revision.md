@@ -158,7 +158,7 @@ Antonio: Proteus es la v2 de Apollon; METIS debe tener un papel (saldrá en prep
 publicado durante la revisión); vale cualquier cambio que lleve a un revisor a **8 o más**.
 Tesis: «Apollon elegía, Proteus garantiza, METIS mide». Análisis en docs/06 §6.104–6.105.
 
-- [~] **V1. Evidencia que acota el daño** (1 semana; hecho: certificado de reutilización con el límite de peticiones por conexión de cada servicio, `@certk`, y `proteus_cert_f` sobre conexiones y recuentos distintos, certificado también frente a peticiones mínimas; unión `proteus_pcf`; en cola `cf_*` en `extra8.sh`): conexiones simultáneas contra el servicio
+- [~] **V1. Evidencia que acota el daño** (1 semana; `@certk` no certifica nada en HTTP, §6.111; hecho: certificado de reutilización con el límite de peticiones por conexión de cada servicio, `@certk`, y `proteus_cert_f` sobre conexiones y recuentos distintos, certificado también frente a peticiones mínimas; unión `proteus_pcf`; en cola `cf_*` en `extra8.sh`): conexiones simultáneas contra el servicio
       como evidencia certificada (comprobar su conservación frente a operaciones aditivas y
       reutilización física; el abandono de conexiones la baja: estudiarlo), daño en sus unidades
       (trabajadores ocupados, peticiones, puertos, intentos), reescritura de la estimación de Little.

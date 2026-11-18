@@ -2875,3 +2875,17 @@ Paper reescrito con las cifras nuevas (adaptativo, frontera, familias, consultas
 comparación de defensas: compuesto 0,49 y 0,44; resumen, conclusión, highlights) y la web. Ficheros
 viejos guardados como `*_oldreuse`. Pendientes con el operador nuevo: `qabp_1817`, `injp_1817`
 (cola), `inj_ugr` y `cf_*`.
+
+### 6.111 `proteus_cert_f` 18 → 17 (`cf_fit_1817`): detecta, pero el certificado con límite por protocolo es demasiado holgado
+
+Presupuesto 0,5: 6+0 a 0,07 alarmas/h (Hulk, GoldenEye, Slowloris, Slowhttptest, LOIC-HTTP, escaneo
+del viernes); certificado frente a operaciones aditivas (`@cert`) 5+0; frente a reutilización con el
+límite del servicio (`@certk`) **0**, también a presupuesto 3 (1). Bajar los recuentos de conexiones de
+HTTP en log 100 = 4,6 deja todo bajo el umbral. Monotonía: 0 violaciones en 348 000 comprobaciones.
+
+- El límite por protocolo sirve para SSH/FTP (log 6, log 3) pero no para HTTP. Una cota útil para DoS
+  lento necesitaría la concurrencia (conexiones abiertas a la vez no se pueden fusionar), que los
+  contadores decaídos no conservan. Queda como negativo; la unión con Proteus-fast (`cf_all_1817`, en
+  cola) dirá si aporta detección frente a peticiones mínimas.
+- `inj_ugr` volvió a morir por memoria (12,5 GB, preparando líneas base y presupuestos de UGR'16, no
+  las plantillas): pasado a la cola con cerrojo sin tope (`extra9.sh`).
