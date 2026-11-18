@@ -31,6 +31,8 @@ TAUS = (60.0, 600.0, 3600.0)
 
 def decayed_counts(src: np.ndarray, t: np.ndarray, tau: float) -> np.ndarray:
     """Counter value right after each event (events sorted by time)."""
+    if len(t) > 1 and np.any(np.diff(t) < 0):
+        raise ValueError("events must be sorted by time")
     out = np.empty(len(t))
     last: dict = {}
     for i, (s, ti) in enumerate(zip(src, t)):
@@ -84,7 +86,9 @@ def main() -> None:
         fp["day"] = day.stem
         fp_rows.append(fp)
         print(stats[-1], flush=True)
-    fp = pd.concat(fp_rows, ignore_index=True)
+    # One clock for every day: days come in file order, not in time order, and a counter
+    # that saw a later day before an earlier one would grow instead of decaying.
+    fp = pd.concat(fp_rows, ignore_index=True).sort_values("t_end", kind="stable").reset_index(drop=True)
     t = fp["t_end"].astype("int64").to_numpy() / 1e6
     src = fp["src_ip"].astype(str).to_numpy()
     bucket = fp["t_end"].dt.floor("10min")
