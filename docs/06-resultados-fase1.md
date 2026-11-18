@@ -2667,3 +2667,9 @@ Las operaciones aditivas no mueven a ningún detector monótono (sistema, reglas
 son: es la prueba empírica de que el certificado defiende frente a algo que ocurre. Contradicciones
 frontera/tab:h1 explicadas (criterio «algún flujo» frente a estricto; escaneos 2018: 1 origen, 21
 destinos, la frontera reproduce solo el destino más sondeado, ~20 % de las sondas).
+
+### 6.98 Certificado sobre paquetes en 17 → 18 (`cp_all_1718`, presupuesto 0,5)
+
+Sistema con el de bytes (`proteus_pcr`) 12+1 a 0,26; con el de paquetes (`proteus_pcp`) 13+1 a 0,76:
+el de paquetes detecta además el DDoS LOIC-HTTP, al triple de alarmas. Proteus-cert-p solo: 13+1 a
+0,56. En 18 → 17 no aportaba nada (§6.91). Se mantiene el de bytes; se cuenta en el paper.
