@@ -2711,3 +2711,10 @@ Presupuesto 0,5, 18 → 17 (vol.+otros, alarmas por entidad y hora):
   violaciones de monotonía en 1,3 M comprobaciones.
 - Ablación de Proteus-fast 17 → 18 (FPR 10⁻³): sin el sub-núcleo de destino cae a 6/13; quitar
   cualquier otro deja la detección y sube las alarmas (1,57 → 2,00–2,37). Falta `ablr_1718`.
+
+### 6.102 Envenenamiento de Proteus-cert al presupuesto (`poib_certr`)
+
+8 días al 95 % de la frontera, sin tope: ninguna frontera se mueve salvo el escaneo del jueves
+(23 867 → 24 080, +1 %; techo 137 539), que ya pasa a Proteus-cert a su ritmo real. SSH 3 114, FTP
+52 339, Hulk 11 847, GoldenEye 8 439, Slowloris 3 965, Slowhttptest 3 710, escaneo del viernes 9 648,
+LOIC-HTTP 378 661 (todos iguales en el día 8 y en el techo). En el paper; falta `poib_prot`.
