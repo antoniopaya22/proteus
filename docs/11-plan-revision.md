@@ -152,6 +152,28 @@ publicado sin garantía.
       una evaluación extra frente a dos en el algoritmo; 119 frente a 152 contadores; bytes
       «forward» frente a «payload»; leyenda de la figura; la nota de la bibliografía.
 
+### Orientación v2 (decidida con Antonio el 2026-11-18)
+
+Antonio: Proteus es la v2 de Apollon; METIS debe tener un papel (saldrá en preprint y se espera
+publicado durante la revisión); vale cualquier cambio que lleve a un revisor a **8 o más**.
+Tesis: «Apollon elegía, Proteus garantiza, METIS mide». Análisis en docs/06 §6.104–6.105.
+
+- [ ] **V1. Evidencia que acota el daño** (1 semana): conexiones simultáneas contra el servicio
+      como evidencia certificada (comprobar su conservación frente a operaciones aditivas y
+      reutilización física; el abandono de conexiones la baja: estudiarlo), daño en sus unidades
+      (trabajadores ocupados, peticiones, puertos, intentos), reescritura de la estimación de Little.
+- [ ] **V2. Apollon dentro de la v2** (3–5 días): Apollon como capa por flujo, con sus sondas
+      bloqueadas como evidencia del origen; tabla «qué se conserva, qué cambia»; cara a cara v1/v2
+      con el mismo atacante (test de 79 flujos ampliado).
+- [ ] **V3. METIS** (1–2 semanas): calibración por entidad entre dos referencias (ruido benigno del
+      servicio, daño que importa) y exclusión de lo que no separa; banco de dosis inyectado en
+      UGR'16 con criterio estadístico; comparación multicriterio con Pareto primero (ya hecha).
+- [ ] **V4. Calibración solo con veredictos del analista** como protocolo principal (medido en
+      §6.105: 0,70 y 0,67 alarmas/h sin etiquetas fuera de línea).
+- [ ] **V5. Atacante óptimo exacto** para detectores monótonos (peor caso, no búsqueda).
+- [ ] Descartados con datos: bandit repartidor del presupuesto (§6.105), complemento de fidelidad
+      (§6.71), entrenamiento adversario y modelos profundos (sin techo en la evidencia).
+
 ### Revisión 3 (2026-11-17 23:50, tras aplicar R2; la pidió Antonio)
 
 Nota **4/10** (baja de 5; revisor nuevo cada vez, varianza ±1, y la tabla por ataque al presupuesto
@@ -172,7 +194,7 @@ dejó ver contradicciones con la frontera). Con los `\todo` entregados, 5; con p
 - [~] **R3-4. Tráfico real al presupuesto.** (UGR sin certificado por Δ desconocido; saturación explicada; falta UGR al presupuesto) UGR'16 (en cola), CTU-13 al presupuesto ya; no dar
       alertas certificadas donde Δ es desconocido; saturación de los árboles monótonos (empates,
       alternativas que siguen creciendo).
-- [ ] **R3-0. Reutilización físicamente consistente** (encontrado el 2026-11-18, §6.104): el operador
+- [~] **R3-0. Reutilización físicamente consistente** (operador corregido y probado, commit «fix(attacks): connection reuse…»; adaptativo repetido en cola: `adaptp_1817` en `run2017q.sh`, `adaptp_1718` en `extra7.sh`; faltan consultas e inyección y reescribir el paper) (encontrado el 2026-11-18, §6.104): el operador
       fusiona conexiones simultáneas; no fusionar flujos que se solapan, límite por protocolo (HTTP
       100, SSH 6, FTP 3, DoS lento y escaneos 1), partir por Δ; rehacer adaptativo, consultas e
       inyección; corregir en el paper «los DoS lentos pasan» de 18 → 17 y las «~370 conexiones».
