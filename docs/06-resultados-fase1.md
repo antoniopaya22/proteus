@@ -2673,3 +2673,11 @@ destinos, la frontera reproduce solo el destino más sondeado, ~20 % de las sond
 Sistema con el de bytes (`proteus_pcr`) 12+1 a 0,26; con el de paquetes (`proteus_pcp`) 13+1 a 0,76:
 el de paquetes detecta además el DDoS LOIC-HTTP, al triple de alarmas. Proteus-cert-p solo: 13+1 a
 0,56. En 18 → 17 no aportaba nada (§6.91). Se mantiene el de bytes; se cuenta en el paper.
+
+### 6.99 Proteus frente a reglas, ataque a ataque (adaptativo al presupuesto)
+
+Parte del ritmo real que conserva el atacante, sistema frente a reglas: 18 → 17, el sistema deja menos
+daño en 2, las reglas en 5, 2 empates (p = 0,45, prueba de signos); 17 → 18, 6 frente a 2, 2 empates
+(p = 0,29); juntos 8 frente a 7. Donde las reglas ganan (DoS de 2017, escaneo del jueves) es por un
+paso de rejilla (×1,5). Lo que los separa son los ataques que pasan: LOIC-HTTP (17), SSH, GoldenEye y
+Slowloris (18) pasan a las reglas y no al sistema. Escrito así en el paper: «empatados».
