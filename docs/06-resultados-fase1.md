@@ -2889,3 +2889,11 @@ HTTP en log 100 = 4,6 deja todo bajo el umbral. Monotonía: 0 violaciones en 348
   cola) dirá si aporta detección frente a peticiones mínimas.
 - `inj_ugr` volvió a morir por memoria (12,5 GB, preparando líneas base y presupuestos de UGR'16, no
   las plantillas): pasado a la cola con cerrojo sin tope (`extra9.sh`).
+
+### 6.112 Bug en el contador de realimentación (2026-11-19)
+
+`feedback.py` ordenaba los falsos positivos dentro de cada día y concatenaba los días en orden de
+fichero (alfabético), así que el reloj retrocedía entre días y el contador decaído crecía en lugar de
+decaer (desbordamiento en `exp`). La tabla de alarmas de origen por hora (suplementario S3) está
+inflada; en 2017 → 2018 daba un suelo de ~5,4/h incluso con K = 500. Corregido (un solo reloj, y
+`decayed_counts` rechaza eventos desordenados); relanzado en los dos sentidos (`fbc_*`, `extra10.sh`).
