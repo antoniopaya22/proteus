@@ -137,7 +137,7 @@ def robustness(adaptive: list[Path]) -> pd.DataFrame:
         c = out["robustness_certified"].dropna().rename("robustness").to_frame()
         # ``@certr`` (certified also against connection reuse) for the detectors whose
         # evidence reuse cannot lower, where both worst cases coincide.
-        out = pd.concat([out] + [c.set_axis(c.index + tag) for tag in ("@cert", "@certr")])
+        out = pd.concat([out] + [c.set_axis(c.index + tag) for tag in ("@cert", "@certr", "@certk")])
     from proteus.evaluation.tables import ladder_damage
     for name, members in SYSTEMS.items():
         parts = []

@@ -24,7 +24,7 @@ from sklearn.ensemble import HistGradientBoostingClassifier
 from proteus.baselines.apollon import ApollonFlow
 from proteus.baselines.kitnet import KitNET
 from proteus.baselines.rate_rules import RateRules
-from proteus.core.certify import reuse_worst_case, slack, worst_case_features
+from proteus.core.certify import log_requests, reuse_worst_case, slack, worst_case_features
 from proteus.core.combine import CalibratedMax, MaxCore
 from proteus.core.linear import MonotoneLogistic
 from proteus.core.verify import monotonicity_violations
@@ -51,6 +51,18 @@ REUSE_SAFE = ("fbytes", "n_src", "n_dport", "n_dhost", "n_dsvc", "n_dhost_nr")
 # (a request is at least one; reuse saves at most the factor of ``certify.reuse_worst_case``)
 # and distinct counts. Payload bytes are left out, since an attacker can shrink requests.
 PACKET_SAFE = ("fpkts", "n_src", "n_dport", "n_dhost", "n_dsvc", "n_dhost_nr")
+# Evidence that smaller requests cannot lower and that connection reuse lowers by at
+# most the requests a connection can carry (``certify.log_requests``): connections and
+# distinct counts.
+FLOW_SAFE = ("flows", "n_src", "n_dport", "n_dhost", "n_dsvc", "n_dhost_nr")
+CERT_SUFFIXES = ("@cert", "@certr", "@certk")
+
+
+def base_model(name: str) -> str:
+    """The detector a certified score belongs to."""
+    for s in CERT_SUFFIXES:
+        name = name.removesuffix(s)
+    return name
 
 
 # ---------------------------------------------------------------- data
@@ -570,6 +582,10 @@ def proteus_detectors(specs, rules, src_rules, raw, raw_of, cst) -> dict:
         # bytes, at scales of 10 minutes and more (reuse discounted by the packet factor).
         "proteus_cert_p": calmax(parts, keep=lambda c: _tau(c) >= 600
                                  and c.split("__")[1] in PACKET_SAFE),
+        # Certifiable against smaller requests and, within the requests a service lets one
+        # connection carry, against reuse: connections and distinct counts, 10 minutes up.
+        "proteus_cert_f": calmax(parts, keep=lambda c: _tau(c) >= 600
+                                 and c.split("__")[1] in FLOW_SAFE),
         # The same restriction on every time scale: no sub-core uses evidence that a
         # free operation or connection reuse can lower.
         "proteus2": calmax(parts, keep=lambda c: c.split("__")[1] in REUSE_SAFE),
@@ -634,6 +650,9 @@ UNIONS = {"proteus_sys": ("proteus", "proteus_cert"),
           "proteus_sys_r": ("proteus", "proteus_cert", "proteus_cert_r"),
           # the two detectors that carry the detection and the damage of the three
           "proteus_pcr": ("proteus", "proteus_cert_r"),
+          # with the certified detector on connections and distinct counts (certified
+          # against smaller requests too, and against reuse within each service's limit)
+          "proteus_pcf": ("proteus", "proteus_cert_f"),
           # the same two detectors as rate thresholds, no learning
           "rules_pcr": ("rate_rules_local", "rate_rules_cr"),
           # with the certified detector on packets (robust to smaller requests too)
@@ -724,10 +743,10 @@ def evaluate(test: pd.DataFrame, scores: dict[str, np.ndarray], thresholds: dict
         s = scores[model]
         alert = s >= thr
         if "+ent" in kind:
-            alert &= s > floors[model.removesuffix("@certr").removesuffix("@cert")]
+            alert &= s > floors[base_model(model)]
         if "+k2n5" in kind:
             alert = persistent(alert, test)
-        side = (sides or {}).get(model.removesuffix("@certr").removesuffix("@cert"))
+        side = (sides or {}).get(base_model(model))
         masks[(model, fpr, kind)] = (alert, side)
         emit(model, fpr, kind, alert, side)
         if export is not None:
@@ -1041,14 +1060,18 @@ def main() -> None:
             mono = getattr(m, "monotonic_cst", None) is not None
             sl = slack(c, specs, EXPORT_TIMEOUT_S, TIMER_S).astype(np.float32) if mono else None
             cst = np.asarray(m.monotonic_cst) if mono else None
-            acc: dict[str, list] = {"s": [], "side": [], "cert": [], "certr": []}
+            acc: dict[str, list] = {"s": [], "side": [], "cert": [], "certr": [], "certk": []}
+            lk_all, at = log_requests(ev["dst_port"].to_numpy()), 0
             for X in score_batches(path, c):
                 acc["s"].append(score(m, X).astype(np.float32))
                 acc["side"].append(alert_side(m, c, X))
+                lk, at = lk_all[at:at + len(X)], at + len(X)
                 if mono:  # certified: worst case over every free-operation variant
                     acc["cert"].append(score(m, worst_case_features(X, cst, sl)).astype(np.float32))
-                    if "cert" in n:  # also against connection reuse
+                    if "cert" in n:  # also against connection reuse: any, or within limits
                         acc["certr"].append(score(m, reuse_worst_case(X, c, cst, sl)
+                                                  ).astype(np.float32))
+                        acc["certk"].append(score(m, reuse_worst_case(X, c, cst, sl, log_k=lk)
                                                   ).astype(np.float32))
             scores[n] = np.concatenate(acc["s"])
             sides[n] = np.concatenate(acc["side"])
@@ -1056,11 +1079,13 @@ def main() -> None:
                 scores[f"{n}@cert"] = np.concatenate(acc["cert"])
             if acc["certr"]:
                 scores[f"{n}@certr"] = np.concatenate(acc["certr"])
+            if acc["certk"]:
+                scores[f"{n}@certk"] = np.concatenate(acc["certk"])
         day_sides[day] = sides
         clean_idx = np.flatnonzero(ev["clean"].to_numpy())
         pick = rng.choice(clean_idx, min(len(clean_idx), 1_000_000), replace=False)
         benign_sample[day] = {n: s_[pick] for n, s_ in scores.items()
-                              if not n.endswith(("@cert", "@certr"))}
+                              if not n.endswith(CERT_SUFFIXES)}
         # Spilled to disk: ten 2018 days of scores (7 M rows x ~14 score columns each)
         # do not fit in memory next to everything else.
         np.savez(spill / f"{day.stem}.npz", **{k.replace("@", "__AT__"): v
@@ -1073,7 +1098,7 @@ def main() -> None:
             hours_of[day] = (ev["t_end"].max() - ev["t_start"].min()).total_seconds() / 3600
             top_of[day] = {}
             for n, s_ in scores.items():
-                if n.endswith(("@cert", "@certr")):
+                if n.endswith(CERT_SUFFIXES):
                     continue
                 sc = s_[clean]
                 cut = np.quantile(sc, 0.99) if len(sc) else np.inf
@@ -1115,20 +1140,25 @@ def main() -> None:
             mono = getattr(m, "monotonic_cst", None) is not None
             cst = np.asarray(m.monotonic_cst) if mono else None
             sl = slack(c, specs, EXPORT_TIMEOUT_S, TIMER_S).astype(np.float32) if mono else None
-            acc: dict[str, list] = {"s": [], "cert": [], "certr": [], "side": []}
+            acc: dict[str, list] = {"s": [], "cert": [], "certr": [], "certk": [], "side": []}
+            lk_all, at = log_requests(ev["dst_port"].to_numpy()), 0
             for X in score_batches(path, c):
                 acc["s"].append(m.score(X))
                 acc["side"].append(alert_side(m, c, X))
+                lk, at = lk_all[at:at + len(X)], at + len(X)
                 if mono:
                     acc["cert"].append(m.score(worst_case_features(X, cst, sl)))
                     if "cert" in n:
                         acc["certr"].append(m.score(reuse_worst_case(X, c, cst, sl)))
+                        acc["certk"].append(m.score(reuse_worst_case(X, c, cst, sl, log_k=lk)))
             scores[n] = np.concatenate(acc["s"])
             local_sides[n] = np.concatenate(acc["side"])
             if acc["cert"]:
                 scores[f"{n}@cert"] = np.concatenate(acc["cert"])
             if acc["certr"]:
                 scores[f"{n}@certr"] = np.concatenate(acc["certr"])
+            if acc["certk"]:
+                scores[f"{n}@certk"] = np.concatenate(acc["certk"])
             refs[n] = np.concatenate([m.score(benign_feats[d][c].to_numpy()) for d in others])
         if args.entity_budgets and local:
             # Local detectors exist only once fitted on the other days, so their entity
@@ -1137,7 +1167,7 @@ def main() -> None:
             # flows by each local detector (the detectors differ only in the benign days
             # they were fitted on, so their top flows nearly coincide).
             loc = {k: v for k, v in scores.items()
-                   if k.removesuffix("@certr").removesuffix("@cert") in local}
+                   if base_model(k) in local}
             loc.update({f"__side__{k}": v for k, v in local_sides.items()})
             np.savez(spill / f"{day.stem}.local.npz", **{k.replace("@", "__AT__"): v
                                                         for k, v in loc.items()})
@@ -1166,7 +1196,7 @@ def main() -> None:
             budget_cand[day] = spill / f"{day.stem}.cand.parquet"
             del loc, feats
         th = {k: v for k, v in thresholds.items() if k[0] not in local}
-        for n in [k for k in scores if not k.endswith(("@cert", "@certr"))]:
+        for n in [k for k in scores if not k.endswith(CERT_SUFFIXES)]:
             if n in refs:
                 ref = refs[n]
             else:
@@ -1180,7 +1210,7 @@ def main() -> None:
                     [top_of[d][n] for d in others], sum(hours_of[d] for d in others), budget)
         # A certified alert uses the same threshold as the model it certifies.
         for (n, fpr, kind), v in list(th.items()):
-            for suffix in ("@cert", "@certr"):
+            for suffix in CERT_SUFFIXES:
                 if f"{n}{suffix}" in scores:
                     th[(f"{n}{suffix}", fpr, kind)] = v
         exported = {} if args.export_alerts else None
@@ -1225,13 +1255,13 @@ def main() -> None:
                 floors[n] = mx.reindex(dkey).fillna(-np.inf).to_numpy()
                 for fpr in FPRS:
                     v = local_thr[(day, n, fpr)]
-                    for m_ in (n, f"{n}@cert", f"{n}@certr"):
+                    for m_ in (n, *(f"{n}{s}" for s in CERT_SUFFIXES)):
                         if m_ in scores:
                             for kind in ("local+ent", "local+k2n5", "local+ent+k2n5"):
                                 th[(m_, fpr, kind)] = v
             for budget in args.entity_budgets:
                 v = entity_threshold(tops, hours, budget)
-                for m_ in (n, f"{n}@cert", f"{n}@certr"):
+                for m_ in (n, *(f"{n}{s}" for s in CERT_SUFFIXES)):
                     if m_ in scores:
                         th[(m_, budget, "entity")] = v
         exported = {} if args.export_alerts else None
