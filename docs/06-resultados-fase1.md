@@ -2694,3 +2694,20 @@ Slowloris (18) pasan a las reglas y no al sistema. Escrito así en el paper: «e
 
 El sistema detecta las 13 campañas con la semilla 1 (Proteus-fast sube de 8 a 12). Falta la semilla 2
 (`seedb_1718_2`, en marcha) para escribir el rango en el paper.
+
+### 6.101 Lo que añaden los árboles (`lin_1817`, `rules_1817`) y ablación 17 → 18 (`abl_1718`)
+
+Presupuesto 0,5, 18 → 17 (vol.+otros, alarmas por entidad y hora):
+
+| Detector | 0,5 | 1 | 3 |
+|---|---|---|---|
+| Proteus (sistema) | 11+3, 1,35 | 11+3, 1,57 | 11+4, 4,08 |
+| `proteus_lin` (mismos sub-núcleos, logística monótona) | 8+1, 0,84 | 9+1, 1,04 | 9+2, 2,52 |
+| `rules_pcr` (reglas ∪ reglas sobre la evidencia de cert) | 9+8, 30,8 | 9+8, 31,4 | 9+9, 36,8 |
+| `rate_rules_cr` solo | 9+7, 26,9 | | |
+
+- Los árboles añaden 2–3 campañas volumétricas al lineal y ~20× menos alarmas que la unión de
+  reglas; las reglas de largo plazo no cumplen el presupuesto (26,9 a 0,5). `proteus_lin`: 0
+  violaciones de monotonía en 1,3 M comprobaciones.
+- Ablación de Proteus-fast 17 → 18 (FPR 10⁻³): sin el sub-núcleo de destino cae a 6/13; quitar
+  cualquier otro deja la detección y sube las alarmas (1,57 → 2,00–2,37). Falta `ablr_1718`.

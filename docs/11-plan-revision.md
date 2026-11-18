@@ -162,7 +162,7 @@ dejó ver contradicciones con la frontera). Con los `\todo` entregados, 5; con p
       frontera), LOIC-HTTP 2018 (0/1 frente a factor 4,4), FTP 2017 (0/1 frente a factor 11).
       Declarar el criterio de la frontera (cualquier flujo alertado, víctima sola, origen nuevo,
       minutos ruidosos descontados) frente al estricto; reconciliar fila a fila; `iso_1718` (en cola).
-- [~] **R3-2. Lo que añade el modelo.** (`rate_rules_cr` + unión `rules_pcr` y su adaptativo encolados en `extra6.sh`; `proteus_lin` en `extra5.sh`) Unión monótona no aprendida (reglas de tasa sobre la
+- [~] **R3-2. Lo que añade el modelo.** (hecho en 18 → 17: lineal monótono 8+1 a 0,84, unión de reglas 9+8 a 30,8, frente a 11+3 a 1,35; por ataque empatados con las reglas, p = 0,45/0,29; faltan `lin_1718`, `rules_1718` y el adaptativo de la unión de reglas) Unión monótona no aprendida (reglas de tasa sobre la
       evidencia de cert ∪ reglas sobre la de fast) al mismo presupuesto; comparación por ataque con
       prueba de signos o bootstrap; las dos métricas de alarmas en el resumen; `proteus_lin` (en cola).
 - [x] **R3-3. Alcance en resumen y conclusión.** (tab:families: lo aditivo no mueve a los monótonos y sube al núcleo sin restricciones de 6,5 % a 27 % y de 26 % a 47 %, KitNET de 19 % a 39 %; resumen y conclusión con peticiones mínimas y DoS lento) Peticiones mínimas + reutilización dejan pasar los
