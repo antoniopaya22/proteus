@@ -165,7 +165,7 @@ Tesis: «Apollon elegía, Proteus garantiza, METIS mide». Análisis en docs/06 
 - [ ] **V2. Apollon dentro de la v2** (3–5 días): Apollon como capa por flujo, con sus sondas
       bloqueadas como evidencia del origen; tabla «qué se conserva, qué cambia»; cara a cara v1/v2
       con el mismo atacante (test de 79 flujos ampliado).
-- [ ] **V3. METIS** (1–2 semanas): calibración por entidad entre dos referencias (ruido benigno del
+- [~] **V3. METIS** (1–2 semanas; `injection --templates` hecho: ataques de 2018 inyectados en víctimas reales de UGR'16 con detectores de 2017, en cola como `inj_ugr`): calibración por entidad entre dos referencias (ruido benigno del
       servicio, daño que importa) y exclusión de lo que no separa; banco de dosis inyectado en
       UGR'16 con criterio estadístico; comparación multicriterio con Pareto primero (ya hecha).
 - [ ] **V4. Calibración solo con veredictos del analista** como protocolo principal (medido en
