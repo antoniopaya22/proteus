@@ -169,7 +169,7 @@ dejó ver contradicciones con la frontera). Con los `\todo` entregados, 5; con p
       DoS lentos (~370 conexiones > 256): al resumen/conclusión. Desglose por tipo de plan (solo
       aditivas / reutilización / ráfagas / mínimas) para núcleo sin restricciones y KitNET: ¿alguna
       operación solo aditiva evade un detector no monótono?
-- [ ] **R3-4. Tráfico real al presupuesto.** UGR'16 (en cola), CTU-13 al presupuesto ya; no dar
+- [~] **R3-4. Tráfico real al presupuesto.** (UGR sin certificado por Δ desconocido; saturación explicada; falta UGR al presupuesto) UGR'16 (en cola), CTU-13 al presupuesto ya; no dar
       alertas certificadas donde Δ es desconocido; saturación de los árboles monótonos (empates,
       alternativas que siguen creciendo).
 - [ ] **R3-5. Atacante más fuerte.** Optimizador de caja blanca sobre ritmo, orígenes, tamaño de
@@ -179,7 +179,7 @@ dejó ver contradicciones con la frontera). Con los `\todo` entregados, 5; con p
       reducir Apollon/clasificador por flujo/BARS reimplementado en el cuerpo.
 - [ ] **R3-7. Extensión ~10k palabras**, un punto de operación y un esquema de nombres; resultados
       solo en texto a tablas (inyección, real); quitar METIS o dejar solo Pareto.
-- [ ] **R3-8. (A1) con un exportador de producción**; caché del exportador y muestreo en supuestos.
+- [~] **R3-8. (A1) con un exportador de producción** (muestreo y caché llena ya en la tabla de supuestos; falta el exportador de producción); caché del exportador y muestreo en supuestos.
 - [~] **R3-9. Discrepancias 2–16** (hechas todas salvo 6, nombres de columnas, que se unifica en la revisión final) (escaneo del viernes certificado; «más alarmas» de cert en la
       discusión; KitNET «not run» pero en h1_1e-3; «0» frente a «<4»; nombres Certified/Cert./Bound;
       carry-over y δ a FPR sin decirlo; spreading solo en consultas; 38k es del presupuesto; coste;
