@@ -2828,3 +2828,23 @@ arranque sin alertas), presupuesto total 0,5.
   operador corregido: 13,0 %, 1 ataque pasa (antes 13,9 %, 3).
 - `inj_ugr` murió por memoria (tope 12 GB) al leer días enteros de 2018 para las plantillas: ahora lee
   solo filas de ataque; relanzado con `OOMPolicy=continue`.
+
+### 6.108 Adaptativo 18 → 17 con la reutilización física (`adaptp_1817`, rejilla 30, presupuesto 0,5)
+
+| Detector | Libre | Con peticiones mínimas | Antes (operador viejo) |
+|---|---|---|---|
+| Sistema | **5,9 %, 1** | **6,7 %, 1** | 11,1 %, 2 / 17,0 %, 4 |
+| Proteus-fast | 7,1 %, 1 | 7,1 %, 1 | 17,8 %, 4 |
+| Proteus-cert | 36,9 %, 4 | 76,6 %, 7 | 32,1 %, 4 / 66,5 %, 7 |
+| Reglas | 13,0 %, 1 | 14,9 %, 1 | 13,9 %, 3 / 25,7 %, 5 |
+| Reglas con selección | 36,3 %, 4 | igual | 61,3 %, 6 |
+| Núcleo sin restricciones | 30,8 %, 3 | 32,3 %, 3 | 38,2 %, 6 |
+| KitNET | 51,3 %, 6 | igual | 55,9 %, 7 |
+
+- Solo pasa la fuerza bruta SSH (1 987 > 1 541). Slowloris y Slowhttptest al daño: 856 flujos/h → ~20
+  conexiones simultáneas (Little), frente a ~240 y ~120 reales y 256 trabajadores de Apache: pierden más
+  del 90 % de su efecto, también con peticiones mínimas.
+- Por ataque frente a las reglas: el sistema deja menos daño en 6, las reglas en 2 (Hulk y escaneo del
+  jueves, un paso de rejilla), 1 empate (p = 0,29). Las reglas dejan pasar LOIC-HTTP al 70 % del ritmo.
+- Pendiente `adaptp_1718` para reescribir en el paper la sección adaptativa, la frontera, las familias
+  de planes y la estimación de Little (hoy con cifras del operador viejo).
