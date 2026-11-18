@@ -2817,3 +2817,14 @@ arranque sin alertas), presupuesto total 0,5.
   0,56–0,86. La detección no descansa en evidencia de campañas anteriores (cierra la parte de R3-1).
 - `proteus_lin` 17 → 18 al presupuesto: 11+0 a 0,29 (presupuesto 1: 11+0 a 0,69), frente a 12+1 a 0,26
   del sistema.
+
+### 6.107 Envenenamiento de Proteus-fast al presupuesto (`poib_prot`) y adaptativo de la unión de reglas (`rulesadapt_1817`)
+
+- Proteus-fast: solo se mueve el escaneo del jueves (130 → 1 978 sondas/h, su techo; real 10 418);
+  todas las demás fronteras quietas (Hulk 1 407, GoldenEye 1 497, Slowloris 811, Slowhttptest 889,
+  SSH 1 304, FTP 499, escaneo del viernes 352, LOIC-HTTP 2 174). En el paper.
+- Unión de reglas `rules_pcr` (reutilización ya física): el atacante conserva 0,7 % y no pasa ningún
+  ataque (4,1 % con peticiones mínimas), pero a 30,8 alarmas/h: no comparable. Reglas solas con el
+  operador corregido: 13,0 %, 1 ataque pasa (antes 13,9 %, 3).
+- `inj_ugr` murió por memoria (tope 12 GB) al leer días enteros de 2018 para las plantillas: ahora lee
+  solo filas de ataque; relanzado con `OOMPolicy=continue`.
