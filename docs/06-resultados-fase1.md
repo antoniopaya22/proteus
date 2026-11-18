@@ -2809,3 +2809,11 @@ arranque sin alertas), presupuesto total 0,5.
 - **Riesgo de arranque**: en 2018 el día de arranque trae la fuerza bruta SSH; sin veredictos ese día,
   envenena el umbral del contador por pares (19 920 flujos por ventana) y la botnet deja de verse.
   Un arranque sin conocimiento previo es atacable: ahí tiene sitio lo aprendido en otra red.
+
+### 6.106 Arrastre en 2018 (`iso_1718`) y sub-núcleos lineales en 17 → 18 (`lin_1718`)
+
+- Campañas de 2018 puntuadas solas (FPR 10⁻³): Proteus-fast 14/25 igual que en su sitio, Proteus-cert-R
+  14/25 igual, el certificado original 13 frente a 14. Los escaneos del miércoles, solos, con recall
+  0,56–0,86. La detección no descansa en evidencia de campañas anteriores (cierra la parte de R3-1).
+- `proteus_lin` 17 → 18 al presupuesto: 11+0 a 0,29 (presupuesto 1: 11+0 a 0,69), frente a 12+1 a 0,26
+  del sistema.

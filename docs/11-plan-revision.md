@@ -180,7 +180,7 @@ Nota **4/10** (baja de 5; revisor nuevo cada vez, varianza ±1, y la tabla por a
 dejó ver contradicciones con la frontera). Con los `\todo` entregados, 5; con prioridades 1–3 y 7,
 6–7. Casillas (R3):
 
-- [~] **R3-1. Frontera/adaptativo frente a tab:h1.** (explicado en el paper: LOIC-HTTP 2018 y FTP 2017 se alertan en <1 % de flujos; los escaneos 2018 barren 21 hosts y la frontera reproduce solo el más sondeado; falta `iso_1718`) Escaneos 2018 (6/6 en tab:h1, pasan en la
+- [x] **R3-1. Frontera/adaptativo frente a tab:h1.** (explicado en el paper; `iso_1718`: la detección de 2018 no depende de campañas anteriores) Escaneos 2018 (6/6 en tab:h1, pasan en la
       frontera), LOIC-HTTP 2018 (0/1 frente a factor 4,4), FTP 2017 (0/1 frente a factor 11).
       Declarar el criterio de la frontera (cualquier flujo alertado, víctima sola, origen nuevo,
       minutos ruidosos descontados) frente al estricto; reconciliar fila a fila; `iso_1718` (en cola).
