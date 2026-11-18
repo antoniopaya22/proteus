@@ -2857,3 +2857,21 @@ reglas con selección 13,9 %, 4. Con peticiones mínimas pasan GoldenEye, **Slow
 91 000 flujos/h frente a 12 184)** y los dos escaneos: en la red grande Proteus-fast es débil y el
 certificado de bytes cae con peticiones pequeñas; es el hueco que debe cerrar `proteus_cert_f`. El de
 18 → 17 (`qab_1817`) usó el operador viejo: se repite como `qabp_1817` (`run2017r.sh`).
+
+### 6.110 Adaptativo 17 → 18 con la reutilización física (`adaptp_1718`) y paper reescrito
+
+| Detector | Libre | Peticiones mínimas | Antes |
+|---|---|---|---|
+| Sistema | **6,1 %, 2** (los dos escaneos) | 18,0 %, 4 (+ GoldenEye, Slowloris) | 7,1 %, 2 / 18,0 %, 4 |
+| Proteus-fast | 13,7 %, 2 | 27,1 %, 4 | 17,5 %, 3 |
+| Proteus-cert | 10,8 %, 4 | 27,3 %, 6 | igual |
+| Reglas | 12,0 %, 4 | igual | 15,3 %, 5 |
+| Reglas con selección | 8,4 %, 3 | igual | 12,0 %, 5 |
+| Núcleo sin restricciones | 55,2 %, 6 | 59,8 %, 6 | igual |
+
+Por ataque, sistema frente a reglas: 6 frente a 2, 2 empates (p = 0,29); con 18 → 17, 12 frente a 4,
+3 empates (p = 0,08). Little: Slowloris 2018 ~60 conexiones al daño; con peticiones mínimas ~1 600.
+Paper reescrito con las cifras nuevas (adaptativo, frontera, familias, consultas 17 → 18, Little,
+comparación de defensas: compuesto 0,49 y 0,44; resumen, conclusión, highlights) y la web. Ficheros
+viejos guardados como `*_oldreuse`. Pendientes con el operador nuevo: `qabp_1817`, `injp_1817`
+(cola), `inj_ugr` y `cf_*`.
