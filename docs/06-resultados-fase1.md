@@ -2848,3 +2848,12 @@ arranque sin alertas), presupuesto total 0,5.
   jueves, un paso de rejilla), 1 empate (p = 0,29). Las reglas dejan pasar LOIC-HTTP al 70 % del ritmo.
 - Pendiente `adaptp_1718` para reescribir en el paper la sección adaptativa, la frontera, las familias
   de planes y la estimación de Little (hoy con cifras del operador viejo).
+
+### 6.109 Atacante por consultas 17 → 18 con la reutilización física (`qab_1718`)
+
+Parte del ritmo que conserva y ataques que pasan (libre / peticiones mínimas): sistema 9,0 %, 2 / 19,1 %, 4;
+Proteus-fast 18,6 %, 2 / 29,4 %, 4; Proteus-cert 14,1 %, 3 / 26,3 %, 5; reglas 15,5 %, 3 (igual);
+reglas con selección 13,9 %, 4. Con peticiones mínimas pasan GoldenEye, **Slowloris (sin reutilizar,
+91 000 flujos/h frente a 12 184)** y los dos escaneos: en la red grande Proteus-fast es débil y el
+certificado de bytes cae con peticiones pequeñas; es el hueco que debe cerrar `proteus_cert_f`. El de
+18 → 17 (`qab_1817`) usó el operador viejo: se repite como `qabp_1817` (`run2017r.sh`).
