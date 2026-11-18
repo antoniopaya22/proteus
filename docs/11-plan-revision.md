@@ -184,7 +184,7 @@ dejó ver contradicciones con la frontera). Con los `\todo` entregados, 5; con p
       discusión; KitNET «not run» pero en h1_1e-3; «0» frente a «<4»; nombres Certified/Cert./Bound;
       carry-over y δ a FPR sin decirlo; spreading solo en consultas; 38k es del presupuesto; coste;
       CTU-13 22,2 frente a 3,68; cabecera de intervals; «free» inconsistente; pair «optional»).
-- [ ] **R3-10. Menores.** Entidades del argmax; Algoritmo 1 «0 for baselines»; TTD con Δ.
+- [x] **R3-10. Menores.** Entidades del argmax; Algoritmo 1 «0 for baselines»; TTD con Δ.
 
 ### Revisión de diagnóstico 2 (2026-11-17 22:00, pedida por Antonio; no cuenta como la de la ronda)
 
