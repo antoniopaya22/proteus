@@ -63,16 +63,19 @@ conocimiento completo.
 
 Las operaciones sobre una traza de ataque se dividen según su coste para el atacante.
 
-Las operaciones **gratuitas** no reducen el efecto del ataque:
+Las operaciones **gratuitas** no reducen el efecto del ataque. Las cuatro primeras filas
+son las **aditivas**: solo añaden tráfico, o desplazan como mucho $\Delta$ el momento en
+que se contabiliza un paquete, y el certificado cubre cualquier combinación de ellas.
 
 | Operación | Efecto sobre la evidencia | Lo cubre |
 |---|---|---|
-| Relleno de paquetes, insertar paquetes en un flujo | Los bytes y paquetes solo crecen | Certificado (exacto) |
+| Relleno de paquetes, insertar paquetes en un flujo | Los bytes y paquetes solo crecen | Certificado (exacto; para el detector rápido, si no se provocan respuestas nuevas) |
 | Flujos señuelo, tráfico de apariencia benigna (dilución) | Solo se añaden eventos | Certificado (exacto) |
 | Cambiar los puertos de origen | Ninguno; los contadores ignoran los puertos de origen | Certificado (exacto) |
 | Partir un flujo, mantener un flujo abierto | El instante de contabilización se desplaza como mucho $\Delta$ | Certificado (holgura $2\Delta/\tau$) |
 | Cambiar flags, opciones, orden de paquetes, tiempos entre llegadas | No los usa el núcleo | — |
-| Reutilizar una conexión para muchas peticiones | Bajan los recuentos por conexión | Peor caso de reutilización |
+| Reutilizar una conexión para muchas peticiones | Bajan los recuentos por conexión | Certificado de reutilización |
+| Enviar peticiones más pequeñas (cabeceras mínimas) | Bajan los bytes de carga | Se mide, no se certifica |
 | Pedir respuestas pequeñas | Baja el volumen de respuesta | Los contadores de respuesta no están en el núcleo |
 | Abandonar una conexión por otra nueva | Bajan las duraciones de los registros | Las duraciones no están en el núcleo |
 
@@ -82,7 +85,7 @@ Las operaciones **costosas** reducen el efecto del ataque o requieren recursos:
 |---|---|---|
 | Enviar a menor tasa, hacer menos | La evidencia baja con el ataque | Frontera de daño |
 | Repartir entre más orígenes | La evidencia del lado del origen se divide | Evidencia de destino; frontera de daño |
-| Subir las líneas base a lo largo de días (envenenamiento) | Baja el exceso sobre la línea base | Subnúcleos en bruto y de par; límite de crecimiento |
+| Subir las líneas base a lo largo de días (envenenamiento) | Baja el exceso sobre la línea base | Subnúcleos en bruto y de par |
 | Sondear la capa en línea | Las sondas bloqueadas se acumulan contra el origen | Contador de realimentación |
 
 El relleno y los paquetes insertados son gratuitos siempre que el atacante no esté

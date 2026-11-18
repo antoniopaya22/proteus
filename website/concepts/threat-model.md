@@ -60,16 +60,19 @@ attacker.
 
 Operations on an attack trace are split by their cost to the attacker.
 
-**Free** operations do not reduce the attack's effect:
+**Free** operations do not reduce the attack's effect. The first four rows are the
+**additive** ones: they only add traffic, or move when a packet is accounted by at most
+$\Delta$, and the certificate covers every combination of them.
 
 | Operation | Effect on evidence | Covered by |
 |---|---|---|
-| Pad packets, insert packets into a flow | Bytes and packets only grow | Certificate (exact) |
+| Pad packets, insert packets into a flow | Bytes and packets only grow | Certificate (exact; for the fast detector, if no new answers are drawn) |
 | Decoy flows, benign-looking traffic (dilution) | Events are only added | Certificate (exact) |
 | Change source ports | None; counters ignore source ports | Certificate (exact) |
 | Split a flow, keep a flow open | Accounting time moves by at most $\Delta$ | Certificate (slack $2\Delta/\tau$) |
 | Change flags, options, packet order, inter-arrival times | Not used by the core | — |
-| Reuse a connection for many requests | Per-connection counts drop | Reuse worst case |
+| Reuse a connection for many requests | Per-connection counts drop | Reuse certificate |
+| Send smaller requests (minimal headers) | Payload bytes drop | Measured, not certified |
 | Request small responses | Response volume drops | Response counters are not in the core |
 | Abandon a connection for a new one | Record durations drop | Durations are not in the core |
 
@@ -79,7 +82,7 @@ Operations on an attack trace are split by their cost to the attacker.
 |---|---|---|
 | Send at a lower rate, do less | Evidence drops with the attack | Harm frontier |
 | Spread over more sources | Source-side evidence is divided | Destination evidence; harm frontier |
-| Raise baselines over days (poisoning) | Excess over the baseline drops | Raw and pair sub-cores; growth cap |
+| Raise baselines over days (poisoning) | Excess over the baseline drops | Raw and pair sub-cores |
 | Probe the inline shell | Blocked probes accumulate against the source | Feedback counter |
 
 Padding and inserted packets are free as long as the attacker is not limited by its own
