@@ -2681,3 +2681,16 @@ daño en 2, las reglas en 5, 2 empates (p = 0,45, prueba de signos); 17 → 18, 
 (p = 0,29); juntos 8 frente a 7. Donde las reglas ganan (DoS de 2017, escaneo del jueves) es por un
 paso de rejilla (×1,5). Lo que los separa son los ataques que pasan: LOIC-HTTP (17), SSH, GoldenEye y
 Slowloris (18) pasan a las reglas y no al sistema. Escrito así en el paper: «empatados».
+
+### 6.100 Semilla 1 en 17 → 18 (`seedb_1718_1`, presupuesto 0,5)
+
+| Detector | Semilla 0 | Semilla 1 |
+|---|---|---|
+| Sistema | 12+1 a 0,26 | 13+1 a 0,32 |
+| Proteus-fast | 8+1 a 0,20 | 12+1 a 0,22 |
+| Proteus-cert | 12+1 a 0,08 | 12+1 a 0,11 |
+| Núcleo sin restricciones | 9+0 a 0,28 | 9+1 a 0,29 |
+| Reglas | 13+2 a 1,31 | 13+2 a 1,09 |
+
+El sistema detecta las 13 campañas con la semilla 1 (Proteus-fast sube de 8 a 12). Falta la semilla 2
+(`seedb_1718_2`, en marcha) para escribir el rango en el paper.
