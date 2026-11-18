@@ -188,7 +188,7 @@ def main() -> None:
     foreign = {}  # attack -> its first campaign in the template dataset
     if args.templates:
         for tday in h1.days(args.templates):
-            tf = pd.read_parquet(tday, columns=FLOW_COLS)
+            tf = pd.read_parquet(tday, columns=FLOW_COLS, filters=[("is_attack", "==", True)])
             for a in want:
                 if a not in foreign and (tf["is_attack"] & (tf["attack"] == a)).any():
                     foreign[a] = tf[tf["is_attack"] & (tf["attack"] == a)].copy()
