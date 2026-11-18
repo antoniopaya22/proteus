@@ -2785,3 +2785,27 @@ Sin entrenamiento iguala la detección de Proteus (11+3 a 1,35; 12–13+1 a 0,26
 con menos alarmas. Cuenta por tipo de ataque y día, no por campaña; no se ha atacado.
 **Conclusión: en estos benchmarks la familia de modelo no es lo que limita; lo son la evidencia y lo
 que se mide.**
+
+### 6.105 Proteus como v2 de Apollon y sitio para METIS: dos simulaciones (2026-11-18)
+
+Antonio: «Proteus es la v2 de Apollon y, si se puede, incluir METIS en algún lugar del proceso».
+Simulación sobre el prototipo de §6.104 c (`an4.py` en el scratchpad): cuatro miembros (contadores de
+daño), modo **causal** y con el **veredicto del analista como única etiqueta** (umbrales del día con
+las ventanas de los días anteriores, quitando solo las alertas confirmadas como ataque; primer día de
+arranque sin alertas), presupuesto total 0,5.
+
+| | Alarmas/h | Detecta |
+|---|---|---|
+| 2017, reparto igual | 0,70 | los 5 DoS/DDoS y los escaneos (recall 1,00), **FTP (0,99) y SSH (0,16)**, botnet, una infiltración |
+| 2017, reparto por bandit (Thompson, 10 semillas) | 0,60 | lo mismo; pierde SSH/FTP en 7 de 10 semillas |
+| 2018, reparto igual | 0,67 | todos los DoS/DDoS (1,00) y los escaneos (0,87); la botnet no |
+| 2018, reparto por bandit | 0,58 | lo mismo |
+
+- **El lazo de recompensa de Apollon (acierto o fallo de cada alerta) basta como etiqueta**: sin
+  etiquetas fuera de línea se mantiene el presupuesto y la detección. Responde a la objeción
+  «calibración con etiquetas».
+- **El bandit como repartidor del presupuesto no aporta detección**: ~15 % menos alarmas y, con 4–9
+  días, apenas mueve los repartos (0,16–0,36). No justifica ser la pieza central.
+- **Riesgo de arranque**: en 2018 el día de arranque trae la fuerza bruta SSH; sin veredictos ese día,
+  envenena el umbral del contador por pares (19 920 flujos por ventana) y la botnet deja de verse.
+  Un arranque sin conocimiento previo es atacable: ahí tiene sitio lo aprendido en otra red.
