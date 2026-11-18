@@ -272,3 +272,26 @@ def test_shrink_requests_leaves_udp_floods_alone():
     x["proto"] = np.int16(17)
     y = op.shrink_requests(x, attacker(x))
     assert (y["fwd_bytes"] == x["fwd_bytes"]).all()
+
+
+def test_reuse_never_merges_flows_that_overlap_in_time():
+    from proteus.attacks import operators as op
+
+    # A slow denial of service: 40 connections of 90 s opened one per second, all open
+    # at once. A client cannot carry them in fewer connections.
+    df = _attack_flows(n=40, gap_s=1.0).assign(duration_us=np.int64(90_000_000))
+    df["t_end"] = df["t_start"] + pd.to_timedelta(df["duration_us"], unit="us")
+    out = op.reuse_connections(df, np.ones(len(df), bool), k=20, timeout_s=120)
+    assert len(out) == 40
+
+
+def test_reuse_respects_the_service_limit_on_requests_per_connection():
+    from proteus.attacks import operators as op
+
+    df = _attack_flows(n=36, gap_s=0.5)                     # 0.2 s requests, sequential
+    ssh = df.assign(dst_port=np.int32(22))
+    assert len(op.reuse_connections(ssh, np.ones(len(ssh), bool), k=20, timeout_s=120)) == 6
+    ftp = df.assign(dst_port=np.int32(21))
+    assert len(op.reuse_connections(ftp, np.ones(len(ftp), bool), k=20, timeout_s=120)) == 12
+    http = op.reuse_connections(df, np.ones(len(df), bool), k=20, timeout_s=120)
+    assert len(http) == 2

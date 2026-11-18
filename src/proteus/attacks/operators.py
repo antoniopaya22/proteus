@@ -182,37 +182,73 @@ def slow_down(df: pd.DataFrame, sel: np.ndarray, factor: float) -> pd.DataFrame:
     return out
 
 
+# Requests per connection a server allows (keep-alive limits): SSH closes after
+# MaxAuthTries (6 by default), vsftpd and most FTP servers after 3 failed logins.
+# Other services: the caller's ``k`` (HTTP servers commonly allow about 100).
+MAX_REQUESTS_PER_CONNECTION = {22: 6, 21: 3}
+
+
 def reuse_connections(df: pd.DataFrame, sel: np.ndarray, k: int, timeout_s: float,
-                      saved_pkts: int = 4) -> pd.DataFrame:
-    """Carry up to ``k`` consecutive selected flows of the same source and service in
-    one connection (HTTP keep-alive, several attempts per session). The merged record
-    keeps the payload bytes and the requests' packets, saves ``saved_pkts`` forward
-    packets (handshake and teardown) per merged flow, and never spans more than the
-    exporter's active timeout. Per-connection counts (flows, resets, unanswered) drop."""
+                      saved_pkts: int = 4, limits: dict[int, int] | None = None) -> pd.DataFrame:
+    """Carry several selected flows of the same source and service in one connection
+    (HTTP keep-alive, several attempts per session), as a client can: one request after
+    another. A flow joins a connection only once that connection's previous request has
+    ended, so flows that overlap in time stay in separate connections (a slow denial of
+    service, whose harm is the connections it holds at once, cannot shrink them by
+    reuse). A connection carries at most ``k`` requests (fewer on the services of
+    ``limits``, by default ``MAX_REQUESTS_PER_CONNECTION``) and never spans more than
+    the exporter's active timeout. The merged record keeps the payload bytes and the
+    requests' packets and saves ``saved_pkts`` forward packets (handshake and teardown)
+    per merged flow. Per-connection counts (flows, resets, unanswered) drop."""
+    import heapq
+
     if k <= 1 or not sel.any():
         return df
+    limits = MAX_REQUESTS_PER_CONNECTION if limits is None else limits
     out = _with_ids(df)
     a = out[sel].sort_values("t_start", kind="stable")
-    slot = (a["t_start"].astype("int64") // int(timeout_s * 1e6)).to_numpy()
-    grp = a.groupby([a["src_ip"].astype(str), a["dst_ip"].astype(str), a["dst_port"],
-                     a["proto"], slot], sort=False).cumcount() // k
-    keys = [a["src_ip"].astype(str), a["dst_ip"].astype(str), a["dst_port"], a["proto"],
-            pd.Series(slot, index=a.index), grp]
-    g = a.groupby(keys, sort=False)
-    first = g.head(1).copy()
-    n = g["fwd_pkts"].transform("size").loc[first.index].to_numpy()
+    ts = a["t_start"].to_numpy().astype("datetime64[us]").astype(np.int64)
+    te = np.maximum(a["t_end"].to_numpy().astype("datetime64[us]").astype(np.int64), ts)
+    span = int(timeout_s * US)
+    keys = pd.MultiIndex.from_arrays([a["src_ip"].astype(str), a["dst_ip"].astype(str),
+                                      a["dst_port"].to_numpy(), a["proto"].to_numpy()])
+    codes = pd.factorize(keys)[0]
+    ports = a["dst_port"].to_numpy()
+    conn = np.empty(len(a), dtype=np.int64)
+    nxt = 0
+    for g in np.unique(codes):
+        idx = np.flatnonzero(codes == g)  # in order of start
+        cap = min(k, limits.get(int(ports[idx[0]]), k))
+        free: list[tuple[int, int]] = []  # (end of last request, connection) of open connections
+        first, count = {}, {}
+        for i in idx:
+            c = -1
+            while free and free[0][0] <= ts[i]:
+                _, cand = heapq.heappop(free)
+                if count[cand] < cap and te[i] - first[cand] <= span:
+                    c = cand
+                    break  # connections popped and skipped are full or too long: closed
+            if c < 0:
+                c, nxt = nxt, nxt + 1
+                first[c], count[c] = ts[i], 0
+            count[c] += 1
+            conn[i] = c
+            heapq.heappush(free, (te[i], c))
+    g = a.groupby(conn, sort=False)
+    first_rows = g.head(1).copy()
+    n = g["fwd_pkts"].transform("size").loc[first_rows.index].to_numpy()
     agg = g.agg(t_start=("t_start", "min"), t_end=("t_end", "max"),
                 fwd_pkts=("fwd_pkts", "sum"), bwd_pkts=("bwd_pkts", "sum"),
                 fwd_bytes=("fwd_bytes", "sum"), bwd_bytes=("bwd_bytes", "sum"),
                 rst=("f_bwd_rst_flags", "max"))
-    first["t_start"], first["t_end"] = agg["t_start"].to_numpy(), agg["t_end"].to_numpy()
-    first["duration_us"] = (first["t_end"] - first["t_start"]).dt.total_seconds().mul(1e6) \
-        .astype(np.int64)
-    first["fwd_pkts"] = np.maximum(agg["fwd_pkts"].to_numpy() - saved_pkts * (n - 1), n)
-    first["bwd_pkts"] = agg["bwd_pkts"].to_numpy()
-    first["fwd_bytes"], first["bwd_bytes"] = agg["fwd_bytes"].to_numpy(), agg["bwd_bytes"].to_numpy()
-    first["f_bwd_rst_flags"] = agg["rst"].to_numpy()
-    return pd.concat([out[~sel], first], ignore_index=True)
+    first_rows["t_start"], first_rows["t_end"] = agg["t_start"].to_numpy(), agg["t_end"].to_numpy()
+    first_rows["duration_us"] = (first_rows["t_end"] - first_rows["t_start"]).dt.total_seconds() \
+        .mul(1e6).astype(np.int64)
+    first_rows["fwd_pkts"] = np.maximum(agg["fwd_pkts"].to_numpy() - saved_pkts * (n - 1), n)
+    first_rows["bwd_pkts"] = agg["bwd_pkts"].to_numpy()
+    first_rows["fwd_bytes"], first_rows["bwd_bytes"] = agg["fwd_bytes"].to_numpy(), agg["bwd_bytes"].to_numpy()
+    first_rows["f_bwd_rst_flags"] = agg["rst"].to_numpy()
+    return pd.concat([out[~sel], first_rows], ignore_index=True)
 
 
 def spread_sources(df: pd.DataFrame, sel: np.ndarray, n: int,
