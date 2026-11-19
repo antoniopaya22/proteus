@@ -79,11 +79,17 @@ def test_references_without_each_day_match_the_reference_of_the_other_days():
     for _ in range(6):
         keys = rng.choice(40, int(rng.integers(5, 30)), replace=False)
         mx.append(pd.Series(rng.integers(1, 8, len(keys)).astype(float), index=keys))
-    for min_days in (1, 2, 3):
-        fast = calibrate.references_without(mx, min_days)
+    for min_days, rank in ((1, 1), (2, 1), (3, 1), (1, 2), (2, 3)):
+        fast = calibrate.references_without(mx, min_days, rank)
         for i in range(len(mx)):
-            slow = calibrate.reference(mx[:i] + mx[i + 1:], min_days)
+            slow = calibrate.reference(mx[:i] + mx[i + 1:], min_days, rank)
             assert fast[i].sort_index().to_dict() == slow.sort_index().to_dict()
+    # the second highest day: one day, however high, does not move the reference
+    days = [pd.Series({1: 50.0, 2: 9.0}), pd.Series({1: 80.0}), pd.Series({1: 60.0, 2: 7.0})]
+    assert calibrate.reference(days, 1, rank=2).to_dict() == {1: 60.0, 2: 7.0}
+    assert calibrate.reference(days + [pd.Series({1: 9000.0})], 1, rank=2).to_dict() == {1: 80.0,
+                                                                                         2: 7.0}
+    assert calibrate.reference(days, 1, rank=3).to_dict() == {1: 50.0}
 
 
 def test_causal_second_day_takes_its_levels_from_the_two_halves_of_the_first():

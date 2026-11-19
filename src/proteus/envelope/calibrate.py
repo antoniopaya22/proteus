@@ -66,13 +66,32 @@ def day_max(table: pd.DataFrame, witness: str, skip: np.ndarray) -> pd.Series:
     return t.groupby("key", sort=False)[witness].max()
 
 
-def reference(maxima: list[pd.Series], min_days: int) -> pd.Series:
-    """Reference level per entity from per-day maxima; entities on fewer than
-    ``min_days`` of those days get none."""
-    if not maxima:
+def _daily(maxima: list[pd.Series]) -> tuple[np.ndarray, np.ndarray]:
+    """Entities and their daily maxima as a matrix (entity, day); -inf where absent."""
+    key = np.concatenate([m.index.to_numpy() for m in maxima])
+    code, uniq = pd.factorize(key)
+    day = np.concatenate([np.full(len(m), i) for i, m in enumerate(maxima)])
+    mat = np.full((len(uniq), len(maxima)), -np.inf)
+    mat[code, day] = np.concatenate([m.to_numpy(np.float64) for m in maxima])
+    return uniq, mat
+
+
+def _ranked(uniq: np.ndarray, mat: np.ndarray, min_days: int, rank: int) -> pd.Series:
+    """The ``rank``-th highest day of each entity seen on enough days."""
+    seen = np.isfinite(mat).sum(axis=1)
+    ok = seen >= max(min_days, rank)
+    m = mat[ok]
+    v = m.max(axis=1) if rank == 1 else -np.partition(-m, rank - 1, axis=1)[:, rank - 1]
+    return pd.Series(v, index=uniq[ok])
+
+
+def reference(maxima: list[pd.Series], min_days: int, rank: int = 1) -> pd.Series:
+    """Reference level per entity from per-day maxima: its highest day, or with
+    ``rank`` above one its ``rank``-th highest, which a single day cannot move.
+    Entities on fewer than ``min_days`` (or ``rank``) of those days get none."""
+    if not sum(len(m) for m in maxima):
         return pd.Series(dtype=np.float64)
-    g = pd.concat(maxima).groupby(level=0, sort=False).agg(["max", "size"])
-    return g.loc[g["size"] >= min_days, "max"]
+    return _ranked(*_daily(maxima), min_days, rank)
 
 
 def scores(table: pd.DataFrame, witness: str, env: Envelope,
@@ -107,40 +126,30 @@ def _levels(env: Envelope, pooled: dict[str, list], hours: float, budget: float,
 
 
 def _refs(maxima: list[dict[str, pd.Series]], witnesses, min_days: int,
-          per_entity: bool) -> dict[str, pd.Series]:
+          per_entity: bool, rank: int = 1) -> dict[str, pd.Series]:
     if not per_entity:
         return {w: pd.Series(dtype=np.float64) for w in witnesses}
-    return {w: reference([m[w] for m in maxima], min_days) for w in witnesses}
+    return {w: reference([m[w] for m in maxima], min_days, rank) for w in witnesses}
 
 
-def references_without(maxima: list[pd.Series], min_days: int) -> list[pd.Series]:
+def references_without(maxima: list[pd.Series], min_days: int, rank: int = 1) -> list[pd.Series]:
     """For each day, the reference from the other days: what ``reference`` gives on
-    the list without that day, from the two highest days of every entity."""
+    the list without that day."""
     if not sum(len(m) for m in maxima):
         return [pd.Series(dtype=np.float64) for _ in maxima]
-    key = np.concatenate([m.index.to_numpy() for m in maxima])
-    val = np.concatenate([m.to_numpy(np.float64) for m in maxima])
-    day = np.concatenate([np.full(len(m), i) for i, m in enumerate(maxima)])
-    code, uniq = pd.factorize(key)
-    first = pd.Series(val).groupby(code).idxmax().to_numpy()  # highest day of each entity
-    rest = val.copy()
-    rest[first] = -np.inf
-    second = pd.Series(rest).groupby(code).max().to_numpy()
-    second = np.where(np.isinf(second), np.nan, second)
-    count = np.bincount(code, minlength=len(uniq))
+    uniq, mat = _daily(maxima)
     out = []
     for i in range(len(maxima)):
-        here = np.zeros(len(uniq), bool)
-        here[code[day == i]] = True
-        ref = np.where(day[first] == i, second, val[first])
-        ok = (count - here) >= min_days
-        out.append(pd.Series(ref[ok], index=uniq[ok]))
+        col = mat[:, i].copy()
+        mat[:, i] = -np.inf
+        out.append(_ranked(uniq, mat, min_days, rank))
+        mat[:, i] = col
     return out
 
 
 def loo(tables: dict[str, pd.DataFrame], hours: dict[str, float], witnesses,
         budget: float, per_entity: bool = True, min_days: int = 2,
-        floors: dict[str, float] = FLOORS) -> dict[str, Envelope]:
+        floors: dict[str, float] = FLOORS, rank: int = 1) -> dict[str, Envelope]:
     """Envelope of each day from the other days; ``budget`` is alarms per hour and
     witness."""
     days = list(tables)
@@ -148,7 +157,8 @@ def loo(tables: dict[str, pd.DataFrame], hours: dict[str, float], witnesses,
     refs: dict[str, list[pd.Series]] = {}
     for w in witnesses:
         if per_entity:
-            refs[w] = references_without([day_max(tables[d], w, dirty[d]) for d in days], min_days)
+            refs[w] = references_without([day_max(tables[d], w, dirty[d]) for d in days],
+                                         min_days, rank)
         else:
             refs[w] = [pd.Series(dtype=np.float64)] * len(days)
     env = {d: Envelope({w: refs[w][i] for w in witnesses}, floors=dict(floors))
@@ -175,7 +185,7 @@ def _first_levels(env: Envelope, first: pd.DataFrame, hours: float, witnesses, b
 
 def causal(tables: dict[str, pd.DataFrame], hours: dict[str, float], witnesses,
            budget: float, per_entity: bool = True, min_days: int = 2,
-           floors: dict[str, float] = FLOORS) -> dict[str, Envelope]:
+           floors: dict[str, float] = FLOORS, rank: int = 1) -> dict[str, Envelope]:
     """Envelope of each day from the earlier days only (``tables`` in time order). The
     only feedback is the analyst's verdict: a window that alerted and holds an attack
     is left out of later references; every other window stays in, attacks included.
@@ -191,8 +201,8 @@ def causal(tables: dict[str, pd.DataFrame], hours: dict[str, float], witnesses,
         confirmed = np.zeros(len(t), bool)
         if i:
             past = days[:i]
-            e = Envelope(_refs([mx[j] for j in past], witnesses, min(min_days, i), per_entity),
-                         floors=dict(floors))
+            e = Envelope(_refs([mx[j] for j in past], witnesses, min(min_days, i), per_entity,
+                               min(rank, i)), floors=dict(floors))
             if i > 1:
                 _levels(e, {w: [s[j][w] for j in past[1:]] for w in witnesses},
                         sum(hours[j] for j in past[1:]), budget, per_entity)

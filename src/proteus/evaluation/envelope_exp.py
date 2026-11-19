@@ -136,12 +136,12 @@ def monitors(span: int) -> dict[str, tuple[tuple[str, ...], dict[str, float]]]:
 
 
 def calibrated(tabs: dict[str, dict], hours, budget: float, protocol: str, per_entity: bool,
-               min_days: int, span: int = 0) -> dict[str, dict]:
+               min_days: int, span: int = 0, rank: int = 1) -> dict[str, dict]:
     """Envelope per table and day of one detector."""
     fit = calibrate.loo if protocol == "loo" else calibrate.causal
     mon = monitors(span)
     n = sum(len(ws) for ws, _ in mon.values())
-    return {t: fit(tabs[t], hours, ws, budget / n, per_entity, min_days, floors)
+    return {t: fit(tabs[t], hours, ws, budget / n, per_entity, min_days, floors, rank)
             for t, (ws, floors) in mon.items()}
 
 
@@ -292,6 +292,8 @@ def main() -> None:
     ap.add_argument("--span", type=int, default=0,
                     help="windows in the second scale of envelope2 and rules2 (0: none)")
     ap.add_argument("--days", nargs="*", default=None, help="days to attack (all are calibrated)")
+    ap.add_argument("--ref-rank", type=int, default=1,
+                    help="reference: the highest day of each entity (1) or its n-th highest")
     ap.add_argument("--tag", default="")
     ap.add_argument("--build-only", action="store_true",
                     help="write the witness tables, print their size and stop")
@@ -316,8 +318,16 @@ def main() -> None:
         tabs["svc_c"] = {d: witness.coarsen(t, args.span) for d, t in svc.items()}
         tabs["host_c"] = {d: witness.coarsen(t, args.span) for d, t in host.items()}
         dets.update({"envelope2": (True, args.span), "rules2": (False, args.span)})
-    envs = {n: calibrated(tabs, hours, args.alarm_budget, args.protocol, pe, args.min_days, sp)
+    envs = {n: calibrated(tabs, hours, args.alarm_budget, args.protocol, pe, args.min_days, sp,
+                          args.ref_rank)
             for n, (pe, sp) in dets.items()}
+    levels = pd.DataFrame([{"detector": n, "table": t, "day": d, "witness": w, "lam": e.lam[w],
+                            "fallback": e.fallback[w], "entities": len(e.ref[w])}
+                           for n, tabs_e in envs.items() for t, by_day in tabs_e.items()
+                           for d, e in by_day.items() for w in e.lam])
+    levels.to_csv(out / "levels.csv", index=False)
+    print(levels.groupby(["detector", "table", "witness"])[["lam", "fallback", "entities"]]
+          .median().round(2).to_string(), flush=True)
     al, dt = [], []
     for n, e in envs.items():
         a, d = alarms_and_detection(tabs, hours, e)
