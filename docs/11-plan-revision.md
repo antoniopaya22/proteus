@@ -203,6 +203,9 @@ del atacante en fórmula cerrada). No está medido ni aprobado como rumbo del pa
       cita como precedente de la frontera de daño (26 páginas, sin overfull).
 - [x] Lectura de UGR'16 día a día y reanudable, con test (10 tests de la envolvente); lanzador
       `envelope.sh` preparado para `~/tools`.
+- [x] Segunda escala de tiempo (totales de 6 horas con su envolvente) y peor caso exacto contra las
+      dos escalas, para tasa sostenida y para total acumulado; contrastado con búsqueda exhaustiva
+      (14 tests de la envolvente). El lanzador pide ataques de 30 minutos, 6 horas y un día.
 - Hasta tener ese número no se toca el paper actual ni se recorta (R4-5); la cola de R4 sigue.
 
 ### Orientación v2 (decidida con Antonio el 2026-11-18)

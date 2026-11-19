@@ -112,11 +112,82 @@ def test_quiet_harm_is_the_tightest_witness_and_ignores_noisy_windows():
     q = attacker.quiet_harm(bg, th, h)
     assert np.isclose(q[0], min(1000 / 600, 20 / 6))  # packets bind: 1.67 requests/s
     assert np.isclose(q[1], min(600 / 600, 10 / 6)) and np.isnan(q[2])  # third: benign alert
-    assert np.isclose(attacker.sustained(q, 2), 1.0) and np.isclose(attacker.sustained(q, 1), 1000 / 600)
-    assert np.isnan(attacker.sustained(q, 2, start=1)) and np.isnan(attacker.sustained(q, 5))
+    wr, sp = np.ones(3, bool), np.zeros(3, np.int64)
+
+    def held(a: int, n: int) -> float:
+        return attacker.kept(q[a:a + n], wr[a:a + n], sp[a:a + n], {}, 0.0, False)
+
+    assert np.isclose(held(0, 2), 1.0) and np.isnan(held(1, 2))
+    assert np.isclose(attacker.best_start(3, 1, lambda a: held(a, 1)), 1000 / 600)
+    assert np.isnan(attacker.best_start(3, 5, lambda a: held(a, 5)))
     slots = attacker.harms(600.0)["slots"]
     assert attacker.quiet_harm(pd.DataFrame({"conc": [5.0], "pkts": [0.0]}),
                                {"conc": 30.0, "pkts": 1e9}, slots)[0] == 25.0
+
+
+def test_coarsen_adds_up_the_windows_of_a_span():
+    t = pd.DataFrame({"key": [1, 1, 1, 1, 2], "dst_ip": ["a"] * 4 + ["b"], "proto": 6,
+                      "win": [0, 1, 2, 3, 5], "ports": [10.0, 20.0, 30.0, 40.0, 9.0],
+                      "dirty": [False, True, False, False, False],
+                      "attack": ["", "portscan", "", "", ""]})
+    c = witness.coarsen(t, 3).set_index(["key", "win"])
+    assert c["ports"].to_dict() == {(1, 0): 60.0, (1, 1): 40.0, (2, 1): 9.0}
+    assert c["dirty"].to_dict() == {(1, 0): True, (1, 1): False, (2, 1): False}
+    assert c.loc[(1, 0), "attack"] == "portscan" and "conn" not in c
+
+
+def test_kept_against_two_scales_is_the_better_of_hiding_and_spending_the_room():
+    T, F = True, False
+    one = np.zeros(4, np.int64)
+    q = np.full(4, 5.0)
+    # a held rate: every window counts against the room of the span
+    assert attacker.kept(q, np.array([T, T, T, T]), one, {0: 2.0}, 0.1, False) == 0.5
+    # with little room, staying under the floor in the idle windows pays more
+    assert attacker.kept(q, np.array([T, F, F, F]), one, {0: 0.4}, 0.3, False) == 0.3
+    assert np.isclose(attacker.kept(q, np.array([T, F, F, F]), one, {0: 0.1}, 0.3, False), 0.1)
+    # a total: the rate is free; hide in two idle windows and spend the room in the rest
+    q = np.full(4, 4.0)
+    assert attacker.kept(q, np.array([T, T, F, F]), one, {0: 5.0}, 1.0, True) == (2 + 5) / 4
+    assert attacker.kept(q, np.array([T, T, F, F]), one, {0: 50.0}, 1.0, True) == 4.0
+    # spans without a test on totals are bound by the single windows only
+    two = np.array([0, 0, 1, 1])
+    assert attacker.kept(np.array([2.0, 2.0, 3.0, 3.0]), np.ones(4, bool), two, {0: 1.0},
+                         0.0, True) == (1 + 6) / 4
+    assert attacker.kept(np.array([2.0, 1.0, 3.0]), np.ones(3, bool), one[:3], {}, 0.0, True) == 2.0
+    # the victim's own traffic alerts: nothing to say
+    assert np.isnan(attacker.kept(q, np.ones(4, bool), one, {0: np.nan}, 1.0, True))
+    assert np.isnan(attacker.kept(np.array([1.0, np.nan]), np.ones(2, bool), one[:2], {}, 0.0, False))
+    assert attacker.hidden_rate(attacker.harms(600.0)["guesses_ssh"], witness.FLOORS) == 0.2
+
+
+def test_kept_agrees_with_trying_every_plan():
+    """On random small cases: every choice of which idle windows to hide in (totals)
+    and a fine grid of rates (held rate) find nothing better than the closed form."""
+    from itertools import product
+
+    rng = np.random.default_rng(3)
+    for _ in range(200):
+        n = int(rng.integers(2, 7))
+        hidden = float(rng.uniform(0.1, 1.0))
+        q = hidden + rng.uniform(0, 4, n)
+        wr = rng.random(n) < 0.5
+        sp = np.sort(rng.integers(0, 2, n))
+        room = {int(s): float(rng.uniform(0, 8)) for s in np.unique(sp) if rng.random() < 0.8}
+        best = 0.0
+        for hide in product([False, True], repeat=n):
+            if any(h and wr[i] for i, h in enumerate(hide)):
+                continue
+            tot = sum(hidden for h in hide if h)
+            for s in np.unique(sp):
+                cap = sum(q[i] for i in range(n) if sp[i] == s and not hide[i])
+                tot += min(cap, room.get(int(s), np.inf))
+            best = max(best, tot)
+        assert np.isclose(attacker.kept(q, wr, sp, room, hidden, True), best / n)
+        ok = [h for h in np.linspace(0, q.min(), 4001)
+              if all(h * sum(1 for i in range(n) if sp[i] == s and (wr[i] or h > hidden)) <= r
+                     for s, r in room.items())]
+        held = attacker.kept(q, wr, sp, room, hidden, False)
+        assert held >= max(ok) - 1e-9 and held <= max(ok) + q.min() / 4000 + 1e-9
 
 
 def test_campaign_harm_in_the_units_of_the_bound():
@@ -160,6 +231,43 @@ def test_experiment_end_to_end_on_a_small_network(tmp_path, monkeypatch):
     assert dt[("envelope", "dos_hulk")] == 1.0  # a flood on a server never seen before
     s = pd.read_csv(out / "summary.csv").set_index("detector")
     assert s.loc["envelope", "mean_best"] < s.loc["rules", "mean_best"]
+
+
+def test_second_scale_bounds_long_slow_guessing(tmp_path, monkeypatch):
+    """An SSH server with steady logins and one busy window a day. Guessing held just
+    under the busy window's level passes the test on single windows all day; the test
+    on the day's total leaves the attacker a fraction of it."""
+    from proteus.evaluation import envelope_exp as ex
+
+    monkeypatch.setattr(ex.h1, "DATA", tmp_path)
+    monkeypatch.setattr(ex, "OUT", tmp_path / "out")
+    (tmp_path / "net").mkdir()
+    rng = np.random.default_rng(1)
+    for i, day in enumerate(("d1", "d2", "d3", "d4")):
+        rows = []
+        for w in range(12):
+            for ip, n in (("10.0.0.1", 30), ("10.0.0.2", 40)):
+                n = int(n * rng.uniform(0.9, 1.1)) * (10 if w == 5 else 1)
+                rows += [(86400 * i + 600 * w + int(s), 1, ip, 22, 12, 2000, "")
+                         for s in rng.uniform(0, 600, n)]
+        if day == "d4":
+            rows += [(86400 * i + 600 * w + int(s), 1, "10.0.0.9", 22, 12, 2000, "bf_ssh")
+                     for w in range(12) for s in rng.uniform(0, 600, 600)]
+        _flows(rows).to_parquet(tmp_path / "net" / f"{day}.parquet", index=False)
+    monkeypatch.setattr("sys.argv", ["x", "--test", "net", "--alarm-budget", "1", "--victims", "5",
+                                     "--attack-windows", "2", "12", "--span", "12"])
+    ex.main()
+    out = tmp_path / "out" / "net__net__loo_b1"
+    res = pd.read_csv(out / "residual.csv")
+    assert set(res["detector"]) == {"envelope", "rules", "envelope2", "rules2"}
+    assert set(res["windows"]) == {2, 12} and res["share_best"].dropna().between(0, 1).all()
+    k = res[res["day"] == "d1"].groupby(["detector", "windows"])["kept_best"].mean()
+    assert k[("envelope2", 12)] < 0.5 * k[("envelope", 12)]  # the day's total binds
+    assert k[("envelope2", 2)] >= k[("envelope2", 12)]  # a shorter attack keeps a higher rate
+    al = pd.read_csv(out / "alarms.csv")
+    assert {"conn", "conn_c", "ports_c"} <= set(al.columns) and "conc_c" not in al
+    s = pd.read_csv(out / "summary.csv")
+    assert len(s) == 8
 
 
 def test_ugr16_weekly_files_are_read_by_the_hour_into_one_table_per_day(tmp_path, monkeypatch):

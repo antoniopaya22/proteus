@@ -57,8 +57,29 @@ ataque.
    presupuesto. Para la denegación de servicio se lee como «un atacante no detectado no
    lleva al servicio más allá de una carga que ya ha soportado».
 
+5. **Segunda escala de tiempo** (`witness.coarsen`, `attacker.kept`; opción `--span`): los
+   totales de `conn`, `pkts`, `bytes` y `ports` sobre varias ventanas seguidas (36 ventanas
+   de 10 minutos, 6 horas), con su propia envolvente y su parte del presupuesto. Responde
+   al ataque lento y largo: quien se queda justo bajo el pico de 10 minutos durante horas
+   pasa la prueba de cada ventana, pero su total supera el de cualquier tramo que el
+   servicio haya tenido. Es la lección de Urbina et al. (§13.7): las pruebas con memoria
+   limitan más que las pruebas por instante. El peor caso sigue siendo exacto, con dos
+   formas según el daño:
+   - *tasa sostenida* (denegación de servicio): la mayor tasa constante que pasa todas
+     las pruebas;
+   - *total acumulado* (adivinación, exploración): el mayor total con la tasa libre de
+     cambiar de ventana a ventana.
+
+   Una ventana en la que el servicio queda bajo todos los suelos no se guarda y no suma
+   al total, así que el atacante puede esconderse en las ventanas ociosas a la tasa del
+   suelo (0,2 intentos/s en SSH); la fórmula lo tiene en cuenta y un test la contrasta
+   con la búsqueda exhaustiva de planes en 200 casos aleatorios. En la red sintética de
+   los tests, la adivinación sostenida todo el día conserva con dos escalas el 2,5 % de
+   la tasa de la campaña, frente al 100 % con una sola (no es un resultado, solo
+   comprueba el mecanismo).
+
 Siguiente paso de diseño, si la comprobación sale bien: repartir el presupuesto entre
-monitores para minimizar el peor daño (programa convexo), y varias escalas de tiempo.
+monitores para minimizar el peor daño (programa convexo).
 
 ## 13.4 Lo que se descarta y por qué
 
@@ -93,8 +114,10 @@ monitores para minimizar el peor daño (programa convexo), y varias escalas de t
 ## 13.6 Comprobaciones antes de escribir
 
 1. **Decisiva.** `python -m proteus.evaluation.envelope_exp --test ugr16 --raw <semanas>
-   --templates csecicids2018 --alarm-budget 0.5`: ataques de 2018 contra víctimas reales de
-   UGR'16. Sirve si la parte del daño que conserva el atacante queda en una mediana del
+   --templates csecicids2018 --alarm-budget 0.5 --span 36 --attack-windows 3 36 144`:
+   ataques de 2018 de 30 minutos, 6 horas y un día contra víctimas reales de UGR'16, con
+   una escala (`envelope`, `rules`) y con dos (`envelope2`, `rules2`) al mismo presupuesto
+   total. Sirve si la parte del daño que conserva el atacante queda en una mediana del
    10 % o menos a 0,5 alarmas/h o menos (referencia de §6.115, en otras unidades: 16,9 % el
    sistema, 54 % las reglas), y si la envolvente mejora con claridad a la regla única sobre
    los mismos testigos y presupuesto. Si no, la propuesta no llega a 8 y se abandona.
@@ -126,8 +149,11 @@ añade Urbina et al.; el resto no está.
 Descartados tras mirarlos: arXiv 2605.24696 (aparecía como «CALIBURN», umbral conforme con
 presupuesto de alertas) fue rehecho y hoy trata de cómo se montan los flujos de evaluación,
 sin detector calibrado; arXiv 2605.13642 es una librería de detección conforme de anomalías
-(p-valores y control de descubrimientos falsos), sin atacante. Un trabajo de ICML 2026
-sobre detección conforme con tasa de falsas alarmas en redes O-RAN queda por leer.
+(p-valores y control de descubrimientos falsos), sin atacante. Rheey y Park, «Toward Reliable Intrusion Monitoring for O-RAN
+Based Networks with Conformal False Alarm Control» (taller AI4NextG de ICML 2026, póster):
+un umbral único fijado por predicción conforme sobre el error de un autoencoder, con
+garantía de tasa de falsas alarmas y sin atacante; es calibración conforme global, no por
+entidad, y no acota lo que pasa sin alertar.
 
 Consecuencias para la propuesta:
 

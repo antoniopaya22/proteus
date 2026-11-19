@@ -12,11 +12,14 @@ rules), and reports for both:
 * the harm an attacker keeps against real victims. Every attack of the template
   network is aimed at ``--victims`` monitored services on its port that no attack
   touches, spread over their load. The most harm that raises no alert is computed in
-  closed form (``proteus.envelope.attacker``) for an attack of ``--attack-windows``
-  windows that starts in the middle of the victim's activity (``mid``) or when it
-  suits the attacker best (``best``), and compared with the recorded campaign.
+  closed form (``proteus.envelope.attacker``) for attacks of each length in
+  ``--attack-windows`` that start in the middle of the victim's activity (``mid``) or
+  when it suits the attacker best (``best``), and compared with the recorded campaign.
 
-``--alarm-budget`` is the total over the five witnesses, split equally.
+With ``--span`` both detectors are also run with a second scale: the totals of the
+summable witnesses over that many windows, each with its own level (``envelope2``,
+``rules2``). ``--alarm-budget`` is the total over every witness and scale of a
+detector, split equally.
 """
 
 from __future__ import annotations
@@ -118,27 +121,43 @@ def load(ds: str, window_s: float, days: list[str] | None = None
     return svc, host, hours
 
 
-def calibrated(svc, host, hours, budget: float, protocol: str, per_entity: bool,
-               min_days: int) -> tuple[dict, dict]:
+def monitors(span: int) -> dict[str, tuple[tuple[str, ...], dict[str, float]]]:
+    """Tables a detector watches: witnesses and floors of each. With ``span`` the
+    totals over that many windows are added, with floors that many times higher."""
+    m = {"svc": (witness.SERVICE_WITNESSES, dict(witness.FLOORS)),
+         "host": (witness.HOST_WITNESSES, dict(witness.FLOORS))}
+    if span:
+        wide = {w: f * span for w, f in witness.FLOORS.items()}
+        m["svc_c"] = (tuple(w for w in witness.SERVICE_WITNESSES if w in witness.SUMMABLE), wide)
+        m["host_c"] = (tuple(w for w in witness.HOST_WITNESSES if w in witness.SUMMABLE), wide)
+    return m
+
+
+def calibrated(tabs: dict[str, dict], hours, budget: float, protocol: str, per_entity: bool,
+               min_days: int, span: int = 0) -> dict[str, dict]:
+    """Envelope per table and day of one detector."""
     fit = calibrate.loo if protocol == "loo" else calibrate.causal
-    n = len(witness.SERVICE_WITNESSES) + len(witness.HOST_WITNESSES)
-    return (fit(svc, hours, witness.SERVICE_WITNESSES, budget / n, per_entity, min_days),
-            fit(host, hours, witness.HOST_WITNESSES, budget / n, per_entity, min_days))
+    mon = monitors(span)
+    n = sum(len(ws) for ws, _ in mon.values())
+    return {t: fit(tabs[t], hours, ws, budget / n, per_entity, min_days, floors)
+            for t, (ws, floors) in mon.items()}
 
 
-def alarms_and_detection(svc, host, hours, env_s, env_h) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Alarms per hour on clean windows, per day and witness, and per labelled attack
-    the share of its windows that alert."""
+def alarms_and_detection(tabs, hours, envs: dict[str, dict]) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Alarms per hour on clean windows, per day and witness (``_c``: the totals over
+    several windows), and per labelled attack the share of its windows that alert."""
     alarms, det = [], []
-    for d in env_s:
+    span = int("svc_c" in envs)
+    for d in envs["svc"]:
         row = {"day": d, "hours": hours[d]}
         total = 0
-        for tab, env, ws in ((svc[d], env_s[d], witness.SERVICE_WITNESSES),
-                             (host[d], env_h[d], witness.HOST_WITNESSES)):
+        for t, (ws, _) in monitors(span).items():
+            tab, env = tabs[t][d], envs[t][d]
             al = env.alerts(tab, ws)
             clean = ~tab["dirty"].to_numpy()
             for w in ws:
-                row[w] = al[w].to_numpy()[clean].sum() / hours[d]
+                row[w + ("_c" if t.endswith("_c") else "")] = (al[w].to_numpy()[clean].sum()
+                                                               / hours[d])
             hit = al.any(axis=1).to_numpy()
             total += (hit & clean).sum()
             a = tab.loc[~clean, ["attack"]].assign(alert=hit[~clean])
@@ -185,13 +204,14 @@ def pick(load: pd.Series, n: int) -> list:
     return list(load.index[pos])
 
 
-def residual(tab: pd.DataFrame, envs: dict[str, calibrate.Envelope], tpl: dict, harm,
-             n_victims: int, n_windows: int) -> list[dict]:
-    """The attack against victims of one day's table, for every detector in ``envs``.
-    Victims are entities with a reference in the first detector, on the attack's port,
-    that no attack touches."""
+def residual(tab: pd.DataFrame, envs: dict[str, tuple], tpl: dict, harm, n_victims: int,
+             lengths: list[int], wide: pd.DataFrame | None = None, span: int = 0) -> list[dict]:
+    """The attack against victims of one day's table, for every detector in ``envs``
+    (name -> envelope of the table and, or None, of ``wide``, its totals over ``span``
+    windows) and every attack length. Victims are entities with a reference in the
+    first detector, on the attack's port, that no attack touches."""
     ws = list(harm.cost)
-    first = next(iter(envs.values()))
+    first = next(iter(envs.values()))[0]
     cand = tab[tab["proto"] == tpl["proto"]]
     if "dst_port" in tab and tpl["kind"] != "probes":
         cand = cand[cand["dst_port"] == tpl["port"]]
@@ -204,29 +224,49 @@ def residual(tab: pd.DataFrame, envs: dict[str, calibrate.Envelope], tpl: dict, 
         return []
     load = cand.groupby("key")[harm.own].sum()
     wmin, wmax = int(tab["win"].min()), int(tab["win"].max())
+    wins = np.arange(wmin, wmax + 1)
+    spans = wins // span if span else np.zeros(len(wins), np.int64)
+    victims = pick(load, n_victims)
+    sums = [w for w in ws if w in witness.SUMMABLE]
+    if wide is not None:
+        wide = wide[wide["key"].isin(victims)]
     rows = []
-    for key in pick(load, n_victims):
+    for key in victims:
         v = cand[cand["key"] == key]
-        bg = v.set_index("win")[ws].reindex(range(wmin, wmax + 1), fill_value=0.0)
-        start = int((v["win"].min() + v["win"].max()) // 2 - wmin)
-        start = max(0, min(start, len(bg) - n_windows))
-        for name, env in envs.items():
+        bg = v.set_index("win")[ws].reindex(wins, fill_value=0.0)
+        written = np.isin(wins, v["win"].to_numpy())
+        mid = int((v["win"].min() + v["win"].max()) // 2 - wmin)
+        for name, (env, env_w) in envs.items():
             th = {w: float(env.thresholds(w, np.array([key]))[0]) for w in ws}
             q = attacker.quiet_harm(bg, th, harm)
-            rows.append({"victim": str(v["dst_ip"].iloc[0]), "key": int(key),
-                         "load": float(load[key]), "detector": name,
-                         "kept_mid": attacker.sustained(q, n_windows, start),
-                         "kept_best": attacker.sustained(q, n_windows),
-                         **{f"th_{w}": th[w] for w in ws}})
+            hidden = attacker.hidden_rate(harm, env.floors)
+            room: dict[int, float] = {}
+            if env_w is not None and sums:
+                tot = (wide[wide["key"] == key].set_index("win")[sums]
+                       .reindex(np.unique(spans), fill_value=0.0))
+                thw = {w: float(env_w.thresholds(w, np.array([key]))[0]) for w in sums}
+                room = dict(zip(tot.index.tolist(), attacker.quiet_harm(tot, thw, harm).tolist()))
+            for n in lengths:
+                n = min(n, len(wins))
+
+                def keeps(s: int, n=n, q=q, room=room, hidden=hidden, written=written) -> float:
+                    return attacker.kept(q[s:s + n], written[s:s + n], spans[s:s + n], room,
+                                         hidden, harm.cumulative)
+
+                rows.append({"victim": str(v["dst_ip"].iloc[0]), "key": int(key),
+                             "load": float(load[key]), "detector": name, "windows": n,
+                             "kept_mid": keeps(max(0, min(mid, len(wins) - n))),
+                             "kept_best": attacker.best_start(len(wins), n, keeps),
+                             **{f"th_{w}": th[w] for w in ws}})
     return rows
 
 
 def summary(res: pd.DataFrame) -> pd.DataFrame:
-    """Per detector: pairs, share where the recorded attack passes whole and the mean
+    """Per detector and attack length: pairs, share where the recorded attack passes whole and the mean
     and median share of its harm the attacker keeps."""
     rows = []
-    for det, g in res.groupby("detector"):
-        row = {"detector": det, "pairs": len(g)}
+    for (det, n), g in res.groupby(["detector", "windows"]):
+        row = {"detector": det, "windows": n, "pairs": len(g)}
         for k in ("mid", "best"):
             f = g[f"share_{k}"].dropna()
             row.update({f"n_{k}": len(f), f"passes_{k}": float((f >= 1).mean()),
@@ -246,7 +286,9 @@ def main() -> None:
     ap.add_argument("--protocol", choices=["loo", "causal"], default="loo")
     ap.add_argument("--min-days", type=int, default=2)
     ap.add_argument("--victims", type=int, default=25)
-    ap.add_argument("--attack-windows", type=int, default=3)
+    ap.add_argument("--attack-windows", type=int, nargs="+", default=[3])
+    ap.add_argument("--span", type=int, default=0,
+                    help="windows in the second scale of envelope2 and rules2 (0: none)")
     ap.add_argument("--days", nargs="*", default=None, help="days to attack (all are calibrated)")
     ap.add_argument("--tag", default="")
     args = ap.parse_args()
@@ -259,19 +301,24 @@ def main() -> None:
     out = OUT / (f"{args.test}__{src}__{args.protocol}_b{args.alarm_budget:g}"
                  + (f"_{args.tag}" if args.tag else ""))
     out.mkdir(parents=True, exist_ok=True)
-    dets = {"envelope": True, "rules": False}
-    envs = {n: calibrated(svc, host, hours, args.alarm_budget, args.protocol, pe, args.min_days)
-            for n, pe in dets.items()}
+    tabs = {"svc": svc, "host": host}
+    dets = {"envelope": (True, 0), "rules": (False, 0)}
+    if args.span:
+        tabs["svc_c"] = {d: witness.coarsen(t, args.span) for d, t in svc.items()}
+        tabs["host_c"] = {d: witness.coarsen(t, args.span) for d, t in host.items()}
+        dets.update({"envelope2": (True, args.span), "rules2": (False, args.span)})
+    envs = {n: calibrated(tabs, hours, args.alarm_budget, args.protocol, pe, args.min_days, sp)
+            for n, (pe, sp) in dets.items()}
     al, dt = [], []
-    for n, (es, eh) in envs.items():
-        a, d = alarms_and_detection(svc, host, hours, es, eh)
+    for n, e in envs.items():
+        a, d = alarms_and_detection(tabs, hours, e)
         al.append(a.assign(detector=n))
         dt.append(d.assign(detector=n))
     al, dt = pd.concat(al), pd.concat(dt)
     al.to_csv(out / "alarms.csv", index=False)
     dt.to_csv(out / "detection.csv", index=False)
-    print(al.groupby("detector")[["alarms_per_h", *witness.SERVICE_WITNESSES,
-                                  *witness.HOST_WITNESSES]].mean().round(3).to_string(), flush=True)
+    print(al.drop(columns=["day", "hours"]).groupby("detector").mean().round(3).to_string(),
+          flush=True)
     print(dt.pivot_table(index=["day", "attack"], columns="detector", values="share")
           .round(3).to_string(), flush=True)
 
@@ -279,15 +326,17 @@ def main() -> None:
     tpls = templates(src, args.window)
     print("templates:", {a: (t["port"], round(t["harm"], 2)) for a, t in tpls.items()}, flush=True)
     rows = []
-    for d in envs["envelope"][0]:
+    for d in envs["envelope"]["svc"]:
         if args.days and d not in args.days:
             continue
         for a, tpl in tpls.items():
             harm = hs[tpl["kind"]]
-            i = 1 if tpl["kind"] == "probes" else 0
-            tab = (host if i else svc)[d]
-            for r in residual(tab, {n: e[i][d] for n, e in envs.items()}, tpl, harm,
-                              args.victims, args.attack_windows):
+            t = "host" if tpl["kind"] == "probes" else "svc"
+            pair = {n: (e[t][d], e[t + "_c"][d] if t + "_c" in e else None)
+                    for n, e in envs.items()}
+            wide = tabs[t + "_c"][d] if args.span else None
+            for r in residual(tabs[t][d], pair, tpl, harm, args.victims, args.attack_windows,
+                              wide, args.span):
                 rows.append({"day": d, "attack": a, "kind": tpl["kind"], "unit": harm.unit,
                              "campaign": tpl["harm"], **r})
     res = pd.DataFrame(rows)
@@ -298,7 +347,7 @@ def main() -> None:
         s = summary(res)
         s.to_csv(out / "summary.csv", index=False)
         print(s.round(3).to_string(), flush=True)
-        print(res.groupby(["attack", "detector"])[["share_mid", "share_best"]].mean()
+        print(res.groupby(["attack", "windows", "detector"])[["share_mid", "share_best"]].mean()
               .round(3).unstack().to_string(), flush=True)
     (out / "run.json").write_text(json.dumps({k: (str(v) if isinstance(v, Path) else v)
                                               for k, v in vars(args).items()

@@ -28,6 +28,7 @@ SERVICE_WITNESSES = ("conc", "conn", "pkts", "bytes")
 HOST_WITNESSES = ("ports",)
 FLOORS = {"conc": 8.0, "conn": 20.0, "pkts": 200.0, "bytes": 2e5, "ports": 8.0}
 MAX_SPAN = 6  # windows a single record may cover; longer records are cut
+SUMMABLE = ("conn", "pkts", "bytes", "ports")  # witnesses that add up over windows
 
 
 def _us(t: pd.Series) -> np.ndarray:
@@ -140,3 +141,16 @@ def host_windows(flows: pd.DataFrame, window_s: float = 600.0,
     names = pd.DataFrame({"key": key, **{c: flows[c].to_numpy() for c in HOST}}
                          ).drop_duplicates("key")
     return _finish(g, names, HOST, HOST_WITNESSES, floors)
+
+
+def coarsen(table: pd.DataFrame, span: int) -> pd.DataFrame:
+    """The same table at a scale of ``span`` windows: per entity, the total of each
+    summable witness over the windows written in the span (``win`` becomes the span).
+    A window under every floor is not written and adds nothing, so the total is over
+    the windows in which the entity was active. For ``ports`` it counts a port once
+    per window in which it is contacted."""
+    ws = [w for w in SUMMABLE if w in table]
+    ids = [c for c in ("key", "dst_ip", "dst_port", "proto") if c in table]
+    t = table[ids + ["win", *ws, "dirty", "attack"]].assign(win=table["win"] // span)
+    return t.groupby([*ids, "win"], sort=False, as_index=False).agg(
+        **{w: (w, "sum") for w in ws}, dirty=("dirty", "max"), attack=("attack", "max"))
