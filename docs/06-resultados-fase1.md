@@ -2947,3 +2947,9 @@ Presupuesto 0,5: `proteus_cert_f` 11+1 a 0,49 (certificado aditivo 4+1; con lím
 unión Proteus-fast ∪ cert-F (`proteus_pcf`) **13+1 a 0,67** (detecta LOIC-HTTP), frente a 12+1 a 0,26
 del sistema actual. Encolado el adaptativo solo de cert-F en 17 → 18 (`adaptf_1718`, misma rejilla y
 semilla) para ver si cierra el paso de Slowloris con peticiones mínimas.
+
+### 6.118 Balance por tipo en 17 → 18 (`bal_type_1718`): el balance importa
+
+Presupuesto 0,5: sistema 6+1 a 0,33 (el nuestro 12+1 a 0,26); Proteus-fast 6+0 a 0,28; Proteus-cert 6+1
+a 0,06. En 18 → 17 apenas cambia (11+2 a 1,83). Escrito en el apéndice como dependencia real del diseño
+(el balance se fijó antes de probar alternativas). Faltan «tipo y entidad» y «sin pesos» (en cola).
