@@ -2897,3 +2897,13 @@ fichero (alfabético), así que el reloj retrocedía entre días y el contador d
 decaer (desbordamiento en `exp`). La tabla de alarmas de origen por hora (suplementario S3) está
 inflada; en 2017 → 2018 daba un suelo de ~5,4/h incluso con K = 500. Corregido (un solo reloj, y
 `decayed_counts` rechaza eventos desordenados); relanzado en los dos sentidos (`fbc_*`, `extra10.sh`).
+
+### 6.113 Unión de reglas 17 → 18 (`rules_1718`) y unión con `proteus_cert_f` 18 → 17 (`cf_all_1817`)
+
+- `rules_pcr` 17 → 18: 13+5 a 5,96 alarmas/h (presupuesto 0,5), frente a 12+1 a 0,26 del sistema;
+  `rate_rules_cr` solo 9+3 a 4,76. En el paper.
+- `proteus_pcf` (Proteus-fast ∪ `proteus_cert_f`) 18 → 17: 11+1 a 1,03, lo mismo que Proteus-fast
+  solo (11+1 a 1,01): `proteus_cert_f` no añade detección. Su único valor posible sería frente a
+  peticiones mínimas en 17 → 18 (falta `cf_fit_1718`, en marcha); sin certificado frente a la
+  reutilización no se adopta salvo que eso lo justifique.
+- Fin de `master.sh`.
