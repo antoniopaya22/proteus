@@ -209,7 +209,10 @@ del atacante en fórmula cerrada). No está medido ni aprobado como rumbo del pa
 - [x] Ensayo a escala con tablas sintéticas: corregido el segundo día del protocolo causal (378 →
       0,66 alarmas/h), ajuste tres veces más rápido, modo `--build-only` para ver el tamaño de las
       tablas antes de calibrar; lanzador en `scripts/queue_envelope.sh` (16 tests de la envolvente).
-- Hasta tener ese número no se toca el paper actual ni se recorta (R4-5); la cola de R4 sigue.
+- **Orden al volver la máquina (Antonio, 2026-11-19, «lo que tú consideres»):** primero la
+  comprobación decisiva (tablas de UGR'16, tamaño, ejecución), antes que `extra11.sh` y `extra.sh`;
+  si pasa, esos trabajos del diseño actual dejan de hacer falta, y si no, se relanzan después.
+- Hasta tener ese número no se toca el paper actual ni se recorta (R4-5).
 
 ### Orientación v2 (decidida con Antonio el 2026-11-18)
 
