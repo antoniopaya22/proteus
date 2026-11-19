@@ -19,7 +19,9 @@ rules), and reports for both:
 With ``--span`` both detectors are also run with a second scale: the totals of the
 summable witnesses over that many windows, each with its own level (``envelope2``,
 ``rules2``). ``--alarm-budget`` is the total over every witness and scale of a
-detector, split equally.
+detector, split equally. Harms tied to a service (requests, held connections, guesses)
+are bound on the service; those the attacker can spread over ports (packet floods,
+probes) on the host.
 """
 
 from __future__ import annotations
@@ -156,8 +158,8 @@ def alarms_and_detection(tabs, hours, envs: dict[str, dict]) -> tuple[pd.DataFra
             al = env.alerts(tab, ws)
             clean = ~tab["dirty"].to_numpy()
             for w in ws:
-                row[w + ("_c" if t.endswith("_c") else "")] = (al[w].to_numpy()[clean].sum()
-                                                               / hours[d])
+                name = ("h_" if t.startswith("host") else "") + w + ("_c" if t.endswith("_c") else "")
+                row[name] = al[w].to_numpy()[clean].sum() / hours[d]
             hit = al.any(axis=1).to_numpy()
             total += (hit & clean).sum()
             a = tab.loc[~clean, ["attack"]].assign(alert=hit[~clean])
@@ -184,7 +186,7 @@ def templates(ds: str, window_s: float) -> dict[str, dict]:
                 continue
             A = A[A["dst_ip"] == A["dst_ip"].mode().iloc[0]]
             port, proto = int(A["dst_port"].mode().iloc[0]), int(A["proto"].mode().iloc[0])
-            if kind == "probes":
+            if kind in attacker.ON_HOST:
                 w = witness.host_windows(A[A["proto"] == proto], window_s, floors=NO_FLOOR)
             else:
                 w = witness.service_windows(A[(A["dst_port"] == port) & (A["proto"] == proto)],
@@ -213,7 +215,7 @@ def residual(tab: pd.DataFrame, envs: dict[str, tuple], tpl: dict, harm, n_victi
     ws = list(harm.cost)
     first = next(iter(envs.values()))[0]
     cand = tab[tab["proto"] == tpl["proto"]]
-    if "dst_port" in tab and tpl["kind"] != "probes":
+    if "dst_port" in tab:
         cand = cand[cand["dst_port"] == tpl["port"]]
     dirty = set(cand.loc[cand["dirty"], "key"])
     cand = cand[~cand["key"].isin(dirty)]
@@ -338,7 +340,7 @@ def main() -> None:
             continue
         for a, tpl in tpls.items():
             harm = hs[tpl["kind"]]
-            t = "host" if tpl["kind"] == "probes" else "svc"
+            t = "host" if tpl["kind"] in attacker.ON_HOST else "svc"
             pair = {n: (e[t][d], e[t + "_c"][d] if t + "_c" in e else None)
                     for n, e in envs.items()}
             wide = tabs[t + "_c"][d] if args.span else None

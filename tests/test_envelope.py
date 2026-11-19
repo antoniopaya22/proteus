@@ -51,6 +51,7 @@ def test_keys_are_stable_across_tables_and_host_windows_count_ports():
                + [(0, 1, "10.0.0.9", 80, 1, 1, "")])
     h = witness.host_windows(f)
     assert len(h) == 1 and h["ports"].iloc[0] == 31 and h["attack"].iloc[0] == "portscan"
+    assert h["conn"].iloc[0] == len(f) and h["pkts"].iloc[0] == f["fwd_pkts"].sum()  # all ports
     g = f.iloc[::-1].reset_index(drop=True).astype({"dst_ip": "category"})
     assert set(witness.entity_key(f, witness.SERVICE)) == set(witness.entity_key(g, witness.SERVICE))
 
@@ -286,6 +287,10 @@ def test_second_scale_bounds_long_slow_guessing(tmp_path, monkeypatch):
         if day == "d4":
             rows += [(86400 * i + 600 * w + int(s), 1, "10.0.0.9", 22, 12, 2000, "bf_ssh")
                      for w in range(12) for s in rng.uniform(0, 600, 600)]
+            # a packet flood on another host, spread over fifty ports
+            rows += [(86400 * i + 600 * w + int(s), 1, "10.0.0.8", 5000 + j % 50, 100, 6000,
+                      "ddos_loic_udp")
+                     for w in range(3) for j, s in enumerate(rng.uniform(0, 600, 300))]
         _flows(rows).to_parquet(tmp_path / "net" / f"{day}.parquet", index=False)
     monkeypatch.setattr("sys.argv", ["x", "--test", "net", "--alarm-budget", "1", "--victims", "5",
                                      "--attack-windows", "2", "12", "--span", "12"])
@@ -298,9 +303,15 @@ def test_second_scale_bounds_long_slow_guessing(tmp_path, monkeypatch):
     assert k[("envelope2", 12)] < 0.5 * k[("envelope", 12)]  # the day's total binds
     assert k[("envelope2", 2)] >= k[("envelope2", 12)]  # a shorter attack keeps a higher rate
     al = pd.read_csv(out / "alarms.csv")
-    assert {"conn", "conn_c", "ports_c"} <= set(al.columns) and "conc_c" not in al
+    assert {"conn", "conn_c", "h_pkts", "h_ports_c"} <= set(al.columns) and "conc_c" not in al
     s = pd.read_csv(out / "summary.csv")
     assert len(s) == 8
+    # the flood is bound on the victim hosts, whatever ports it uses: 50 packets/s recorded
+    fl = res[res["attack"] == "ddos_loic_udp"]
+    assert set(fl["victim"]) == {"10.0.0.1", "10.0.0.2"} and (fl["campaign"] == 50.0).all()
+    assert "th_pkts" in fl and fl["share_best"].dropna().between(0, 1).all()
+    dt = pd.read_csv(out / "detection.csv").set_index(["detector", "attack"])["share"]
+    assert dt[("envelope", "ddos_loic_udp")] == 1.0  # each port stays small; the host does not
 
 
 def test_ugr16_weekly_files_are_read_by_the_hour_into_one_table_per_day(tmp_path, monkeypatch):

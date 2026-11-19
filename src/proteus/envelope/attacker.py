@@ -62,6 +62,8 @@ def harms(window_s: float = 600.0, reuse: int = 100, min_request: float = 18.0,
     }
 
 
+ON_HOST = ("packets", "probes")  # harms the attacker can spread over the ports of a host
+
 KIND = {"dos_slowloris": "slots", "dos_slowhttptest": "slots", "dos_hulk": "requests",
         "dos_goldeneye": "requests", "ddos_loic_http": "requests", "ddos_hoic": "requests",
         "ddos_loic_udp": "packets", "bf_ssh": "guesses_ssh", "bf_ftp": "guesses_ftp",

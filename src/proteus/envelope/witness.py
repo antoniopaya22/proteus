@@ -25,7 +25,7 @@ import pandas as pd
 SERVICE = ["dst_ip", "dst_port", "proto"]
 HOST = ["dst_ip", "proto"]
 SERVICE_WITNESSES = ("conc", "conn", "pkts", "bytes")
-HOST_WITNESSES = ("ports",)
+HOST_WITNESSES = ("conn", "pkts", "bytes", "ports")  # volume over every port, and ports
 FLOORS = {"conc": 8.0, "conn": 20.0, "pkts": 200.0, "bytes": 2e5, "ports": 8.0}
 MAX_SPAN = 6  # windows a single record may cover; longer records are cut
 SUMMABLE = ("conn", "pkts", "bytes", "ports")  # witnesses that add up over windows
@@ -126,7 +126,9 @@ def service_windows(flows: pd.DataFrame, window_s: float = 600.0,
 def host_windows(flows: pd.DataFrame, window_s: float = 600.0,
                  keep: tuple[int, int] | None = None,
                  floors: dict[str, float] = FLOORS) -> pd.DataFrame:
-    """One row per (destination host, protocol, window): distinct ports contacted."""
+    """One row per (destination host, protocol, window): connections, packets and
+    bytes over all its ports, which a flood spread over ports cannot lower, and the
+    distinct ports contacted."""
     W = int(window_s * 1e6)
     win = _us(flows["t_start"]) // W
     key = entity_key(flows, HOST)
@@ -134,10 +136,14 @@ def host_windows(flows: pd.DataFrame, window_s: float = 600.0,
     own = np.ones(len(flows), bool) if keep is None else (win >= keep[0]) & (win < keep[1])
     base = pd.DataFrame({"key": key[own], "win": win[own],
                          "port": flows["dst_port"].to_numpy(np.int64)[own],
+                         "pkts": flows["fwd_pkts"].to_numpy(np.float64)[own],
+                         "bytes": flows["fwd_bytes"].to_numpy(np.float64)[own],
                          "dirty": att[own], "attack": name[own]})
     g = base.groupby(["key", "win"], sort=False).agg(
+        conn=("pkts", "size"), pkts=("pkts", "sum"), bytes=("bytes", "sum"),
         ports=("port", "nunique"), dirty=("dirty", "max"), attack=("attack", "max")).reset_index()
     g["ports"] = g["ports"].astype(np.float64)
+    g["conn"] = g["conn"].astype(np.float64)
     names = pd.DataFrame({"key": key, **{c: flows[c].to_numpy() for c in HOST}}
                          ).drop_duplicates("key")
     return _finish(g, names, HOST, HOST_WITNESSES, floors)
