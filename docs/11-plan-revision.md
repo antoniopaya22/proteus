@@ -176,7 +176,7 @@ Casillas (R4):
       búsqueda de caja blanca.
 - [ ] **R4-7. Daño en servicio medido en un banco de pruebas** (Slowloris, Slowhttptest, una
       inundación HTTP).
-- [ ] **R4-8. Trabajo relacionado:** detectores monótonos/no negativos de malware (Fleshman), inserción
+- [x] **R4-8. Trabajo relacionado:** detectores monótonos/no negativos de malware (Fleshman), inserción
       y tiempos en NIDS (Hashemi, TANTRA), ataques con restricciones (FENCE, Sheatsley), detectores de
       flujo con recuentos decaídos (MIDAS).
 
