@@ -44,11 +44,13 @@ def combined(models: dict, name: str):
     same after calibrating each part on local benign traffic (``CalibratedMax``, needs
     ``fit`` on benign flows). ``a&b``: one calibrated maximum over every sub-core of
     the maxima ``a`` and ``b``. ``name-K``: a fitted maximum without its sub-core K
-    (ablation)."""
+    (ablation); suffixes chain from left to right, each index counted in what the
+    previous ones left (``proteus_cert_r-2-1``: without the pair and the source
+    sub-cores, destination evidence only)."""
     if name not in models and "-" in name and name.rsplit("-", 1)[1].isdigit():
         # Ablation: a fitted maximum without one of its sub-cores ("proteus-2").
         base, k = name.rsplit("-", 1)
-        cols, m = models[base]
+        cols, m = combined(models, base)
         keep = [(list(np.asarray(cols)[idx]), part) for j, (idx, part) in enumerate(m.parts)
                 if j != int(k)]
         new_cols = list(dict.fromkeys(c for cs, _ in keep for c in cs))

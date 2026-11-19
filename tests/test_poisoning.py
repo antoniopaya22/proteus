@@ -123,6 +123,24 @@ def test_ablation_drops_one_subcore():
     assert cols == ["b", "c"] and len(abl.parts) == 1 and type(abl) is type(full)
 
 
+def test_ablation_suffixes_chain():
+    from sklearn.ensemble import HistGradientBoostingClassifier
+
+    from proteus.evaluation.poisoning import combined
+
+    rng = np.random.default_rng(0)
+    X = rng.normal(size=(500, 3))
+    y = (X.sum(axis=1) > 0).astype(int)
+    fit = {n: ([n], HistGradientBoostingClassifier(max_iter=10).fit(X[:, [i]], y))
+           for i, n in enumerate("abc")}
+    cols, full = combined(fit, "a|b|c")
+    # Without sub-core 2 (c), then without sub-core 1 of what is left (b).
+    cols, abl = combined({"m": (cols, full)}, "m-2-1")
+    assert cols == ["a"] and len(abl.parts) == 1
+    cols, abl = combined({"m": (["a", "b", "c"], full)}, "m-0-0")
+    assert cols == ["c"] and len(abl.parts) == 1
+
+
 def test_calibrated_max_excludes_saturated_subcores():
     from proteus.core.combine import CalibratedMax
 

@@ -3045,3 +3045,23 @@ marcha) para cerrar la frase pendiente.
 Presupuesto 0,5: sistema 9+2 a 1,18 alarmas de entidad/h (el del paper: 11+3 a 1,35); Proteus-fast 9+0
 a 0,81 (pierde dos escaneos); Proteus-cert-R 5+2 a 0,66 (pierde los seis escaneos). Peor que el balance
 del paper también en la red pequeña. Falta `bal_none_1718` (en marcha) para cerrar la frase del apéndice.
+
+### 6.124 Balance «sin pesos» en 17 → 18 (`bal_none_1718`) y cierre de la sensibilidad al balance
+
+Presupuesto 0,5: sistema 12+1 a 0,21 alarmas de entidad/h (el del paper: 12+1 a 0,26); Proteus-fast 6+1
+a 0,16 (pierde los escaneos y LOIC-HTTP); Proteus-cert-R 12+1 a 0,07, certificadas 6+1 a 0,06. Iguala al
+balance del paper en la red grande y pierde dos escaneos en la pequeña (§6.123).
+
+Cuadro final (sistema, presupuesto 0,5; volumétricas y escaneos + otras, alarmas de entidad/h):
+
+| Balance | 18 → 17 | 17 → 18 |
+|---|---|---|
+| del paper (entidad y destino) | 11+3 a 1,35 | 12+1 a 0,26 |
+| por tipo | 11+2 a 1,83 | 6+1 a 0,33 |
+| por tipo y entidad | 11+7 a 0,87 | 7+1 a 0,49 |
+| sin pesos | 9+2 a 1,18 | 12+1 a 0,21 |
+
+Ninguno mejora en las dos direcciones; «tipo y entidad» es mejor en 18 → 17 (cuatro «otras» más con
+menos alarmas) y pierde los seis escaneos en 17 → 18. El apéndice del paper lo dice así y el `\todo`
+de los balances queda cerrado.
+

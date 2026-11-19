@@ -36,7 +36,7 @@ DETECTOR_SETS = {
     # The paper: the system (the fast detector or the certified one), its two members
     # (of the certified one, the alerts certified also against connection reuse) and
     # the detectors it is compared with.
-    "paper": [("proteus_pcr", r"\sysname"), ("proteus", "Fast"),
+    "paper": [("proteus_pcr", r"\sysname"), ("proteus", "P-fast"),
               ("proteus_cert_r@certr", "Certified"), ("proteus_free", "Unc."),
               ("rate_rules_local", "Rules"), ("rate_rules_sel", "Sel."),
               ("kitnet_local", "KitNET"), ("flow_clf", "Flow"), ("apollon", "Apollon")],
@@ -279,7 +279,7 @@ def ablation_pair_table(runs: list[Path], fpr: float,
 BUDGET_ROWS = [("entity", 0.5, "Budget 0.5"), ("entity", 1.0, "Budget 1"), ("entity", 3.0, "Budget 3"),
                ("entity", 10.0, "Budget 10"), ("local", 1e-3, r"FPR $10^{-3}$"),
                ("local", 1e-4, r"FPR $10^{-4}$")]
-BUDGET_PAPER = [("proteus_pcr", r"\sysname"), ("proteus", "Fast"), ("proteus_cert_r", "Cert."),
+BUDGET_PAPER = [("proteus_pcr", r"\sysname"), ("proteus", "P-fast"), ("proteus_cert_r", "P-cert"),
                 ("proteus_free", "Unc."), ("rate_rules_local", "Rules"), ("rate_rules_sel", "Sel.")]
 
 
@@ -408,8 +408,8 @@ ADAPTIVE = [("proteus", "Proteus", "adaptive_flows_per_h"),
 # certified damage of the certified one, and the detectors it is compared with.
 ADAPTIVE_PAPER = [("proteus+proteus_cert_r", r"\sysname", "union"),
                   ("proteus+proteus_cert_r", r"\sysname, min.", "union_shrink"),
-                  ("proteus", "Fast", "adaptive_flows_per_h"),
-                  ("proteus_cert_r", "Cert.", "adaptive_flows_per_h"),
+                  ("proteus", "P-fast", "adaptive_flows_per_h"),
+                  ("proteus_cert_r", "P-cert", "adaptive_flows_per_h"),
                   ("proteus_cert_r", "Bound", "certified_flows_per_h"),
                   ("proteus_free", "Unc.", "adaptive_flows_per_h"),
                   ("rate_rules_local", "Rules", "adaptive_flows_per_h"),
@@ -607,7 +607,7 @@ PLAN_FAMILIES = [("Plain", ("plain",)),
                  ("+ bursts", ("plain", "random0", "random1", "random2", "random3", "mimic", "pulse")),
                  ("+ reuse", ("plain", "random0", "random1", "random2", "random3", "mimic", "pulse",
                               "reuse", "reuse+pulse"))]
-FAMILY_DETECTORS = [(r"\sysname", ("proteus", "proteus_cert_r")), ("Fast", ("proteus",)),
+FAMILY_DETECTORS = [(r"\sysname", ("proteus", "proteus_cert_r")), ("P-fast", ("proteus",)),
                     ("Rules", ("rate_rules_local",)), ("Sel.", ("rate_rules_sel",)),
                     ("Unc.", ("proteus_free",)), ("KitNET", ("kitnet_local",))]
 
@@ -642,7 +642,7 @@ def plan_family_table(csvs: list[Path], floor: float = GRID_MIN_FLOWS_PER_H) -> 
 QUERY = [("proteus", "Proteus"), ("proteus_sys_r", "System"), ("proteus_cert_r", "Cert.-R"),
          ("rate_rules_local", "Rules"), ("rate_rules_sel", "Sel. rules")]
 # The paper: the system is the union that the query attacker was run against (``pcr``).
-QUERY_PAPER = [("pcr", r"\sysname"), ("proteus", "Fast"), ("proteus_cert_r", "Cert."),
+QUERY_PAPER = [("pcr", r"\sysname"), ("proteus", "P-fast"), ("proteus_cert_r", "P-cert"),
                ("rate_rules_local", "Rules"), ("rate_rules_sel", "Sel.")]
 
 

@@ -1,0 +1,12 @@
+{
+  "proteus": {
+    "checks": 1314000,
+    "violations": 0,
+    "worst_drop": 0.0
+  },
+  "proteus_cert_r": {
+    "checks": 348000,
+    "violations": 0,
+    "worst_drop": 0.0
+  }
+}
