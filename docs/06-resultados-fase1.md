@@ -3039,3 +3039,9 @@ escaneos). Con §6.121 (11+7 a 0,87 en 18 → 17): el balance alternativo gana e
 pierde los seis escaneos en la grande, igual que «por tipo» (§6.118). El balance del paper se
 mantiene; queda como dependencia declarada en el apéndice. Falta «sin pesos» (`bal_none_*`, en
 marcha) para cerrar la frase pendiente.
+
+### 6.123 Balance «sin pesos» en 18 → 17 (`bal_none_1817`)
+
+Presupuesto 0,5: sistema 9+2 a 1,18 alarmas de entidad/h (el del paper: 11+3 a 1,35); Proteus-fast 9+0
+a 0,81 (pierde dos escaneos); Proteus-cert-R 5+2 a 0,66 (pierde los seis escaneos). Peor que el balance
+del paper también en la red pequeña. Falta `bal_none_1718` (en marcha) para cerrar la frase del apéndice.

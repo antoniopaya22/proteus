@@ -162,7 +162,7 @@ publicados, ablación de la monotonía por familias de planes («la evidencia m�
 consistencia numérica alta (recalculó medias geométricas, test de signos, razones, Wilson), métrica
 en unidades del ataque. Objeciones por gravedad y casillas (R5):
 
-- [ ] **R5-1. Manuscrito inacabado** (válida; lo más barato de arreglar). Tres `\todo` visibles
+- [~] **R5-1. Manuscrito inacabado** (21:30 UTC: encolado `extra12.sh` con `ugrJA_nox`, `ugrAJ_nox` y `ugr17_nox`, UGR'16 al presupuesto 0,5 sin exclusión reutilizando los modelos r2, unas 5 h; balances: faltan solo `bal_none_1718`) (válida; lo más barato de arreglar). Tres `\todo` visibles
       (§5.3.3, ap. B.3, ap. D.2); UGR'16 a FPR 1e-3 y con el detector certificado anterior mientras
       §6.5 dice «presupuesto 0,5 y nada más»; KitNET sin presupuesto ni ataque en la red grande;
       ablación sin Proteus-cert en 17 → 18; «original certified detector» sin definir (ap. B.1).
@@ -204,7 +204,7 @@ en unidades del ataque. Objeciones por gravedad y casillas (R5):
 - [ ] **R5-13. Claridad y extensión** (= R4-5): objetivo 16–18 páginas; resultados en prosa a tablas;
       puntos de operación mezclados (FPR 1e-3 en apéndices, §6.3 y S2 sin decirlo); «Certified»
       frente a «Cert.»; comentarios internos del `.tex`; φ(r) de los contadores de RST en el ap. C.
-- [ ] **R5-14. Discrepancias texto–tablas** (13; redacción salvo la 2): LOIC-UDP del miércoles
+- [~] **R5-14. Discrepancias texto–tablas** (corregidas en el paper la 3–12 salvo la 2: umbral de §6.3 y S2 declarado (FPR 1e-3), rango con > 887, 681, 12 días completos, bots de CTU-13, atacante por consultas sin «confirms», 0,08/0,07, «no more often»; la 2, LOIC-UDP del miércoles, en diagnóstico: `diag_udp.py` encolado bajo el candado; falta la 13, compuestos de S1) (13; redacción salvo la 2): LOIC-UDP del miércoles
       certificada al 99 % en la tabla de detección y «nada certificado» en frontera y adaptativo;
       «behind in both directions» del núcleo sin restricción (9+0 a 0,28 frente a 8+1 a 0,20);
       «certifies nearly everything it alerts on»; §6.3 y S2 con otro umbral; rango de inundaciones sin
