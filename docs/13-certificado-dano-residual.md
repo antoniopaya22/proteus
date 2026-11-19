@@ -87,6 +87,8 @@ monitores para minimizar el peor daño (programa convexo), y varias escalas de t
   Dritsoula et al. 2017), características conservadas en malware (Tong et al. 2019), TRW
   para escaneos (Jung et al. 2004).
 - El fondo de UGR'16 no está verificado como benigno.
+- Ver §13.7: el precedente más cercano está en sistemas de control industrial y hay que
+  citarlo como origen de la idea, no esconderlo.
 
 ## 13.6 Comprobaciones antes de escribir
 
@@ -104,3 +106,39 @@ monitores para minimizar el peor daño (programa convexo), y varias escalas de t
 
 Evaluación retenida prevista si se sigue: semanas de UGR'16 aún sin abrir y CTU-SME-11, con
 el diseño congelado en un commit etiquetado antes de abrirlas.
+
+## 13.7 Trabajo previo verificado (2026-11-19)
+
+Comprobado en la web (existencia, autores, sede); el contenido solo por resumen salvo que
+se diga lo contrario. En `paper/references.bib` ya estaban Jung et al. y Tong et al.; se
+añade Urbina et al.; el resto no está.
+
+| Trabajo | Sede | Qué hace | Relación |
+|---|---|---|---|
+| Urbina, Giraldo, Cárdenas, Tippenhauer, Valente, Faisal, Ruths, Candell, Sandberg, «Limiting the Impact of Stealthy Attacks on Industrial Control Systems» | ACM CCS 2016, DOI 10.1145/2976749.2978388 | Métrica nueva: impacto del ataque que no se detecta frente a la cota de falsas alarmas; atacante que imita el comportamiento esperado | **Precedente más cercano.** Misma pregunta (cuánto daño cabe sin alertar, a un nivel de alarmas dado), en señales de sensores y control. Leído el PDF (§3–4): la métrica es la desviación máxima por unidad de tiempo que impone un ataque sin detectar frente al tiempo esperado entre falsas alarmas, con un atacante que se adapta al umbral; concluyen que las pruebas con estado limitan más que las sin estado |
+| Renganathan et al., «Distributionally Robust Tuning of Anomaly Detectors» (arXiv 1909.12506) y «Higher-Order Moment-Based Anomaly Detection» (arXiv 2011.01522) | preprints | Umbral con cota de falsas alarmas y conjunto alcanzable por el atacante sigiloso | Misma línea de control; el conjunto alcanzable sale de un modelo lineal del sistema, que una red no tiene |
+| Laszka, Abbas, Sastry, Vorobeychik, Koutsoukos, «Optimal Thresholds for Intrusion Detection Systems» | HotSoS 2016, pp. 72–81, DOI 10.1145/2898375.2898399 | Juego atacante–defensor para fijar umbrales con coste de falsas alarmas | Reparto del presupuesto entre monitores (comprobación 4) |
+| Lisý, Kessl, Pevný, «Randomized Operating Point Selection in Adversarial Classification» | ECML PKDD 2014, LNCS 8725, pp. 240–255 | Umbral sorteado sobre la curva ROC frente a quien ataca justo bajo el umbral | Lo que §13.4 descarta; se cita como alternativa |
+| Dritsoula, Loiseau, Musacchio, «A Game-Theoretic Analysis of Adversarial Classification» | IEEE TIFS 12(12), 2017, pp. 3094–3109 (DOI por confirmar en IEEE Xplore) | Equilibrios de Nash entre clasificador y atacante que elige características | Igual que el anterior |
+| Tong, Li, Hajaj, Xiao, Zhang, Vorobeychik, «Improving Robustness of ML Classifiers against Realizable Evasion Attacks Using Conserved Features» | USENIX Security 2019, pp. 285–302 | Características que el atacante no puede cambiar sin perder la función maliciosa (malware PDF) | Los testigos de daño son el análogo en red: totales que no bajan sin bajar el daño |
+| Jung, Paxson, Berger, Balakrishnan, «Fast Portscan Detection Using Sequential Hypothesis Testing» | IEEE S&P 2004, DOI 10.1109/SECPRI.2004.1301325 | TRW por origen con cotas de fallo y falsa alarma | Decide por origen; el testigo `ports` es por víctima y no se reparte entre orígenes |
+
+Descartados tras mirarlos: arXiv 2605.24696 (aparecía como «CALIBURN», umbral conforme con
+presupuesto de alertas) fue rehecho y hoy trata de cómo se montan los flujos de evaluación,
+sin detector calibrado; arXiv 2605.13642 es una librería de detección conforme de anomalías
+(p-valores y control de descubrimientos falsos), sin atacante. Un trabajo de ICML 2026
+sobre detección conforme con tasa de falsas alarmas en redes O-RAN queda por leer.
+
+Consecuencias para la propuesta:
+
+- La novedad no puede enunciarse como «primera cota del daño de un ataque no detectado»:
+  eso existe en control industrial desde 2016. Lo que se sostiene es llevarlo a la detección
+  en red, donde no hay modelo físico del sistema: los testigos hacen de modelo (totales en
+  la víctima que el ataque no baja sin renunciar al daño, con cualquier número de orígenes),
+  la envolvente por servicio se fija sin ejemplos de ataque y el peor caso tiene fórmula
+  cerrada. En mi búsqueda no apareció ninguna cota de este tipo para detectores de flujos
+  de red; es una búsqueda corta, no una revisión sistemática.
+- La métrica de Urbina et al. (impacto sin detectar frente a falsas alarmas) es la misma
+  forma que la frontera de daño del paper actual y que la curva daño–alarmas de R4-1. Hay
+  que citarla allí también, se adopte o no el rediseño. Hecho en `paper/` (trabajo
+  relacionado, detectores agregados; `urbina2016stealthy` en la bibliografía).

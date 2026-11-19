@@ -196,6 +196,13 @@ del atacante en fórmula cerrada). No está medido ni aprobado como rumbo del pa
 - [ ] Lanzarla en la máquina cuando vuelva (lleva caída desde las 08:36 UTC): tablas de testigos de
       UGR'16 desde las semanas en bruto y ataques de 2018 contra sus víctimas, a presupuesto 0,5;
       después CIC-IDS-2017 y CSE-CIC-IDS-2018 con el protocolo causal. Criterio en docs/13 §13.6.
+- [x] Trabajo previo de la propuesta verificado (docs/13 §13.7). El precedente más cercano es
+      Urbina et al. (CCS 2016, control industrial): impacto del ataque sin detectar frente al
+      tiempo entre falsas alarmas. La novedad no puede enunciarse como «primera cota del daño sin
+      detectar»; sí como llevarla a la detección en red sin modelo físico. El paper actual ya lo
+      cita como precedente de la frontera de daño (26 páginas, sin overfull).
+- [x] Lectura de UGR'16 día a día y reanudable, con test (10 tests de la envolvente); lanzador
+      `envelope.sh` preparado para `~/tools`.
 - Hasta tener ese número no se toca el paper actual ni se recorta (R4-5); la cola de R4 sigue.
 
 ### Orientación v2 (decidida con Antonio el 2026-11-18)
