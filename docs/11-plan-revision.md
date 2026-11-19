@@ -170,7 +170,7 @@ Casillas (R4):
       otro), calibración sin etiquetas (V4: veredictos del analista) y CTU-13 con los sospechosos.
 - [ ] **R4-4. Un punto de operación:** UGR'16 (en cola), CIC-DDoS-2019, ablación, tabla de evidencia,
       S2 y S3 al presupuesto; resumen con el tráfico real.
-- [ ] **R4-5. Extensión ~10k palabras**; capa por flujo y Apollon más cortos (sin perder el linaje v1→v2);
+- [~] **R4-5. Extensión ~10k palabras** (2026-11-19: envenenamiento y ataques a la capa por flujo al suplementario, S5 y S6, con resumen en el texto; «otros detectores» más corto; 17 905 → 17 407 palabras, 25 páginas; siguen RQ5, diseño y apéndice); capa por flujo y Apollon más cortos (sin perder el linaje v1→v2);
       puntuación de Apollon justa (voto blando o desempate) para el presupuesto.
 - [ ] **R4-6. Atacante sobre lo no cubierto:** pulsos ajustados a τ, reparto a escala de botnet,
       búsqueda de caja blanca.
