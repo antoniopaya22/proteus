@@ -72,6 +72,33 @@ def test_reference_needs_history_and_fit_lambda_meets_the_budget():
     assert calibrate.fit_lambda(pooled, hours=100.0, budget=0.5) == 0.0
 
 
+def test_references_without_each_day_match_the_reference_of_the_other_days():
+    rng = np.random.default_rng(5)
+    mx = []
+    for _ in range(6):
+        keys = rng.choice(40, int(rng.integers(5, 30)), replace=False)
+        mx.append(pd.Series(rng.integers(1, 8, len(keys)).astype(float), index=keys))
+    for min_days in (1, 2, 3):
+        fast = calibrate.references_without(mx, min_days)
+        for i in range(len(mx)):
+            slow = calibrate.reference(mx[:i] + mx[i + 1:], min_days)
+            assert fast[i].sort_index().to_dict() == slow.sort_index().to_dict()
+
+
+def test_causal_second_day_takes_its_levels_from_the_two_halves_of_the_first():
+    first = _table({1: [100, 80, 150, 120], 2: [40, 50, 30, 45], 3: [0, 0, 60, 70]})
+    first = first[first["conn"] > 0]  # entity 3 appears in the second half only
+    days = {"a": first, "b": _table({1: [140, 400, 90, 90], 2: [70, 20, 20, 20]})}
+    env = calibrate.causal(days, {"a": 4.0, "b": 4.0}, ("conn",), budget=0.0, min_days=1,
+                           floors={"conn": 20.0})["b"]
+    # scores of the second half against the first: 150/100, 120/100, 30/50, 45/50
+    assert np.isclose(env.lam["conn"], 1.5)
+    assert env.fallback["conn"] == 70.0  # entity 3 has no first half: 70 / floor 20, times 20
+    assert env.ref["conn"].to_dict() == {1: 150.0, 2: 50.0, 3: 70.0}  # the whole first day
+    assert env.alerts(days["b"], ("conn",))["conn"].tolist() == [False, True, False, False,
+                                                                 False, False, False, False]
+
+
 def test_loo_envelope_scales_with_the_entity_and_skips_labelled_attacks():
     days = {"a": _table({1: [100, 120, 110], 2: [30, 25, 28]}),
             "b": _table({1: [105, 900, 100], 2: [31, 22, 500]}, dirty={(1, 1)}),
@@ -302,3 +329,7 @@ def test_ugr16_weekly_files_are_read_by_the_hour_into_one_table_per_day(tmp_path
     before = written.stat().st_mtime_ns
     ex.build_from_raw([tmp_path / "w1.parquet", tmp_path / "w2.parquet"], 600.0)  # nothing redone
     assert written.stat().st_mtime_ns == before
+    monkeypatch.setattr(ex, "OUT", tmp_path / "out")
+    monkeypatch.setattr("sys.argv", ["x", "--test", "ugr16", "--build-only"])
+    ex.main()  # reports the size of the tables and stops before calibrating
+    assert not (tmp_path / "out").exists()

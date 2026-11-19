@@ -127,6 +127,20 @@ monitores para minimizar el peor daño (programa convexo).
    CIC-IDS-2017: ninguna manipulación baja un testigo sin bajar el daño.
 4. Reparto del presupuesto: mejora de al menos un 20 % sobre el reparto uniforme.
 
+Antes de lanzar (2026-11-19, con tablas sintéticas de 300 000 filas por día y 14 días):
+
+- El protocolo causal daba 378 alarmas/h de media porque el segundo día alertaba todo lo
+  que superaba el máximo del primero (1 627/h ese día). Ahora los niveles del segundo día
+  salen del primero partido en dos mitades (referencia de la primera, puntuaciones de la
+  segunda) y la media queda en 0,66/h para un presupuesto de 0,5.
+- Las referencias dejando un día fuera se calculan de una vez con los dos días más altos
+  de cada entidad: el ajuste pasa de 57 s a 19 s. Las tablas ya no se copian al quitar
+  las ventanas etiquetadas.
+- Memoria: unos 600 bytes por fila de tabla en el pico. Con 5 millones de filas por día
+  en UGR'16 serían unos 40 GB; con más no cabe en la máquina. El lanzador
+  (`scripts/queue_envelope.sh`) construye primero las tablas, escribe su tamaño y se
+  detiene; se sigue con `ENV_GO=1` tras mirarlo.
+
 Evaluación retenida prevista si se sigue: semanas de UGR'16 aún sin abrir y CTU-SME-11, con
 el diseño congelado en un commit etiquetado antes de abrirlas.
 

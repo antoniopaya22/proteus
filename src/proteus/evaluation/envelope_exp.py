@@ -291,12 +291,19 @@ def main() -> None:
                     help="windows in the second scale of envelope2 and rules2 (0: none)")
     ap.add_argument("--days", nargs="*", default=None, help="days to attack (all are calibrated)")
     ap.add_argument("--tag", default="")
+    ap.add_argument("--build-only", action="store_true",
+                    help="write the witness tables, print their size and stop")
     args = ap.parse_args()
     if args.raw:
         build_from_raw(args.raw, args.window)
     elif not any(_cache(args.test, args.window).glob("*.svc.parquet")):
         build_from_days(args.test, args.window)
     svc, host, hours = load(args.test, args.window)
+    size = sum(t.memory_usage(deep=True).sum() for tt in (svc, host) for t in tt.values()) / 1e9
+    print("rows per day:", {d: (len(svc[d]), len(host[d])) for d in svc}, flush=True)
+    print(f"tables in memory: {size:.1f} GB over {sum(hours.values()):.0f} hours", flush=True)
+    if args.build_only:
+        return
     src = args.templates or args.test
     out = OUT / (f"{args.test}__{src}__{args.protocol}_b{args.alarm_budget:g}"
                  + (f"_{args.tag}" if args.tag else ""))

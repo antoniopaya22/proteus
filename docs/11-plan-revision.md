@@ -206,6 +206,9 @@ del atacante en fórmula cerrada). No está medido ni aprobado como rumbo del pa
 - [x] Segunda escala de tiempo (totales de 6 horas con su envolvente) y peor caso exacto contra las
       dos escalas, para tasa sostenida y para total acumulado; contrastado con búsqueda exhaustiva
       (14 tests de la envolvente). El lanzador pide ataques de 30 minutos, 6 horas y un día.
+- [x] Ensayo a escala con tablas sintéticas: corregido el segundo día del protocolo causal (378 →
+      0,66 alarmas/h), ajuste tres veces más rápido, modo `--build-only` para ver el tamaño de las
+      tablas antes de calibrar; lanzador en `scripts/queue_envelope.sh` (16 tests de la envolvente).
 - Hasta tener ese número no se toca el paper actual ni se recorta (R4-5); la cola de R4 sigue.
 
 ### Orientación v2 (decidida con Antonio el 2026-11-18)

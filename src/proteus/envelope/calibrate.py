@@ -16,7 +16,8 @@ witness.
 Two protocols: ``loo`` (reference and levels from the other days, leaving out the
 windows labelled as attack: the protocol of the benchmark tables) and ``causal`` (from
 the earlier days only, leaving out only the windows that alerted and the analyst
-confirmed: no label enters).
+confirmed: no label enters). In ``causal`` the first day raises no alert, and the
+levels of the second come from the first split in two halves.
 """
 
 from __future__ import annotations
@@ -74,12 +75,16 @@ def reference(maxima: list[pd.Series], min_days: int) -> pd.Series:
     return g.loc[g["size"] >= min_days, "max"]
 
 
-def scores(table: pd.DataFrame, witness: str, env: Envelope) -> tuple[np.ndarray, np.ndarray]:
-    """Normalised score of every row, and whether its entity has a reference (the
-    others are scored against the floor)."""
-    b = env.base(witness, table["key"].to_numpy())
+def scores(table: pd.DataFrame, witness: str, env: Envelope,
+           skip: np.ndarray | None = None) -> tuple[np.ndarray, np.ndarray]:
+    """Normalised score of every row not skipped, and whether its entity has a
+    reference (the others are scored against the floor)."""
+    keys, v = table["key"].to_numpy(), table[witness].to_numpy()
+    if skip is not None:
+        keys, v = keys[~skip], v[~skip]
+    b = env.base(witness, keys)
     mon = ~np.isnan(b)
-    return table[witness].to_numpy() / np.where(mon, b, env.floors[witness]), mon
+    return (v / np.where(mon, b, env.floors[witness])).astype(np.float32), mon
 
 
 def fit_lambda(pooled: np.ndarray, hours: float, budget: float) -> float:
@@ -108,23 +113,64 @@ def _refs(maxima: list[dict[str, pd.Series]], witnesses, min_days: int,
     return {w: reference([m[w] for m in maxima], min_days) for w in witnesses}
 
 
+def references_without(maxima: list[pd.Series], min_days: int) -> list[pd.Series]:
+    """For each day, the reference from the other days: what ``reference`` gives on
+    the list without that day, from the two highest days of every entity."""
+    if not sum(len(m) for m in maxima):
+        return [pd.Series(dtype=np.float64) for _ in maxima]
+    key = np.concatenate([m.index.to_numpy() for m in maxima])
+    val = np.concatenate([m.to_numpy(np.float64) for m in maxima])
+    day = np.concatenate([np.full(len(m), i) for i, m in enumerate(maxima)])
+    code, uniq = pd.factorize(key)
+    first = pd.Series(val).groupby(code).idxmax().to_numpy()  # highest day of each entity
+    rest = val.copy()
+    rest[first] = -np.inf
+    second = pd.Series(rest).groupby(code).max().to_numpy()
+    second = np.where(np.isinf(second), np.nan, second)
+    count = np.bincount(code, minlength=len(uniq))
+    out = []
+    for i in range(len(maxima)):
+        here = np.zeros(len(uniq), bool)
+        here[code[day == i]] = True
+        ref = np.where(day[first] == i, second, val[first])
+        ok = (count - here) >= min_days
+        out.append(pd.Series(ref[ok], index=uniq[ok]))
+    return out
+
+
 def loo(tables: dict[str, pd.DataFrame], hours: dict[str, float], witnesses,
         budget: float, per_entity: bool = True, min_days: int = 2,
         floors: dict[str, float] = FLOORS) -> dict[str, Envelope]:
     """Envelope of each day from the other days; ``budget`` is alarms per hour and
     witness."""
     days = list(tables)
-    mx = {d: {w: day_max(tables[d], w, tables[d]["dirty"].to_numpy()) for w in witnesses}
-          for d in days}
-    env = {d: Envelope(_refs([mx[j] for j in days if j != d], witnesses, min_days, per_entity),
-                       floors=dict(floors)) for d in days}
-    clean = {d: tables[d][~tables[d]["dirty"].to_numpy()] for d in days}
-    s = {d: {w: scores(clean[d], w, env[d]) for w in witnesses} for d in days}
+    dirty = {d: tables[d]["dirty"].to_numpy() for d in days}
+    refs: dict[str, list[pd.Series]] = {}
+    for w in witnesses:
+        if per_entity:
+            refs[w] = references_without([day_max(tables[d], w, dirty[d]) for d in days], min_days)
+        else:
+            refs[w] = [pd.Series(dtype=np.float64)] * len(days)
+    env = {d: Envelope({w: refs[w][i] for w in witnesses}, floors=dict(floors))
+           for i, d in enumerate(days)}
+    s = {d: {w: scores(tables[d], w, env[d], dirty[d]) for w in witnesses} for d in days}
     for d in days:
         others = [j for j in days if j != d]
         _levels(env[d], {w: [s[j][w] for j in others] for w in witnesses},
                 sum(hours[j] for j in others), budget, per_entity)
     return env
+
+
+def _first_levels(env: Envelope, first: pd.DataFrame, hours: float, witnesses, budget: float,
+                  per_entity: bool) -> None:
+    """Levels for the second day, when one day is all there is: the reference of each
+    entity from the first half of that day and the scores from its second half."""
+    mid = (int(first["win"].min()) + int(first["win"].max()) + 1) // 2
+    early = (first["win"] < mid).to_numpy()
+    half = Envelope(_refs([{w: day_max(first, w, ~early) for w in witnesses}], witnesses, 1,
+                          per_entity), floors=env.floors)
+    _levels(env, {w: [scores(first, w, half, early)] for w in witnesses}, hours / 2, budget,
+            per_entity)
 
 
 def causal(tables: dict[str, pd.DataFrame], hours: dict[str, float], witnesses,
@@ -133,8 +179,9 @@ def causal(tables: dict[str, pd.DataFrame], hours: dict[str, float], witnesses,
     """Envelope of each day from the earlier days only (``tables`` in time order). The
     only feedback is the analyst's verdict: a window that alerted and holds an attack
     is left out of later references; every other window stays in, attacks included.
-    The first day has no envelope, and the second is calibrated on the first alone
-    (levels at the reference itself)."""
+    The first day has no envelope. The second has the first as reference and levels
+    from the first alone, split in two halves; from the third on, the levels come from
+    the scores of the days after the first."""
     days = list(tables)
     mx: dict[str, dict[str, pd.Series]] = {}
     s: dict[str, dict[str, tuple]] = {}
@@ -150,10 +197,9 @@ def causal(tables: dict[str, pd.DataFrame], hours: dict[str, float], witnesses,
                 _levels(e, {w: [s[j][w] for j in past[1:]] for w in witnesses},
                         sum(hours[j] for j in past[1:]), budget, per_entity)
             else:
-                e.lam = {w: 1.0 if per_entity else np.inf for w in witnesses}
-                e.fallback = {w: max(float(mx[past[0]][w].max()), floors[w]) for w in witnesses}
+                _first_levels(e, tables[past[0]], hours[past[0]], witnesses, budget, per_entity)
             env[d] = e
             confirmed = e.alerts(t, witnesses).any(axis=1).to_numpy() & t["dirty"].to_numpy()
-            s[d] = {w: scores(t[~confirmed], w, e) for w in witnesses}
+            s[d] = {w: scores(t, w, e, confirmed) for w in witnesses}
         mx[d] = {w: day_max(t, w, confirmed) for w in witnesses}
     return env
