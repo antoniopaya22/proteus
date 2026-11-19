@@ -138,6 +138,22 @@ monitores para minimizar el peor daño (programa convexo).
    CIC-IDS-2017: ninguna manipulación baja un testigo sin bajar el daño.
 4. Reparto del presupuesto: mejora de al menos un 20 % sobre el reparto uniforme.
 
+5. **Deriva de la referencia** (hueco visto al redactar el modelo de amenaza, 2026-11-19).
+   Lo que no alerta entra en la referencia, así que quien mantiene un servicio justo bajo
+   su nivel un día sube la referencia a ese nivel: con el máximo como referencia, cada día
+   de ataque sostenido multiplica la holgura por λ. Cada día sigue acotado por la
+   envolvente de ese día, pero la cota se afloja en una campaña paciente. A medir: la
+   referencia como r-ésimo máximo diario más alto (un paso cuesta r días) y una prueba
+   sobre el crecimiento semanal de cada referencia, calibrada al presupuesto como las
+   demás; hay que dar la deriva que el atacante puede imponer por semana.
+6. **Condición (D2) del exportador:** unir los trozos de un flujo largo que corta el
+   tiempo activo, o `conc` infracuenta las conexiones retenidas. El código aún no los une;
+   entra en la comprobación 3.
+7. **Testigos de volumen por host** (añadidos el 2026-11-19): conexiones, paquetes y bytes
+   sobre todos los puertos del host, para que una inundación repartida entre puertos quede
+   acotada en el host. Los daños ligados a un servicio se acotan en el servicio; los
+   repartibles (inundación de paquetes, exploración), en el host.
+
 Antes de lanzar (2026-11-19, con tablas sintéticas de 300 000 filas por día y 14 días):
 
 - El protocolo causal daba 378 alarmas/h de media porque el segundo día alertaba todo lo

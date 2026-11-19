@@ -218,7 +218,18 @@ del atacante en fórmula cerrada). No está medido ni aprobado como rumbo del pa
   ventanas de servicio por hora, unos 45 s por hora de datos; calculo unas 3 horas), y encadenada
   la comprobación (`ENV_GO=1`) para cuando termine: con ~1,3 M de filas por día la memoria no es
   problema. `extra11.sh` y `extra.sh` quedan retenidos.
-- Hasta tener ese número no se toca el paper actual ni se recorta (R4-5).
+- **Borrador del paper nuevo (2026-11-19, a petición de Antonio):** rama `residual-harm` de
+  `paper/`, sin tocar `main`. Título provisional «Proteus: Bounding the Harm of Network Attacks
+  That Raise No Alert». Escritos diseño, modelo de amenaza, introducción, resumen, motivación,
+  trabajo relacionado, discusión, conclusión y apéndice con las dos proposiciones; la evaluación
+  es un esqueleto con marcas `\todo` sin ninguna cifra. 12 páginas, 7 400 palabras, sin overfull.
+  Redactarlo destapó cuatro huecos de solidez, ya corregidos en el código (costes de peticiones
+  e intentos, puertos que la víctima ya usa, volumen por host) y dos abiertos (deriva de la
+  referencia y unión de flujos largos; docs/13 §13.6). Las tablas de UGR'16 se reconstruyeron
+  con los testigos de host (relanzado a las 16:56 UTC, comprobación encadenada).
+- La web, el README y la cita no se tocan hasta que la comprobación pase: son públicos y aún no
+  hay ninguna cifra que los sostenga. Entonces irán en la misma pasada que la fusión de la rama.
+- Hasta tener ese número no se toca el paper de `main` ni se recorta (R4-5).
 
 ### Orientación v2 (decidida con Antonio el 2026-11-18)
 
