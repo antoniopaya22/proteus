@@ -161,7 +161,7 @@ correcta, amplitud de la evaluación. Discrepancias 1–18: corregidas en el pap
 operación de ablación, evidencia, UGR, CIC-DDoS, S2, S3), 13 (nombres), 17 (KitNET en la figura).
 Casillas (R4):
 
-- [ ] **R4-1. Afirmaciones.** Cobertura certificada por clase sobre todas las campañas; las dos
+- [~] **R4-1. Afirmaciones.** (intervalo bootstrap: reglas 2,1× el daño, IC 0,97–4,3; seleccionadas 2,8×, 1,1–7,1; resumen y conclusión suavizados; faltan curvas daño–alarmas y las dos métricas en el resumen) Cobertura certificada por clase sobre todas las campañas; las dos
       métricas de alarmas en el resumen; «la mitad que las reglas» con curvas daño–alarmas a varios
       presupuestos e incertidumbre (bootstrap sobre ataques y semillas) o suavizarlo.
 - [ ] **R4-2. (A1) con exportadores reales** (CICFlowMeter, nProbe/YAF/softflowd) y variantes con
