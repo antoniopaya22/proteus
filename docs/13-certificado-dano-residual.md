@@ -78,6 +78,17 @@ ataque.
    la tasa de la campaña, frente al 100 % con una sola (no es un resultado, solo
    comprueba el mecanismo).
 
+6. **Costes revisados al redactar (2026-11-19).** Tres costes eran optimistas y la cota no
+   era segura: (a) varias peticiones caben en un segmento, así que una petición cuesta
+   18/1460 de paquete, no un paquete; la cota de peticiones la sostienen los bytes y las
+   conexiones; (b) un intento de contraseña no cuesta un paquete sino 1/k de conexión (k
+   intentos que concede el servidor) y tres paquetes por conexión; (c) explorar un puerto
+   que la víctima ya usa no añade nada al recuento de puertos distintos, así que para ese
+   testigo la holgura es el umbral entero, sin restar el tráfico propio. Requisito de
+   despliegue que hay que declarar: el tiempo de inactividad del exportador no puede ser
+   menor que el del servidor, o una conexión retenida se parte en registros que no se
+   solapan y `conc` no la ve.
+
 Siguiente paso de diseño, si la comprobación sale bien: repartir el presupuesto entre
 monitores para minimizar el peor daño (programa convexo).
 

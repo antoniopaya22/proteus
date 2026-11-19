@@ -8,8 +8,11 @@ headroom is the threshold minus what the victim's own traffic already puts there
 search is involved, and no plan of the attacker can do better.
 
 The costs assume the cheapest attack the protocol allows: connections reused up to
-the server's limit, requests of minimal size, slots held with one packet per idle
-timeout. They are lower bounds on evidence, so the harm computed is an upper bound.
+the server's limit, requests of minimal size packed into full segments, slots held
+with one packet per idle timeout, as many password attempts per connection as the
+server grants. They are lower bounds on evidence, so the harm computed is an upper
+bound. Distinct ports are not additive: a probe of a port the host's own traffic
+already uses adds nothing, so for that witness the headroom is the whole threshold.
 """
 
 from __future__ import annotations
@@ -29,20 +32,31 @@ class Harm:
     cumulative: bool = False  # the harm is the total (guesses, probes), not a held rate
 
 
+OVERLAP = ("ports",)  # witnesses that count distinct things the victim may already have
+
+
 def harms(window_s: float = 600.0, reuse: int = 100, min_request: float = 18.0,
-          idle_timeout_s: float = 300.0) -> dict[str, Harm]:
+          idle_timeout_s: float = 300.0, mss: float = 1460.0, tries_ssh: int = 6,
+          tries_ftp: int = 3, conn_pkts: float = 3.0) -> dict[str, Harm]:
+    """Kinds of harm and the least each leaves in every witness. The parameters are
+    limits of the protected servers, which their operator knows: requests served per
+    connection, smallest request, idle timeout, password attempts per connection; and
+    of the protocol: segment size and packets a client sends to open a connection."""
     w = float(window_s)
     return {
         # connections held open at once: each needs a packet per idle timeout
         "slots": Harm("connections held", {"conc": 1.0, "pkts": w / idle_timeout_s}, "conc", 1.0),
-        # requests per second: a packet and a minimal request each, a connection per `reuse`
-        "requests": Harm("requests/s", {"pkts": w, "bytes": w * min_request, "conn": w / reuse},
-                         "conn", w),
+        # requests per second: a minimal request each, as many as fit in a segment, and
+        # a connection per `reuse`
+        "requests": Harm("requests/s", {"bytes": w * min_request, "pkts": w * min_request / mss,
+                                        "conn": w / reuse}, "conn", w),
         # packets per second of a volumetric flood
         "packets": Harm("packets/s", {"pkts": w, "bytes": w * 28.0}, "pkts", w),
         # password attempts per second: the server allows a few per connection
-        "guesses_ssh": Harm("attempts/s", {"conn": w / 6.0, "pkts": w}, "conn", w, True),
-        "guesses_ftp": Harm("attempts/s", {"conn": w / 3.0, "pkts": w}, "conn", w, True),
+        "guesses_ssh": Harm("attempts/s", {"conn": w / tries_ssh,
+                                           "pkts": conn_pkts * w / tries_ssh}, "conn", w, True),
+        "guesses_ftp": Harm("attempts/s", {"conn": w / tries_ftp,
+                                           "pkts": conn_pkts * w / tries_ftp}, "conn", w, True),
         # ports probed on a host per window
         "probes": Harm("ports/window", {"ports": 1.0}, "ports", 1.0, True),
     }
@@ -66,7 +80,8 @@ def quiet_harm(background: pd.DataFrame, thresholds: dict[str, float], harm: Har
             continue
         b = background[w].to_numpy(np.float64)
         noisy |= b > thresholds[w]
-        out = np.minimum(out, np.maximum(thresholds[w] - b, 0.0) / c)
+        room = thresholds[w] - (0.0 if w in OVERLAP else b)
+        out = np.minimum(out, np.maximum(room, 0.0) / c)
     return np.where(noisy, np.nan, out)
 
 

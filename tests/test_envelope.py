@@ -137,15 +137,21 @@ def test_quiet_harm_is_the_tightest_witness_and_ignores_noisy_windows():
                        "conn": [0.0, 10.0, 0.0]})
     th = {"pkts": 1000.0, "bytes": 1e9, "conn": 20.0}
     q = attacker.quiet_harm(bg, th, h)
-    assert np.isclose(q[0], min(1000 / 600, 20 / 6))  # packets bind: 1.67 requests/s
-    assert np.isclose(q[1], min(600 / 600, 10 / 6)) and np.isnan(q[2])  # third: benign alert
+    # requests can share a segment, so packets hardly bind; connections do: 3.33 requests/s
+    assert np.isclose(q[0], 20 / 6) and np.isclose(h.cost["pkts"], 600 * 18 / 1460)
+    assert np.isclose(q[1], 10 / 6) and np.isnan(q[2])  # third: the benign traffic alerts
     wr, sp = np.ones(3, bool), np.zeros(3, np.int64)
 
     def held(a: int, n: int) -> float:
         return attacker.kept(q[a:a + n], wr[a:a + n], sp[a:a + n], {}, 0.0, False)
 
-    assert np.isclose(held(0, 2), 1.0) and np.isnan(held(1, 2))
-    assert np.isclose(attacker.best_start(3, 1, lambda a: held(a, 1)), 1000 / 600)
+    assert np.isclose(held(0, 2), 10 / 6) and np.isnan(held(1, 2))
+    assert np.isclose(attacker.best_start(3, 1, lambda a: held(a, 1)), 20 / 6)
+    # a probe of a port the host already uses adds nothing: the whole threshold is room
+    probes = attacker.harms(600.0)["probes"]
+    assert attacker.quiet_harm(pd.DataFrame({"ports": [12.0]}), {"ports": 30.0}, probes)[0] == 30.0
+    ssh = attacker.harms(600.0, tries_ssh=6)["guesses_ssh"]
+    assert ssh.cost == {"conn": 100.0, "pkts": 300.0}  # six attempts and three packets a connection
     assert np.isnan(attacker.best_start(3, 5, lambda a: held(a, 5)))
     slots = attacker.harms(600.0)["slots"]
     assert attacker.quiet_harm(pd.DataFrame({"conc": [5.0], "pkts": [0.0]}),
