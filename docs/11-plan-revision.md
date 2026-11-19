@@ -161,7 +161,7 @@ correcta, amplitud de la evaluación. Discrepancias 1–18: corregidas en el pap
 operación de ablación, evidencia, UGR, CIC-DDoS, S2, S3), 13 (nombres), 17 (KitNET en la figura).
 Casillas (R4):
 
-- [~] **R4-1. Afirmaciones.** (intervalo bootstrap: reglas 2,1× el daño, IC 0,97–4,3; seleccionadas 2,8×, 1,1–7,1; resumen y conclusión suavizados; faltan curvas daño–alarmas y las dos métricas en el resumen) Cobertura certificada por clase sobre todas las campañas; las dos
+- [~] **R4-1. Afirmaciones.** (intervalo bootstrap: reglas 2,1× el daño, IC 0,97–4,3; seleccionadas 2,8×, 1,1–7,1; resumen y conclusión suavizados; las dos métricas de alarmas ya en el resumen, 250 palabras; faltan curvas daño–alarmas) Cobertura certificada por clase sobre todas las campañas; las dos
       métricas de alarmas en el resumen; «la mitad que las reglas» con curvas daño–alarmas a varios
       presupuestos e incertidumbre (bootstrap sobre ataques y semillas) o suavizarlo.
 - [ ] **R4-2. (A1) con exportadores reales** (CICFlowMeter, nProbe/YAF/softflowd) y variantes con
@@ -179,6 +179,20 @@ Casillas (R4):
 - [x] **R4-8. Trabajo relacionado:** detectores monótonos/no negativos de malware (Fleshman), inserción
       y tiempos en NIDS (Hashemi, TANTRA), ataques con restricciones (FENCE, Sheatsley), detectores de
       flujo con recuentos decaídos (MIDAS).
+
+**Máquina (2026-11-19, 08:26 UTC).** La estación se reinició redimensionada (62 GB de memoria y una
+Tesla T4) y se perdieron `adaptf_1718` (su escalera parcial está guardada; se reanuda con `--resume`)
+y `bal_type_entity_1817`. Relanzados `extra11.sh` y `extra.sh` a las 08:33; minutos después el nombre
+dejó de resolver otra vez (otro reinicio en curso). Al volver: comprobar `master.log` y relanzar los
+dos guiones (saltan lo hecho). Con la GPU quedan al alcance las defensas publicadas con su código
+(BARS, CertTA, PANTS) y un atacante aprendido tipo NetMasquerade.
+
+**Propuesta de rediseño pendiente de decisión (2026-11-19).** A petición de Antonio se planteó, sin
+contar con lo desarrollado, un diseño alternativo: certificado de daño residual (umbrales sobre
+testigos de daño por entidad, envolvente calibrada con veredictos, punto de operación sorteado según
+el equilibrio como herencia de Apollon, METIS para admisión de monitores, banco de dosis y fidelidad
+del tráfico inyectado), con cuatro comprobaciones previas de unas dos semanas. No está medido ni
+aprobado; hasta que Antonio decida, el bucle sigue con las casillas R4.
 
 ### Orientación v2 (decidida con Antonio el 2026-11-18)
 
