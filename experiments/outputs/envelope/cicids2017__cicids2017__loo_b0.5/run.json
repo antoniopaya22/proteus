@@ -1,0 +1,19 @@
+{
+ "test": "cicids2017",
+ "templates": null,
+ "alarm_budget": 0.5,
+ "window": 600.0,
+ "protocol": "loo",
+ "min_days": 1,
+ "victims": 25,
+ "attack_windows": [
+  3,
+  36,
+  144
+ ],
+ "span": 36,
+ "days": null,
+ "ref_rank": 1,
+ "tag": "",
+ "build_only": false
+}

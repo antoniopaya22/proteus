@@ -209,3 +209,27 @@ Consecuencias para la propuesta:
   forma que la frontera de daño del paper actual y que la curva daño–alarmas de R4-1. Hay
   que citarla allí también, se adopte o no el rediseño. Hecho en `paper/` (trabajo
   relacionado, detectores agregados; `urbina2016stealthy` en la bibliografía).
+
+## 13.8 Resultado de la comprobación decisiva (2026-11-19): no pasa, se abandona
+
+Cifras en docs/06 §6.119. En UGR'16 a 0,5 alarmas/h el atacante óptimo conserva de media el 72–91 %
+del daño (mediana 100 %; umbral: 10 %), la envolvente no mejora a la regla única con una escala y el
+presupuesto no se cumple fuera de muestra (0,69–0,77 alarmas/h). En CIC-IDS-2017 y CSE-CIC-IDS-2018
+la mediana queda en el 16–68 % a 1–3,7 alarmas/h, y la detección de las campañas propias es peor que
+la del sistema actual (no ve ataques web, infiltración ni Heartbleed).
+
+Causas, por orden de peso:
+
+1. **La referencia propia no es estable en una red real.** El pico diario de un servicio cambia
+   más de 10× entre días con frecuencia suficiente para agotar el presupuesto: los márgenes
+   ajustados van de 40× a 4 300×. Restringir a servicios asentados (7 días, 10 veces el suelo) lo
+   reduce pero no basta (conexiones a 2×: 1,45 alarmas/h de ese solo testigo; bytes: 39,7).
+2. **Donde la referencia sí es estable (servidores grandes), la holgura absoluta es mayor que los
+   ataques.** Con costes sólidos (100 peticiones por conexión, 18 bytes por petición), dos veces el
+   historial de un servidor con miles de conexiones por ventana son cientos de peticiones/s.
+3. **Servicios sin carga:** quedan en el nivel de red, que es el de la regla única.
+
+Qué se conserva: el código (`proteus.envelope`, 16 tests) y el cálculo exacto del óptimo del atacante
+contra umbrales monótonos, que sirve al punto V5 del plan (peor caso exacto, no búsqueda) aplicado a
+las reglas y a los contadores del sistema actual; la cita de Urbina et al. ya está en `main`. La rama
+`residual-harm` del paper queda archivada, sin fusionar. Las comprobaciones 3–7 de §13.6 no se hacen.

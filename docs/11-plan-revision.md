@@ -193,7 +193,7 @@ daño por víctima, envolvente por entidad calibrada al presupuesto sin ejemplos
 del atacante en fórmula cerrada). No está medido ni aprobado como rumbo del paper.
 - [x] Código de la comprobación decisiva: `proteus.envelope` (`witness`, `calibrate`, `attacker`) y
       `proteus.evaluation.envelope_exp`, con 9 tests (254 en total).
-- [ ] Lanzarla en la máquina cuando vuelva (lleva caída desde las 08:36 UTC): tablas de testigos de
+- [x] Lanzarla en la máquina cuando vuelva (lleva caída desde las 08:36 UTC): tablas de testigos de
       UGR'16 desde las semanas en bruto y ataques de 2018 contra sus víctimas, a presupuesto 0,5;
       después CIC-IDS-2017 y CSE-CIC-IDS-2018 con el protocolo causal. Criterio en docs/13 §13.6.
 - [x] Trabajo previo de la propuesta verificado (docs/13 §13.7). El precedente más cercano es
@@ -230,6 +230,19 @@ del atacante en fórmula cerrada). No está medido ni aprobado como rumbo del pa
 - La web, el README y la cita no se tocan hasta que la comprobación pase: son públicos y aún no
   hay ninguna cifra que los sostenga. Entonces irán en la misma pasada que la fusión de la rama.
 - Hasta tener ese número no se toca el paper de `main` ni se recorta (R4-5).
+- [x] Opción `--ref-rank` (referencia como n-ésimo día más alto, contra la deriva) y tabla de
+      niveles ajustados por ejecución (`levels.csv`).
+- **RESULTADO (2026-11-19, 18:30 UTC; docs/06 §6.119, docs/13 §13.8): la comprobación decisiva no
+  pasa y el rediseño se abandona.** En UGR'16 a 0,5 alarmas/h el atacante óptimo conserva de media
+  el 72–91 % del daño (mediana 100 %; el umbral era 10 %), sin mejora sobre la regla única y con
+  0,69–0,77 alarmas/h reales. En 2017 y 2018 la mediana es 16–68 % y la detección de campañas es
+  peor que la del sistema actual. Diagnóstico: el pico diario por servicio no es estable en una red
+  real (márgenes de 40× a 4 300×) y en los servidores grandes la holgura absoluta supera a los
+  ataques; no es cuestión de un parámetro.
+- Consecuencias: el paper sigue siendo el de `main` (sistema actual, nota 5/10 de la ronda 4); la
+  rama `residual-harm` queda archivada sin fusionar; la web, el README y la cita no cambian.
+  Relanzados `extra11.sh` y `extra.sh` a las 18:31 UTC. Se retoma la ronda 4 (R4-2 a R4-7). El óptimo
+  exacto del atacante (`proteus.envelope.attacker`) se reutiliza para V5.
 
 ### Orientación v2 (decidida con Antonio el 2026-11-18)
 

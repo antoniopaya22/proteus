@@ -2953,3 +2953,51 @@ semilla) para ver si cierra el paso de Slowloris con peticiones mínimas.
 Presupuesto 0,5: sistema 6+1 a 0,33 (el nuestro 12+1 a 0,26); Proteus-fast 6+0 a 0,28; Proteus-cert 6+1
 a 0,06. En 18 → 17 apenas cambia (11+2 a 1,83). Escrito en el apéndice como dependencia real del diseño
 (el balance se fijó antes de probar alternativas). Faltan «tipo y entidad» y «sin pesos» (en cola).
+
+### 6.119 Comprobación decisiva del rediseño (envolvente sobre testigos de daño, docs/13): no pasa
+
+`env_ugr`, `env_ugr_causal`, `env_cicids2017_*`, `env_csecicids2018_causal` (2026-11-19; tablas en
+`experiments/outputs/envelope/`). Ventanas de 10 minutos, segunda escala de 6 horas, presupuesto 0,5
+alarmas/h, 25 víctimas por ataque. «Parte conservada»: daño del mejor ataque que no alerta, sobre el
+de la campaña original (óptimo exacto, no búsqueda). Umbral de §13.6: mediana ≤ 10 % a ≤ 0,5 alarmas/h
+en UGR'16 y mejora clara sobre la regla única.
+
+| Red (protocolo) | Detector | Alarmas/h | Parte conservada: media (mediana) |
+|---|---|---|---|
+| UGR'16 (loo), 2 201 pares | envolvente | 0,69 | 90 % (100 %) |
+| | envolvente, dos escalas | 0,77 | 72–91 % (100 %) |
+| | regla única | 0,50 | 90 % (100 %) |
+| | regla única, dos escalas | 0,49 | 87–90 % (100 %) |
+| UGR'16 (causal) | envolvente / dos escalas | 1,08 / 1,22 | 91 % / 76–90 % (100 %) |
+| CIC-IDS-2017 (loo) | envolvente / dos escalas | 1,06 / 1,14 | 52 % (52 %) / 32–64 % (25–75 %) |
+| | regla única | 0,74 | 69 % (100 %) |
+| CIC-IDS-2017 (causal) | envolvente / dos escalas | 3,36 / 3,69 | 38–46 % (22–34 %) / 33–40 % (20–25 %) |
+| CSE-CIC-IDS-2018 (causal) | envolvente / dos escalas | 1,64 / 2,20 | 56 % (57 %) / 40–56 % (16–68 %) |
+| | regla única | 0,89 | 73 % (100 %) |
+
+- **UGR'16.** Solo queda acotada la inundación UDP (LOIC-UDP: 19–58 %); HULK baja al 43–45 % con la
+  segunda escala y campañas de 6 horas o más; GoldenEye, LOIC-HTTP, Slowloris, SSH y el escaneo
+  conservan el 73–100 %. La envolvente no mejora a la regla única con una escala (90 % frente a 90 %).
+  El presupuesto tampoco se respeta fuera de muestra (0,69–0,77; 1,1–1,2 en causal).
+- **Por qué.** Los márgenes ajustados sobre el historial propio son enormes: λ = 40 (conexiones
+  simultáneas), 209 (conexiones), 2 314 (paquetes), 1 292 (bytes) en servicios; 109–4 304 en hosts. El
+  servicio mejor protegido deja pasar 235 peticiones/s sin alertar (93 con dos escalas), y la mediana
+  6 400; las campañas van de 7 a 1 500 peticiones/s.
+- **Diagnóstico (exploratorio, `diag_env.py`, loo):** alarmas/h de un solo testigo según el margen sobre
+  el día más alto del propio servicio. Con todos los servicios con referencia: conexiones 10,6/h a 2×,
+  0,57 a 10×; bytes 252/h a 2×, 53 a 10×, 3,6 a 100×. Restringido a servicios vistos 7 días y con
+  referencia ≥ 10 veces el suelo (1 535 por conexiones, 26 127 por bytes): conexiones 1,45/h a 2×,
+  0,04 a 10×; bytes 39,7/h a 2×, 3,7 a 10×. En un ISP el pico diario por servicio cambia más de 10×
+  de un día a otro varias veces por hora en el conjunto de la red, así que ningún ajuste del margen
+  llega al presupuesto con una envolvente ceñida; y en los servidores grandes, donde la referencia sí
+  es estable, la holgura absoluta (2 × miles de conexiones × 100 peticiones por conexión) supera a las
+  campañas. El fallo es del planteamiento a este presupuesto, no de un parámetro.
+- **Detección de campañas propias (causal).** 2017: fuerza bruta web, inyección SQL y Heartbleed sin
+  detectar, a 3,4 alarmas/h (el sistema actual: 11 de 11 a 1,35). 2018: ataques web e infiltración sin
+  detectar, a 1,6–2,2 alarmas/h (el sistema: 12–13 de 13 a 0,26). No iguala al sistema actual.
+- **Decisión (regla fijada antes de medir):** el rediseño se abandona como diseño del paper. Relanzados
+  `extra11.sh` (`adaptf_1718`) y `extra.sh` (`bal_type_entity_*`, `bal_none_*`).
+- No comparable con §6.115 (16,9 % del sistema en UGR'16): allí el atacante es una búsqueda con las
+  manipulaciones implementadas; aquí es el óptimo con el coste mínimo por unidad de daño (peticiones de
+  18 bytes, 100 por conexión). Queda como dato para la discusión: un umbral de volumen por servicio no
+  acota al atacante óptimo en una red real con este presupuesto.
