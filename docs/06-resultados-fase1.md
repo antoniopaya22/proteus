@@ -2940,3 +2940,10 @@ igual que la tabla publicada (el bug no afectaba a 2017); falta 17 → 18 (`fbc_
 - Balance «cada tipo de ataque con el mismo peso» 18 → 17, presupuesto 0,5: sistema 11+2 a 1,83 (el
   nuestro, 11+3 a 1,35); Proteus-fast 11+0 a 1,06; Proteus-cert 8+2 a 0,94. Los resultados no dependen
   de esa elección. Falta 17 → 18 (`bal_type_1718`, en marcha) para escribirlo.
+
+### 6.117 `proteus_cert_f` en 17 → 18 (`cf_all_1718`)
+
+Presupuesto 0,5: `proteus_cert_f` 11+1 a 0,49 (certificado aditivo 4+1; con límite por protocolo 1);
+unión Proteus-fast ∪ cert-F (`proteus_pcf`) **13+1 a 0,67** (detecta LOIC-HTTP), frente a 12+1 a 0,26
+del sistema actual. Encolado el adaptativo solo de cert-F en 17 → 18 (`adaptf_1718`, misma rejilla y
+semilla) para ver si cierra el paso de Slowloris con peticiones mínimas.
