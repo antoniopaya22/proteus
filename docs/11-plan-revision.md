@@ -212,6 +212,12 @@ del atacante en fórmula cerrada). No está medido ni aprobado como rumbo del pa
 - **Orden al volver la máquina (Antonio, 2026-11-19, «lo que tú consideres»):** primero la
   comprobación decisiva (tablas de UGR'16, tamaño, ejecución), antes que `extra11.sh` y `extra.sh`;
   si pasa, esos trabajos del diseño actual dejan de hacer falta, y si no, se relanzan después.
+- **Máquina de vuelta (2026-11-19, 16:48 UTC):** disco conservado (363 GB, 117 marcas), sin otros
+  usuarios. Los 16 tests de la envolvente pasan allí (pandas 3.1.1). Lanzado `~/tools/envelope.sh`:
+  tablas de UGR'16 desde `july_week5` y `august_week1` (unos 5,8 M de registros y 50 000
+  ventanas de servicio por hora, unos 45 s por hora de datos; calculo unas 3 horas), y encadenada
+  la comprobación (`ENV_GO=1`) para cuando termine: con ~1,3 M de filas por día la memoria no es
+  problema. `extra11.sh` y `extra.sh` quedan retenidos.
 - Hasta tener ese número no se toca el paper actual ni se recorta (R4-5).
 
 ### Orientación v2 (decidida con Antonio el 2026-11-18)
