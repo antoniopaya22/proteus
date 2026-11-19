@@ -25,6 +25,7 @@ Antonio pide iterar hasta la máxima nota posible. Protocolo:
 | 1 (diagnóstico, a mitad de ronda) | 2026-11-17 | 4/10 | revisión mayor | los bytes de carga no se conservan respecto al daño (peticiones mínimas) y el atacante nunca lo prueba; cifras de cabecera a presupuesto 0,5 y robustez a FPR 10⁻³; evaluación adversaria en un solo sentido y sobre víctimas sin carga; ventaja frente a reglas y núcleo sin restricciones dentro del ruido; sin intervalos ni semillas; calibración con etiquetas; líneas base propias; el sistema evaluado no incluye la capa por flujo; título y resumen prometen de más; 13 900 palabras |
 | 1 (diagnóstico 2, a mitad de ronda) | 2026-11-17 22:00 | 5/10 | revisión mayor | puntos de operación mezclados (envenenamiento, consultas, ablación, servidor con carga, tab:h1 a FPR 10⁻³; la conclusión del envenenamiento no vale al presupuesto); el certificado cubre lo que menos importa y el título vende de más; novedad limitada frente a reglas; «daño» en flujos y no en servicio denegado; validez externa y ajuste sobre las redes de prueba; calibración con etiquetas (umbrales); comparación con alarmas reales distintas; atacantes aprendidos no ejecutados; certificado de reutilización sin prueba formal; (A4) demasiado fuerte; desalojo de estado; exportador del chequeo de paquetes; extensión |
 | 2 (tras los cambios de R2, pedida por Antonio) | 2026-11-17 23:50 | 4/10 | revisión mayor | el certificado protege donde no hace falta y peticiones mínimas + reutilización tumban a Proteus-cert (Slowloris ~370 conexiones > 256); lo que añade el modelo frente a reglas no está establecido (por ataque las reglas dejan menos daño en 5 de 9 en 18 → 17; métrica de alarmas por destino-minuto al revés); frontera/adaptativo contradicen tab:h1 al mismo punto (escaneos 2018, LOIC-HTTP 2018, FTP 2017); validez externa (víctimas ociosas, etiquetas en la calibración, UGR'16 y CTU-13 no al presupuesto, Δ desconocido en tráfico real); saturación de los árboles monótonos; supuestos (caché del exportador, muestreo, «free» inconsistente); atacante adaptativo débil (sin optimizador de caja blanca); faltan defensas robustas publicadas; novedad estrecha; extensión |
+| 4 | 2026-11-19 04:00 | 5/10 | revisión mayor | el certificado cubre el movimiento más débil y la detección viene de Proteus-fast sin certificar; novedad estrecha (Incer, Fleshman, Tong); (A1) en manos del atacante (FIN/RST insertados, caché) y sin probar con exportadores reales; ventaja sobre reglas débil (p = 0,08, una semilla, rejilla gruesa, inyección 6,5 frente a 8,8 %); diseño ajustado en las redes de prueba y etiquetas en la calibración; tráfico real flojo y fuera del punto de operación; «daño» en flujos/h; atacante limitado en lo no cubierto (pulsos frente a τ, botnets, caja blanca); capa por flujo/Apollon débiles; extensión |
 
 **Criterio de parada (Antonio, 2026-11-17):** cuando los resultados y la funcionalidad estén a nivel de
 un 8, se para de añadir experimentos y se hace una revisión a fondo del paper: coherencia de principio a
@@ -151,6 +152,33 @@ publicado sin garantía.
       de UGR'16, bots «dos o tres órdenes por debajo»); «todo detector se enfrenta al mismo atacante»;
       una evaluación extra frente a dos en el algoritmo; 119 frente a 152 contadores; bytes
       «forward» frente a «payload»; leyenda de la figura; la nota de la bibliografía.
+
+### Revisión 4 (2026-11-19 04:00)
+
+Nota **5/10** (sube de 4). Con los `\todo` entregados, 5,5. Reconoce: modelo de amenaza y supuestos
+ejemplares, la holgura del exportador como aportación, «ritmo que conserva el atacante» como medida
+correcta, amplitud de la evaluación. Discrepancias 1–18: corregidas en el paper salvo 10 (punto de
+operación de ablación, evidencia, UGR, CIC-DDoS, S2, S3), 13 (nombres), 17 (KitNET en la figura).
+Casillas (R4):
+
+- [ ] **R4-1. Afirmaciones.** Cobertura certificada por clase sobre todas las campañas; las dos
+      métricas de alarmas en el resumen; «la mitad que las reglas» con curvas daño–alarmas a varios
+      presupuestos e incertidumbre (bootstrap sobre ataques y semillas) o suavizarlo.
+- [ ] **R4-2. (A1) con exportadores reales** (CICFlowMeter, nProbe/YAF/softflowd) y variantes con
+      FIN/RST insertados y presión sobre la caché; normalización como requisito de despliegue.
+- [ ] **R4-3. Evaluación retenida:** diseño congelado sobre un dataset intacto (UNSW-NB15 de nuevo, o
+      otro), calibración sin etiquetas (V4: veredictos del analista) y CTU-13 con los sospechosos.
+- [ ] **R4-4. Un punto de operación:** UGR'16 (en cola), CIC-DDoS-2019, ablación, tabla de evidencia,
+      S2 y S3 al presupuesto; resumen con el tráfico real.
+- [ ] **R4-5. Extensión ~10k palabras**; capa por flujo y Apollon más cortos (sin perder el linaje v1→v2);
+      puntuación de Apollon justa (voto blando o desempate) para el presupuesto.
+- [ ] **R4-6. Atacante sobre lo no cubierto:** pulsos ajustados a τ, reparto a escala de botnet,
+      búsqueda de caja blanca.
+- [ ] **R4-7. Daño en servicio medido en un banco de pruebas** (Slowloris, Slowhttptest, una
+      inundación HTTP).
+- [ ] **R4-8. Trabajo relacionado:** detectores monótonos/no negativos de malware (Fleshman), inserción
+      y tiempos en NIDS (Hashemi, TANTRA), ataques con restricciones (FENCE, Sheatsley), detectores de
+      flujo con recuentos decaídos (MIDAS).
 
 ### Orientación v2 (decidida con Antonio el 2026-11-18)
 
