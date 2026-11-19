@@ -170,7 +170,7 @@ Casillas (R4):
       otro), calibración sin etiquetas (V4: veredictos del analista) y CTU-13 con los sospechosos.
 - [ ] **R4-4. Un punto de operación:** UGR'16 (en cola), CIC-DDoS-2019, ablación, tabla de evidencia,
       S2 y S3 al presupuesto; resumen con el tráfico real.
-- [~] **R4-5. Extensión ~10k palabras** (2026-11-19: envenenamiento y ataques a la capa por flujo al suplementario, S5 y S6, con resumen en el texto; «otros detectores» más corto; RQ5 más corto y atacante por consultas al suplementario, S7; 17 905 → 17 216 palabras con tablas, 14 400 de prosa sin apéndice (evaluación 7 000, diseño 2 600), 25 páginas; siguen preparación, RQ1, RQ3, RQ4, tráfico real y diseño); capa por flujo y Apollon más cortos (sin perder el linaje v1→v2);
+- [~] **R4-5. Extensión ~10k palabras** (2026-11-19: envenenamiento y ataques a la capa por flujo al suplementario, S5 y S6, con resumen en el texto; «otros detectores» más corto; RQ5 más corto y atacante por consultas al suplementario, S7; 17 905 → 17 216 palabras con tablas, 14 400 de prosa sin apéndice (evaluación 7 000, diseño 2 600), 25 páginas; 20:30 UTC: preparación, RQ1, RQ2, RQ3, frontera, CTU-13 y coste apretados, evaluación 6 977 → 6 758 palabras de prosa; apretar frases rinde un 3 % por pasada, así que lo que queda es mover contenido entero: objetivo realista ~12 000 de prosa sin apéndice, con el detalle de tráfico real, semillas y uniones de reglas al suplementario y el diseño a ~2 100); capa por flujo y Apollon más cortos (sin perder el linaje v1→v2);
       puntuación de Apollon justa (voto blando o desempate) para el presupuesto.
 - [ ] **R4-6. Atacante sobre lo no cubierto:** pulsos ajustados a τ, reparto a escala de botnet,
       búsqueda de caja blanca.
