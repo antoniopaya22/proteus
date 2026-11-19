@@ -56,7 +56,8 @@ def build_from_days(ds: str, window_s: float) -> None:
 
 def build_from_raw(paths: list[Path], window_s: float, chunk_s: float = 3600.0) -> None:
     """Witness tables of UGR'16 from its weekly files, read hour by hour: every record
-    that overlaps the hour is read, and only the windows of that hour are written."""
+    that overlaps the hour is read, and only the windows of that hour are written. A
+    day is written when its last hour is done, and days already written are skipped."""
     import pyarrow.dataset as pads
     import pyarrow.parquet as pq
 
@@ -71,24 +72,37 @@ def build_from_raw(paths: list[Path], window_s: float, chunk_s: float = 3600.0) 
         ci = md.schema.to_arrow_schema().names.index("ts_start")
         st += [md.row_group(i).column(ci).statistics for i in range(md.num_row_groups)]
     t_min, t_max = min(x.min for x in st), max(x.max for x in st)
-    parts: dict[tuple[str, str], list] = {}
+    parts: dict[str, dict[str, list]] = {}
+
+    def flush(day: str) -> None:
+        for kind, frames in parts.pop(day).items():
+            d = pd.concat(frames, ignore_index=True)
+            d.to_parquet(out / f"{day}.{kind}.parquet", index=False)
+        print(f"witnesses ugr16 {day}: written", flush=True)
+
     t = np.floor(t_min / chunk_s) * chunk_s
     while t <= t_max:
         lo, hi = t, t + chunk_s
+        t = hi
+        day = pd.Timestamp(lo, unit="s").strftime("%Y-%m-%d")
+        for done in [d for d in parts if d != day]:
+            flush(done)
+        if (out / f"{day}.svc.parquet").exists():
+            continue
         tbl = ds.to_table(columns=ugr16.COLS,
                           filter=(pads.field("ts_end") >= lo) & (pads.field("ts_start") < hi))
         f = ugr16._frame(tbl)
         del tbl
         if len(f):
             keep = (int(lo // window_s), int(hi // window_s))
-            day = pd.Timestamp(lo, unit="s").strftime("%Y-%m-%d")
-            parts.setdefault((day, "svc"), []).append(witness.service_windows(f, window_s, keep))
-            parts.setdefault((day, "host"), []).append(witness.host_windows(f, window_s, keep))
-            print(f"witnesses ugr16 {pd.Timestamp(lo, unit='s')}: {len(f):,} records", flush=True)
+            p = parts.setdefault(day, {"svc": [], "host": []})
+            p["svc"].append(witness.service_windows(f, window_s, keep))
+            p["host"].append(witness.host_windows(f, window_s, keep))
+            print(f"witnesses ugr16 {pd.Timestamp(lo, unit='s')}: {len(f):,} records, "
+                  f"{len(p['svc'][-1]):,} service windows", flush=True)
         del f
-        t = hi
-    for (day, kind), frames in parts.items():
-        pd.concat(frames, ignore_index=True).to_parquet(out / f"{day}.{kind}.parquet", index=False)
+    for day in list(parts):
+        flush(day)
 
 
 def load(ds: str, window_s: float, days: list[str] | None = None

@@ -160,3 +160,34 @@ def test_experiment_end_to_end_on_a_small_network(tmp_path, monkeypatch):
     assert dt[("envelope", "dos_hulk")] == 1.0  # a flood on a server never seen before
     s = pd.read_csv(out / "summary.csv").set_index("detector")
     assert s.loc["envelope", "mean_best"] < s.loc["rules", "mean_best"]
+
+
+def test_ugr16_weekly_files_are_read_by_the_hour_into_one_table_per_day(tmp_path, monkeypatch):
+    from proteus.evaluation import envelope_exp as ex
+
+    monkeypatch.setattr(ex.h1, "DATA", tmp_path)
+    t0 = pd.Timestamp("2016-07-28 22:00:00").timestamp()
+    rng = np.random.default_rng(1)
+    n = 4000  # one server, four hours across midnight, 1000 records an hour
+    ts = t0 + np.sort(rng.uniform(0, 4 * 3600, n))
+    raw = pd.DataFrame({
+        "ts_start": ts, "ts_end": ts + 2.0, "src_ip": "42.219.1.1", "dst_ip": "42.219.153.7",
+        "src_port": rng.integers(1024, 60000, n), "dst_port": 80, "l4_proto": 6,
+        "duration": 2.0, "packets": 4, "bytes": 400,
+        "label_binary": "background", "label_attack": ""})
+    raw.loc[::2].to_parquet(tmp_path / "w1.parquet", index=False)
+    raw.loc[1::2].to_parquet(tmp_path / "w2.parquet", index=False)
+    ex.build_from_raw([tmp_path / "w1.parquet", tmp_path / "w2.parquet"], 600.0)
+    svc, host, hours = ex.load("ugr16", 600.0)
+    assert list(svc) == ["2016-07-28", "2016-07-29"] and hours == {"2016-07-28": 2.0, "2016-07-29": 2.0}
+    both = pd.concat(svc.values())
+    assert both["conn"].sum() == n and both["pkts"].sum() == 4 * n and len(both) == 24
+    assert not both["dirty"].any() and both["win"].is_unique
+    direct = witness.service_windows(ex.h1.pd.DataFrame({
+        "t_start": pd.to_datetime(raw["ts_start"], unit="s"), "t_end": pd.to_datetime(raw["ts_end"], unit="s"),
+        "dst_ip": raw["dst_ip"], "dst_port": 80, "proto": 6, "fwd_pkts": 4, "fwd_bytes": 400}))
+    m = both.merge(direct, on=["key", "win"], suffixes=("", "_d"))
+    assert len(m) == 24 and (m["conc"] == m["conc_d"]).all()  # peaks agree across chunk edges
+    before = (tmp_path / "ugr16" / "witness_w600" / "2016-07-28.svc.parquet").stat().st_mtime_ns
+    ex.build_from_raw([tmp_path / "w1.parquet", tmp_path / "w2.parquet"], 600.0)  # nothing redone
+    assert (tmp_path / "ugr16" / "witness_w600" / "2016-07-28.svc.parquet").stat().st_mtime_ns == before
