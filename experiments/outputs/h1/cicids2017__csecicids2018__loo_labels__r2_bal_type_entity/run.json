@@ -1,0 +1,45 @@
+{
+ "argv": [
+  "--train",
+  "cicids2017",
+  "--test",
+  "csecicids2018",
+  "--balance",
+  "type_entity",
+  "--models",
+  "proteus",
+  "proteus_cert_r",
+  "--entity-budgets",
+  "0.5",
+  "1",
+  "3",
+  "10",
+  "--tag",
+  "r2_bal_type_entity"
+ ],
+ "args": {
+  "train": "cicids2017",
+  "test": "csecicids2018",
+  "out": "experiments/outputs/h1",
+  "seed": "0",
+  "baseline": "loo",
+  "mask": "labels",
+  "models": "['proteus', 'proteus_cert_r']",
+  "tag": "r2_bal_type_entity",
+  "entity_budgets": "[0.5, 1.0, 3.0, 10.0]",
+  "train_days": "None",
+  "test_days": "None",
+  "balance": "type_entity",
+  "extra_runs": "[]",
+  "export_alerts": "False",
+  "alert_variants": "False",
+  "exclude_saturated": "None",
+  "reuse": "None",
+  "train_thresholds": "False"
+ },
+ "env": {
+  "PROTEUS_EVIDENCE": "v3"
+ },
+ "commit": "2e15241ea379757ce8b0c81860d4fbad8f493289",
+ "started": "2026-11-19T19:14:52+0000"
+}

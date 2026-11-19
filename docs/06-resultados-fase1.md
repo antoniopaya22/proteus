@@ -3030,3 +3030,12 @@ el balance del paper en esta red, pero «por tipo» ya mostró que el otro senti
 mejor en los dos sentidos, cambiar el balance ahora sería elegir el diseño con las redes de prueba
 (objeción O6): iría como sensibilidad en el apéndice, no como cifra de cabecera, salvo evaluación
 retenida (R4-3).
+
+### 6.122 Balance «tipo y entidad» en 17 → 18 (`bal_type_entity_1718`): pierde los escaneos
+
+Presupuesto 0,5: sistema **7+1 a 0,49** alarmas de entidad/h (el del paper: 12+1 a 0,26); Proteus-fast
+6+1 a 0,21 (pierde LOIC-HTTP y los seis escaneos); Proteus-cert-R 7+1 a 0,36 (pierde los seis
+escaneos). Con §6.121 (11+7 a 0,87 en 18 → 17): el balance alternativo gana en la red pequeña y
+pierde los seis escaneos en la grande, igual que «por tipo» (§6.118). El balance del paper se
+mantiene; queda como dependencia declarada en el apéndice. Falta «sin pesos» (`bal_none_*`, en
+marcha) para cerrar la frase pendiente.
