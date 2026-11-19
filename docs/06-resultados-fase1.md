@@ -3065,3 +3065,21 @@ Ninguno mejora en las dos direcciones; «tipo y entidad» es mejor en 18 → 17 
 menos alarmas) y pierde los seis escaneos en 17 → 18. El apéndice del paper lo dice así y el `\todo`
 de los balances queda cerrado.
 
+### 6.125 Proteus-cert solo con evidencia de destino, 18 → 17 (`dst_1817`; revisión 5, R5-4)
+
+`proteus_cert_r-2-1`: Proteus-cert sin los sub-núcleos de par y de origen (quedan destino y destino en
+bruto), recalibrado, presupuesto 0,5. Campañas (criterio estricto), volumétricas y escaneos + otras:
+
+| Detector | Todas las alertas | Certificadas (también frente a reutilización) |
+|---|---|---|
+| Proteus-cert (cuatro sub-núcleos) | 8+2 a 0,41 alarmas/h | 4+2 a 0,17 (los cuatro DoS y las dos infiltraciones) |
+| solo destino | 5+0 a 0,59 | 3+0 a 0,10 (tres episodios de escaneo; ningún DoS) |
+
+Solo con evidencia de destino el detector alerta Hulk y cuatro de los seis episodios de escaneo, y
+certifica tres escaneos; pierde GoldenEye, Slowloris, Slowhttptest y las infiltraciones, y no certifica
+ningún DoS. Lectura: en la red pequeña la cobertura certificada de los DoS descansa en la evidencia de
+origen y de par, que un atacante con más orígenes reparte; la objeción del revisor es correcta en esta
+dirección. A cambio la evidencia de destino certifica escaneos que el detector completo no certifica
+(el umbral común lo fija el sub-núcleo más ruidoso). Falta 17 → 18 (`dst_1718`, bajo el candado) y el
+atacante que reparte (`qadst_1817`, en marcha).
+

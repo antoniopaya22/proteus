@@ -174,7 +174,7 @@ en unidades del ataque. Objeciones por gravedad y casillas (R5):
 - [ ] **R5-3. Comparación no a alarmas iguales; métrica de cabecera favorable** (válida): por
       destino y minuto Proteus es el peor detector agregado (60,4 frente a 22,2 / 1,8 / 0,8). Hacer:
       curvas daño–alarmas con las dos métricas (lo que falta de R4-1) y dar las dos al mismo nivel.
-- [~] **R5-4. Cobertura certificada escasa y frágil al reparto entre orígenes** (22:40 UTC: sufijos de ablación encadenables, `proteus_cert_r-2-1` = solo sub-núcleos de destino; encolados `dst_1817` y `qadst_1817` (unidad con tope) y `dst_1718` (candado); tabla 2 ya dice «destination evidence; not certified» para el reparto) (válida y nueva en
+- [~] **R5-4. Cobertura certificada escasa y frágil al reparto entre orígenes** (22:40 UTC: sufijos de ablación encadenables, `proteus_cert_r-2-1` = solo sub-núcleos de destino; encolados `dst_1817` y `qadst_1817` (unidad con tope) y `dst_1718` (candado); tabla 2 ya dice «destination evidence; not certified» para el reparto; 23:40 UTC, `dst_1817`: solo destino detecta 5+0 a 0,59 y certifica 3+0, tres escaneos y ningún DoS, §6.125: la cobertura certificada de los DoS de 2017 descansa en origen y par) (válida y nueva en
       esta forma): GoldenEye, Slowloris y Slowhttptest pasan Proteus-cert repartidos entre ≤ 100
       orígenes (S7), y la tabla de hipótesis y §5.2 dicen que repartir no baja la evidencia de
       destino. Hacer: variante de Proteus-cert certificada solo con evidencia de destino y medir qué
@@ -201,7 +201,7 @@ en unidades del ataque. Objeciones por gravedad y casillas (R5):
       argumento analítico; redacción respetuosa (un solo sistema).
 - [ ] **R5-12. Componentes no evaluados extremo a extremo** (capa por flujo, contador de
       realimentación, compuesto METIS). Justificar o retirar.
-- [~] **R5-13. Claridad y extensión** (22:40 UTC: columnas «P-fast» y «P-cert» para los detectores y «Certified» solo para alertas certificadas, también en `tables.py`; comentarios internos del `.tex` fuera; φ(r) con paquete testigo para los contadores de RST, cota 2Δ; resumen 248 palabras. Falta la extensión) (= R4-5): objetivo 16–18 páginas; resultados en prosa a tablas;
+- [~] **R5-13. Claridad y extensión** (22:40 UTC: columnas «P-fast» y «P-cert» para los detectores y «Certified» solo para alertas certificadas, también en `tables.py`; comentarios internos del `.tex` fuera; φ(r) con paquete testigo para los contadores de RST, cota 2Δ; resumen 248 palabras; 23:45 UTC: apéndices A, B y D al suplementario como S8–S10, el paper queda en 23 páginas con la prueba como único apéndice y el suplementario en 10. Falta recortar el cuerpo, 18 páginas) (= R4-5): objetivo 16–18 páginas; resultados en prosa a tablas;
       puntos de operación mezclados (FPR 1e-3 en apéndices, §6.3 y S2 sin decirlo); «Certified»
       frente a «Cert.»; comentarios internos del `.tex`; φ(r) de los contadores de RST en el ap. C.
 - [~] **R5-14. Discrepancias texto–tablas** (corregidas en el paper la 3–12 salvo la 2: umbral de §6.3 y S2 declarado (FPR 1e-3), rango con > 887, 681, 12 días completos, bots de CTU-13, atacante por consultas sin «confirms», 0,08/0,07, «no more often»; la 2, LOIC-UDP del miércoles, en diagnóstico: `diag_udp.py` encolado bajo el candado; la 13 corregida a las 22:40: S1 dice que λ cambia en los dos niveles) (13; redacción salvo la 2): LOIC-UDP del miércoles
