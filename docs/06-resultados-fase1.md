@@ -2907,3 +2907,12 @@ inflada; en 2017 → 2018 daba un suelo de ~5,4/h incluso con K = 500. Corregido
   peticiones mínimas en 17 → 18 (falta `cf_fit_1718`, en marcha); sin certificado frente a la
   reutilización no se adopta salvo que eso lo justifique.
 - Fin de `master.sh`.
+
+### 6.114 Consultas 18 → 17 (`qabp_1817`) e inyección (`injp_1817`) con la reutilización física
+
+- Consultas, sistema: libre 5,0 %, 1; peticiones mínimas 6,7 %, 1; más orígenes 5,7 %, 1 (planes: 5,9 %
+  y 6,7 %). Reglas 13,4 %, 2; reglas con selección 47,7 %, 4; Proteus-cert 37,2 %, 3.
+- Inyección (92 pares): el sistema no deja pasar ninguno (6,5 %; por tercios de carga 4,6 / 10,8 /
+  5,7 %); reglas 10 pasan (8,8 %, todos LOIC-HTTP); con peticiones mínimas 28 % frente a 27 %. Núcleo
+  sin restricciones 5,2 %, 0; KitNET 19,9 %, 41 %; reglas con selección 59 %, 59 %.
+- Paper actualizado (consultas en los dos sentidos, inyección). Ficheros viejos `*_oldreuse`.
