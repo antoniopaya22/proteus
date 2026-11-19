@@ -2916,3 +2916,18 @@ inflada; en 2017 → 2018 daba un suelo de ~5,4/h incluso con K = 500. Corregido
   5,7 %); reglas 10 pasan (8,8 %, todos LOIC-HTTP); con peticiones mínimas 28 % frente a 27 %. Núcleo
   sin restricciones 5,2 %, 0; KitNET 19,9 %, 41 %; reglas con selección 59 %, 59 %.
 - Paper actualizado (consultas en los dos sentidos, inyección). Ficheros viejos `*_oldreuse`.
+
+### 6.115 Ataques de 2018 inyectados en UGR'16 (`inj_ugr`; detectores de 2017; presupuesto 0,5)
+
+176 pares (7 ataques × hasta 25 víctimas, días 2016-07-28 y 2016-08-02); carga de la víctima en el
+puerto atacado: mediana 36, p90 338, máx. 3 933 flujos/h.
+
+| Detector | Pares que pasan | Parte del ritmo | Por tercios de carga |
+|---|---|---|---|
+| Sistema | 28 % (todo SSH y LOIC-HTTP) | 16,9 % | 17,9 / 18,1 / 14,8 % |
+| Reglas | 72 % | 54,0 % | 55,5 / 53,8 / 52,6 % |
+| Núcleo sin restricciones | 28 % | 6,9 % | |
+
+GoldenEye, Slowloris y escaneos pasan las reglas en todas las víctimas y el sistema en ninguna. Las
+peticiones mínimas no añaden nada en UGR'16. Contador de realimentación corregido 18 → 17 (`fbc_1817`):
+igual que la tabla publicada (el bug no afectaba a 2017); falta 17 → 18 (`fbc_1718`).

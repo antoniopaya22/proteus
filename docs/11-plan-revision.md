@@ -191,7 +191,7 @@ dejó ver contradicciones con la frontera). Con los `\todo` entregados, 5; con p
       DoS lentos (~370 conexiones > 256): al resumen/conclusión. Desglose por tipo de plan (solo
       aditivas / reutilización / ráfagas / mínimas) para núcleo sin restricciones y KitNET: ¿alguna
       operación solo aditiva evade un detector no monótono?
-- [~] **R3-4. Tráfico real al presupuesto.** (UGR sin certificado por Δ desconocido; saturación explicada; falta UGR al presupuesto) UGR'16 (en cola), CTU-13 al presupuesto ya; no dar
+- [~] **R3-4. Tráfico real al presupuesto.** (UGR sin certificado por Δ desconocido; saturación explicada; inyección de 2018 en 176 víctimas reales de UGR'16 hecha, §6.115; falta la subsección de UGR'16 al presupuesto) UGR'16 (en cola), CTU-13 al presupuesto ya; no dar
       alertas certificadas donde Δ es desconocido; saturación de los árboles monótonos (empates,
       alternativas que siguen creciendo).
 - [~] **R3-0. Reutilización físicamente consistente** (operador corregido y probado, commit «fix(attacks): connection reuse…»; adaptativo repetido en cola: `adaptp_1817` en `run2017q.sh`, `adaptp_1718` en `extra7.sh`; faltan consultas e inyección y reescribir el paper) (encontrado el 2026-11-18, §6.104): el operador
