@@ -1,0 +1,159 @@
+"""Per-entity envelope calibrated to a budget of alarms, without attack examples.
+
+For a witness, the reference level of an entity is the highest value its own windows
+reached on the reference days. An entity-window alerts when the witness exceeds
+``lam * max(reference, floor)``; ``lam`` is one number per witness, set on the pooled
+scores ``value / max(reference, floor)`` of every entity with a reference so that the
+windows over it are the budget (split conformal calibration on normalised scores).
+
+Entities seen on fewer than ``min_days`` reference days have no reference. They are
+held to one network-wide level per witness (``fallback``), set the same way on their
+pooled values with a share of the budget, so every entity has a bound: its own where
+it has a history, the network's otherwise. With ``per_entity`` off no entity has a
+reference and the whole budget goes to the network-wide level: a rate rule on the same
+witness.
+
+Two protocols: ``loo`` (reference and levels from the other days, leaving out the
+windows labelled as attack: the protocol of the benchmark tables) and ``causal`` (from
+the earlier days only, leaving out only the windows that alerted and the analyst
+confirmed: no label enters).
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+
+import numpy as np
+import pandas as pd
+
+from proteus.envelope.witness import FLOORS
+
+FALLBACK_SHARE = 0.5  # of each witness's budget, for the entities without a reference
+
+
+@dataclass
+class Envelope:
+    ref: dict[str, pd.Series]  # witness -> reference level of each entity that has one
+    lam: dict[str, float] = field(default_factory=dict)
+    fallback: dict[str, float] = field(default_factory=dict)  # level for the other entities
+    floors: dict[str, float] = field(default_factory=lambda: dict(FLOORS))
+
+    def base(self, witness: str, keys: np.ndarray) -> np.ndarray:
+        """Scale of the witness for each entity (NaN: no reference)."""
+        r = self.ref[witness].reindex(keys).to_numpy(np.float64)
+        return np.where(np.isnan(r), np.nan, np.maximum(r, self.floors[witness]))
+
+    def monitored(self, witness: str, keys: np.ndarray) -> np.ndarray:
+        return ~np.isnan(self.base(witness, keys))
+
+    def thresholds(self, witness: str, keys: np.ndarray) -> np.ndarray:
+        """Alert level of each entity: its own, or the network-wide one."""
+        b = self.base(witness, keys)
+        own = np.maximum(self.lam.get(witness, np.inf) * np.where(np.isnan(b), 1.0, b),
+                         self.floors[witness])
+        return np.where(np.isnan(b), self.fallback.get(witness, np.inf), own)
+
+    def alerts(self, table: pd.DataFrame, witnesses) -> pd.DataFrame:
+        keys = table["key"].to_numpy()
+        return pd.DataFrame({w: table[w].to_numpy() > self.thresholds(w, keys)
+                             for w in witnesses}, index=table.index)
+
+
+def day_max(table: pd.DataFrame, witness: str, skip: np.ndarray) -> pd.Series:
+    """Highest value of the witness per entity over the windows not skipped."""
+    t = table.loc[~skip, ["key", witness]]
+    return t.groupby("key", sort=False)[witness].max()
+
+
+def reference(maxima: list[pd.Series], min_days: int) -> pd.Series:
+    """Reference level per entity from per-day maxima; entities on fewer than
+    ``min_days`` of those days get none."""
+    if not maxima:
+        return pd.Series(dtype=np.float64)
+    g = pd.concat(maxima).groupby(level=0, sort=False).agg(["max", "size"])
+    return g.loc[g["size"] >= min_days, "max"]
+
+
+def scores(table: pd.DataFrame, witness: str, env: Envelope) -> tuple[np.ndarray, np.ndarray]:
+    """Normalised score of every row, and whether its entity has a reference (the
+    others are scored against the floor)."""
+    b = env.base(witness, table["key"].to_numpy())
+    mon = ~np.isnan(b)
+    return table[witness].to_numpy() / np.where(mon, b, env.floors[witness]), mon
+
+
+def fit_lambda(pooled: np.ndarray, hours: float, budget: float) -> float:
+    """Largest-score level that at most ``budget * hours`` pooled scores exceed."""
+    k = int(budget * hours)
+    if len(pooled) <= k:
+        return 0.0
+    return float(np.partition(pooled, len(pooled) - 1 - k)[len(pooled) - 1 - k])
+
+
+def _levels(env: Envelope, pooled: dict[str, list], hours: float, budget: float,
+            per_entity: bool) -> None:
+    """Set ``lam`` and ``fallback`` of ``env`` from pooled (score, monitored) pairs."""
+    share = FALLBACK_SHARE if per_entity else 1.0
+    for w, parts in pooled.items():
+        s = np.concatenate([p[0] for p in parts]) if parts else np.array([])
+        m = np.concatenate([p[1] for p in parts]) if parts else np.array([], bool)
+        env.lam[w] = fit_lambda(s[m], hours, budget * (1 - share)) if per_entity else np.inf
+        env.fallback[w] = env.floors[w] * max(fit_lambda(s[~m], hours, budget * share), 1.0)
+
+
+def _refs(maxima: list[dict[str, pd.Series]], witnesses, min_days: int,
+          per_entity: bool) -> dict[str, pd.Series]:
+    if not per_entity:
+        return {w: pd.Series(dtype=np.float64) for w in witnesses}
+    return {w: reference([m[w] for m in maxima], min_days) for w in witnesses}
+
+
+def loo(tables: dict[str, pd.DataFrame], hours: dict[str, float], witnesses,
+        budget: float, per_entity: bool = True, min_days: int = 2,
+        floors: dict[str, float] = FLOORS) -> dict[str, Envelope]:
+    """Envelope of each day from the other days; ``budget`` is alarms per hour and
+    witness."""
+    days = list(tables)
+    mx = {d: {w: day_max(tables[d], w, tables[d]["dirty"].to_numpy()) for w in witnesses}
+          for d in days}
+    env = {d: Envelope(_refs([mx[j] for j in days if j != d], witnesses, min_days, per_entity),
+                       floors=dict(floors)) for d in days}
+    clean = {d: tables[d][~tables[d]["dirty"].to_numpy()] for d in days}
+    s = {d: {w: scores(clean[d], w, env[d]) for w in witnesses} for d in days}
+    for d in days:
+        others = [j for j in days if j != d]
+        _levels(env[d], {w: [s[j][w] for j in others] for w in witnesses},
+                sum(hours[j] for j in others), budget, per_entity)
+    return env
+
+
+def causal(tables: dict[str, pd.DataFrame], hours: dict[str, float], witnesses,
+           budget: float, per_entity: bool = True, min_days: int = 2,
+           floors: dict[str, float] = FLOORS) -> dict[str, Envelope]:
+    """Envelope of each day from the earlier days only (``tables`` in time order). The
+    only feedback is the analyst's verdict: a window that alerted and holds an attack
+    is left out of later references; every other window stays in, attacks included.
+    The first day has no envelope, and the second is calibrated on the first alone
+    (levels at the reference itself)."""
+    days = list(tables)
+    mx: dict[str, dict[str, pd.Series]] = {}
+    s: dict[str, dict[str, tuple]] = {}
+    env: dict[str, Envelope] = {}
+    for i, d in enumerate(days):
+        t = tables[d]
+        confirmed = np.zeros(len(t), bool)
+        if i:
+            past = days[:i]
+            e = Envelope(_refs([mx[j] for j in past], witnesses, min(min_days, i), per_entity),
+                         floors=dict(floors))
+            if i > 1:
+                _levels(e, {w: [s[j][w] for j in past[1:]] for w in witnesses},
+                        sum(hours[j] for j in past[1:]), budget, per_entity)
+            else:
+                e.lam = {w: 1.0 if per_entity else np.inf for w in witnesses}
+                e.fallback = {w: max(float(mx[past[0]][w].max()), floors[w]) for w in witnesses}
+            env[d] = e
+            confirmed = e.alerts(t, witnesses).any(axis=1).to_numpy() & t["dirty"].to_numpy()
+            s[d] = {w: scores(t[~confirmed], w, e) for w in witnesses}
+        mx[d] = {w: day_max(t, w, confirmed) for w in witnesses}
+    return env
