@@ -153,6 +153,69 @@ publicado sin garantía.
       una evaluación extra frente a dos en el algoritmo; 119 frente a 152 contadores; bytes
       «forward» frente a «payload»; leyenda de la figura; la nota de la bibliografía.
 
+### Revisión 5 (2026-11-19 21:45; la pidió Antonio a mitad de la ronda 4, con R4-2 a R4-7 abiertas)
+
+Nota **5/10** (revisión mayor con dudas serias); «con los cambios prioritarios podría llegar a 7».
+Paper de `main` tras los recortes del día (25 páginas, S1–S7). Puntos fuertes que reconoce: alcance de
+la garantía bien delimitado (tablas de hipótesis), línea base fuerte y admitida, resultados negativos
+publicados, ablación de la monotonía por familias de planes («la evidencia más convincente»),
+consistencia numérica alta (recalculó medias geométricas, test de signos, razones, Wilson), métrica
+en unidades del ataque. Objeciones por gravedad y casillas (R5):
+
+- [ ] **R5-1. Manuscrito inacabado** (válida; lo más barato de arreglar). Tres `\todo` visibles
+      (§5.3.3, ap. B.3, ap. D.2); UGR'16 a FPR 1e-3 y con el detector certificado anterior mientras
+      §6.5 dice «presupuesto 0,5 y nada más»; KitNET sin presupuesto ni ataque en la red grande;
+      ablación sin Proteus-cert en 17 → 18; «original certified detector» sin definir (ap. B.1).
+      = R4-4. Hacer: UGR'16 con el sistema final al presupuesto, balances (en cola), ablación.
+- [ ] **R5-2. Ventaja sobre la regla trivial no establecida** (válida; ya declarada): 2,1× con IC
+      0,97–4,3, p = 0,08, rejilla a pasos de 2,26× en la red grande; reglas seleccionadas 13/13 a
+      0,61 y 8,4 % frente a 6,1 %. Hacer: bisección o rejilla fina en 17 → 18, más semillas en el
+      atacante, y rebajar «6 % frente a 12–13 %» en resumen, highlights y conclusión con el intervalo.
+- [ ] **R5-3. Comparación no a alarmas iguales; métrica de cabecera favorable** (válida): por
+      destino y minuto Proteus es el peor detector agregado (60,4 frente a 22,2 / 1,8 / 0,8). Hacer:
+      curvas daño–alarmas con las dos métricas (lo que falta de R4-1) y dar las dos al mismo nivel.
+- [ ] **R5-4. Cobertura certificada escasa y frágil al reparto entre orígenes** (válida y nueva en
+      esta forma): GoldenEye, Slowloris y Slowhttptest pasan Proteus-cert repartidos entre ≤ 100
+      orígenes (S7), y la tabla de hipótesis y §5.2 dicen que repartir no baja la evidencia de
+      destino. Hacer: variante de Proteus-cert certificada solo con evidencia de destino y medir qué
+      cobertura queda; o declarar el reparto como límite del certificado en resumen y tabla 2.
+- [ ] **R5-5. Tráfico real débil y sin tabla** (válida): CTU-13, UGR'16, inyección con víctimas casi
+      ociosas (mediana 36 flujos/h); el núcleo sin restricción conserva 6,9 % frente al 17 % en
+      UGR'16, dicho en media frase. Hacer: tablas, víctimas de carga alta, discutir el 6,9 %.
+- [ ] **R5-6. El certificado cubre movimientos que el atacante no haría; (A1) sin exportadores
+      reales** (válida; = R4-2). RQ3 como comprobación de implementación; límite de recursos del
+      exportador frente a «sin presupuesto».
+- [ ] **R5-7. Atacante propio y débil** (válida; = R4-6, R3-5, R2-6): semilla 0; la búsqueda por
+      consultas queda por debajo del ataque sin modificar en el escaneo del jueves (12 frente a 104);
+      sin atacante aprendido ni caja blanca; sin banco de pruebas (= R4-7).
+- [ ] **R5-8. Defensas externas sin ejecutar** (válida; = R3-6): CertTA/BARS con su código, Whisper
+      o HyperVision; o reducir la tabla 1 y RQ5.
+- [ ] **R5-9. Muestras pequeñas y pseudo-replicación** (válida; = O5, R4-3): episodios de escaneo
+      como campañas, 3 semillas, diseño ajustado en las redes de prueba; quitar el sub-núcleo de
+      origen mejora en 18 → 17 (ablación). Hacer: agrupar por ataque y víctima, ≥ 10 semillas,
+      evaluación retenida.
+- [ ] **R5-10. Calibración y cómputo no realizables en despliegue** (válida; = V4): etiquetas de la
+      red de prueba, días posteriores, orden de evento y no de llegada, TTD sin el retraso de
+      exportación. Hacer: evaluación causal en orden de llegada.
+- [ ] **R5-11. Motivación sobre Apollon no sustentada por los 79 flujos** (válida): dejarla en el
+      argumento analítico; redacción respetuosa (un solo sistema).
+- [ ] **R5-12. Componentes no evaluados extremo a extremo** (capa por flujo, contador de
+      realimentación, compuesto METIS). Justificar o retirar.
+- [ ] **R5-13. Claridad y extensión** (= R4-5): objetivo 16–18 páginas; resultados en prosa a tablas;
+      puntos de operación mezclados (FPR 1e-3 en apéndices, §6.3 y S2 sin decirlo); «Certified»
+      frente a «Cert.»; comentarios internos del `.tex`; φ(r) de los contadores de RST en el ap. C.
+- [ ] **R5-14. Discrepancias texto–tablas** (13; redacción salvo la 2): LOIC-UDP del miércoles
+      certificada al 99 % en la tabla de detección y «nada certificado» en frontera y adaptativo;
+      «behind in both directions» del núcleo sin restricción (9+0 a 0,28 frente a 8+1 a 0,20);
+      «certifies nearly everything it alerts on»; §6.3 y S2 con otro umbral; rango de inundaciones sin
+      el > 887; 680/681; 13 o 12 días de UGR'16; escaneos de bots (2 de 4 detectados frente a «todos
+      bajo la frontera»); «the search confirms our plans»; 0,08 frente a 0,07; «evaded as often»;
+      compuestos de S1 con λ.
+
+Lectura: misma nota que la revisión 4 y casi las mismas objeciones de fondo (ventaja sobre reglas,
+alarmas iguales, exportadores reales, atacante, defensas externas, evaluación retenida). Lo nuevo y
+accionable ya: R5-1, R5-4, R5-14 y la parte de redacción de R5-2, R5-3, R5-11 y R5-13.
+
 ### Revisión 4 (2026-11-19 04:00)
 
 Nota **5/10** (sube de 4). Con los `\todo` entregados, 5,5. Reconoce: modelo de amenaza y supuestos
