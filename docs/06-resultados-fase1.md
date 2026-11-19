@@ -2931,3 +2931,12 @@ puerto atacado: mediana 36, p90 338, máx. 3 933 flujos/h.
 GoldenEye, Slowloris y escaneos pasan las reglas en todas las víctimas y el sistema en ninguna. Las
 peticiones mínimas no añaden nada en UGR'16. Contador de realimentación corregido 18 → 17 (`fbc_1817`):
 igual que la tabla publicada (el bug no afectaba a 2017); falta 17 → 18 (`fbc_1718`).
+
+### 6.116 Realimentación corregida en 2018 (`fbc_1718`) y balance por tipo en 18 → 17 (`bal_type_1817`)
+
+- Realimentación 17 → 18 (166,8 h, 60 903 falsos positivos de 18 296 orígenes), τ = 600 s: K = 10 →
+  0,44 alarmas de origen/h; K = 20 → 0,14; K = 50 → 0,04 (antes, con el bug, un suelo de ~5,4). En el
+  suplementario.
+- Balance «cada tipo de ataque con el mismo peso» 18 → 17, presupuesto 0,5: sistema 11+2 a 1,83 (el
+  nuestro, 11+3 a 1,35); Proteus-fast 11+0 a 1,06; Proteus-cert 8+2 a 0,94. Los resultados no dependen
+  de esa elección. Falta 17 → 18 (`bal_type_1718`, en marcha) para escribirlo.
