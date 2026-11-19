@@ -179,15 +179,18 @@ def test_ugr16_weekly_files_are_read_by_the_hour_into_one_table_per_day(tmp_path
     raw.loc[1::2].to_parquet(tmp_path / "w2.parquet", index=False)
     ex.build_from_raw([tmp_path / "w1.parquet", tmp_path / "w2.parquet"], 600.0)
     svc, host, hours = ex.load("ugr16", 600.0)
-    assert list(svc) == ["2016-07-28", "2016-07-29"] and hours == {"2016-07-28": 2.0, "2016-07-29": 2.0}
+    assert list(svc) == list(host) == ["2016-07-28", "2016-07-29"]
+    assert hours == {"2016-07-28": 2.0, "2016-07-29": 2.0}
     both = pd.concat(svc.values())
     assert both["conn"].sum() == n and both["pkts"].sum() == 4 * n and len(both) == 24
     assert not both["dirty"].any() and both["win"].is_unique
-    direct = witness.service_windows(ex.h1.pd.DataFrame({
-        "t_start": pd.to_datetime(raw["ts_start"], unit="s"), "t_end": pd.to_datetime(raw["ts_end"], unit="s"),
+    direct = witness.service_windows(pd.DataFrame({
+        "t_start": pd.to_datetime(raw["ts_start"], unit="s"),
+        "t_end": pd.to_datetime(raw["ts_end"], unit="s"),
         "dst_ip": raw["dst_ip"], "dst_port": 80, "proto": 6, "fwd_pkts": 4, "fwd_bytes": 400}))
     m = both.merge(direct, on=["key", "win"], suffixes=("", "_d"))
     assert len(m) == 24 and (m["conc"] == m["conc_d"]).all()  # peaks agree across chunk edges
-    before = (tmp_path / "ugr16" / "witness_w600" / "2016-07-28.svc.parquet").stat().st_mtime_ns
+    written = tmp_path / "ugr16" / "witness_w600" / "2016-07-28.svc.parquet"
+    before = written.stat().st_mtime_ns
     ex.build_from_raw([tmp_path / "w1.parquet", tmp_path / "w2.parquet"], 600.0)  # nothing redone
-    assert (tmp_path / "ugr16" / "witness_w600" / "2016-07-28.svc.parquet").stat().st_mtime_ns == before
+    assert written.stat().st_mtime_ns == before
