@@ -422,7 +422,7 @@ def training_set(ds: str, rng: np.random.Generator, cap_attack=50_000, cap_benig
         del ev
         rows = read_rows(cache_parts(ds, day), idx)
         flow = read_rows(day, idx, flow_feature_columns(day)).astype("float32")
-        parts.append(pd.concat([rows, flow.add_prefix("flow__")], axis=1))
+        parts.append(pd.concat([rows, flow.add_prefix("flow__")], axis=1).assign(_day=day.stem))
         print(f"  train {ds}/{day.stem}: {len(idx):,} rows", flush=True)
     return pd.concat(parts, ignore_index=True), specs
 
@@ -448,10 +448,36 @@ def hgb(cst: list[int] | None) -> HistGradientBoostingClassifier:
     )
 
 
+def _cell_weights(keys: pd.DataFrame) -> np.ndarray:
+    """Weights that give every group of the first column the same total, and every cell
+    (all columns) within a group the same share of it."""
+    cell = keys.groupby(list(keys.columns), sort=False, observed=True).ngroup().to_numpy()
+    group = keys.groupby(keys.columns[0], sort=False, observed=True).ngroup().to_numpy()
+    n_cell = np.bincount(cell)[cell].astype(np.float64)
+    cells_per_group = pd.Series(cell).groupby(group).nunique().to_numpy()[group]
+    return 1.0 / (n_cell * cells_per_group)  # each group sums to 1
+
+
 def sample_weights(tr: pd.DataFrame) -> np.ndarray | None:
-    """Training weights for the --balance modes "type" and "type_entity" (None otherwise).
-    Total weight: every attack type the same; benign as much as all attacks."""
+    """Training weights for the --balance modes "type", "type_entity" and "campaign"
+    (None otherwise). "type": every attack type the same total weight, benign as much as
+    all attacks. "campaign": the unit that matters is not the flow but the entity in a
+    window: every campaign (attack type of a day) the same total, every (victim,
+    ten-minute window) within it the same share, so a tool that sends many flows
+    weighs no more than one that sends few; benign traffic likewise by (destination,
+    window) within each day, with as much total weight as all campaigns."""
     mode = BALANCE["mode"]
+    if mode == "campaign":
+        att = tr["is_attack"].to_numpy()
+        win = (pd.to_datetime(tr["t_start"]).astype("int64") // (600 * 10**9)).to_numpy()
+        keys = pd.DataFrame({"g": tr["_day"].astype(str) + "|" + np.where(att, tr["attack"].astype(str), "~benign"),
+                             "dst": tr["dst_ip"].astype(str).to_numpy(), "win": win})
+        w = np.zeros(len(tr))
+        w[att] = _cell_weights(keys[att].reset_index(drop=True))
+        n_campaigns = keys.loc[att, "g"].nunique()
+        wb = _cell_weights(keys[~att].reset_index(drop=True))
+        w[~att] = wb / wb.sum() * n_campaigns
+        return w * (len(tr) / w.sum())
     if mode not in ("type", "type_entity"):
         return None
     att = tr["is_attack"].to_numpy()
@@ -928,7 +954,7 @@ def main() -> None:
                     help="restrict training to these capture days (file stems)")
     ap.add_argument("--test-days", nargs="*", default=None,
                     help="restrict testing to these capture days (file stems)")
-    ap.add_argument("--balance", choices=["cap", "type", "type_entity", "none"], default="cap",
+    ap.add_argument("--balance", choices=["cap", "type", "type_entity", "campaign", "none"], default="cap",
                     help="class balance of the training set (see BALANCE)")
     ap.add_argument("--extra-runs", type=Path, nargs="*", default=[],
                     help="with --reuse: more runs of the same pair to take fitted models from")
