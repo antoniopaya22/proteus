@@ -187,12 +187,16 @@ dejó de resolver otra vez (otro reinicio en curso). Al volver: comprobar `maste
 dos guiones (saltan lo hecho). Con la GPU quedan al alcance las defensas publicadas con su código
 (BARS, CertTA, PANTS) y un atacante aprendido tipo NetMasquerade.
 
-**Propuesta de rediseño pendiente de decisión (2026-11-19).** A petición de Antonio se planteó, sin
-contar con lo desarrollado, un diseño alternativo: certificado de daño residual (umbrales sobre
-testigos de daño por entidad, envolvente calibrada con veredictos, punto de operación sorteado según
-el equilibrio como herencia de Apollon, METIS para admisión de monitores, banco de dosis y fidelidad
-del tráfico inyectado), con cuatro comprobaciones previas de unas dos semanas. No está medido ni
-aprobado; hasta que Antonio decida, el bucle sigue con las casillas R4.
+**Propuesta de rediseño (2026-11-19; docs/13).** A petición de Antonio, y sin obligación de conservar
+Apollon, se plantea un diseño alternativo: certificado de daño residual (umbrales sobre testigos de
+daño por víctima, envolvente por entidad calibrada al presupuesto sin ejemplos de ataque, peor caso
+del atacante en fórmula cerrada). No está medido ni aprobado como rumbo del paper.
+- [x] Código de la comprobación decisiva: `proteus.envelope` (`witness`, `calibrate`, `attacker`) y
+      `proteus.evaluation.envelope_exp`, con 9 tests (254 en total).
+- [ ] Lanzarla en la máquina cuando vuelva (lleva caída desde las 08:36 UTC): tablas de testigos de
+      UGR'16 desde las semanas en bruto y ataques de 2018 contra sus víctimas, a presupuesto 0,5;
+      después CIC-IDS-2017 y CSE-CIC-IDS-2018 con el protocolo causal. Criterio en docs/13 §13.6.
+- Hasta tener ese número no se toca el paper actual ni se recorta (R4-5); la cola de R4 sigue.
 
 ### Orientación v2 (decidida con Antonio el 2026-11-18)
 
