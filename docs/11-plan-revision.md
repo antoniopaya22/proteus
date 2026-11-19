@@ -162,19 +162,19 @@ publicados, ablación de la monotonía por familias de planes («la evidencia m�
 consistencia numérica alta (recalculó medias geométricas, test de signos, razones, Wilson), métrica
 en unidades del ataque. Objeciones por gravedad y casillas (R5):
 
-- [~] **R5-1. Manuscrito inacabado** (21:30 UTC: encolado `extra12.sh` con `ugrJA_nox`, `ugrAJ_nox` y `ugr17_nox`, UGR'16 al presupuesto 0,5 sin exclusión reutilizando los modelos r2, unas 5 h; balances: faltan solo `bal_none_1718`) (válida; lo más barato de arreglar). Tres `\todo` visibles
+- [~] **R5-1. Manuscrito inacabado** (22:40 UTC: cerrado el `\todo` de los balances con `bal_none_1718`, 12+1 a 0,21, §6.124; `ablr_1718` no estaba en ninguna cola viva y se ha reencolado en `extra13.sh`; quedan dos `\todo`: UGR'16 y ablación) (21:30 UTC: encolado `extra12.sh` con `ugrJA_nox`, `ugrAJ_nox` y `ugr17_nox`, UGR'16 al presupuesto 0,5 sin exclusión reutilizando los modelos r2, unas 5 h; balances: faltan solo `bal_none_1718`) (válida; lo más barato de arreglar). Tres `\todo` visibles
       (§5.3.3, ap. B.3, ap. D.2); UGR'16 a FPR 1e-3 y con el detector certificado anterior mientras
       §6.5 dice «presupuesto 0,5 y nada más»; KitNET sin presupuesto ni ataque en la red grande;
       ablación sin Proteus-cert en 17 → 18; «original certified detector» sin definir (ap. B.1).
       = R4-4. Hacer: UGR'16 con el sistema final al presupuesto, balances (en cola), ablación.
-- [ ] **R5-2. Ventaja sobre la regla trivial no establecida** (válida; ya declarada): 2,1× con IC
+- [~] **R5-2. Ventaja sobre la regla trivial no establecida** (22:40 UTC, redacción hecha: resumen con «ratio 2.1, 95 % interval 0.97–4.3» y 248 palabras, highlight con p = 0,08; la conclusión ya decía que los intervalos llegan a la paridad; la web y el README no citan esa cifra. Falta lo experimental: rejilla fina y semillas del atacante) (válida; ya declarada): 2,1× con IC
       0,97–4,3, p = 0,08, rejilla a pasos de 2,26× en la red grande; reglas seleccionadas 13/13 a
       0,61 y 8,4 % frente a 6,1 %. Hacer: bisección o rejilla fina en 17 → 18, más semillas en el
       atacante, y rebajar «6 % frente a 12–13 %» en resumen, highlights y conclusión con el intervalo.
 - [ ] **R5-3. Comparación no a alarmas iguales; métrica de cabecera favorable** (válida): por
       destino y minuto Proteus es el peor detector agregado (60,4 frente a 22,2 / 1,8 / 0,8). Hacer:
       curvas daño–alarmas con las dos métricas (lo que falta de R4-1) y dar las dos al mismo nivel.
-- [ ] **R5-4. Cobertura certificada escasa y frágil al reparto entre orígenes** (válida y nueva en
+- [~] **R5-4. Cobertura certificada escasa y frágil al reparto entre orígenes** (22:40 UTC: sufijos de ablación encadenables, `proteus_cert_r-2-1` = solo sub-núcleos de destino; encolados `dst_1817` y `qadst_1817` (unidad con tope) y `dst_1718` (candado); tabla 2 ya dice «destination evidence; not certified» para el reparto) (válida y nueva en
       esta forma): GoldenEye, Slowloris y Slowhttptest pasan Proteus-cert repartidos entre ≤ 100
       orígenes (S7), y la tabla de hipótesis y §5.2 dicen que repartir no baja la evidencia de
       destino. Hacer: variante de Proteus-cert certificada solo con evidencia de destino y medir qué
@@ -182,29 +182,29 @@ en unidades del ataque. Objeciones por gravedad y casillas (R5):
 - [ ] **R5-5. Tráfico real débil y sin tabla** (válida): CTU-13, UGR'16, inyección con víctimas casi
       ociosas (mediana 36 flujos/h); el núcleo sin restricción conserva 6,9 % frente al 17 % en
       UGR'16, dicho en media frase. Hacer: tablas, víctimas de carga alta, discutir el 6,9 %.
-- [ ] **R5-6. El certificado cubre movimientos que el atacante no haría; (A1) sin exportadores
-      reales** (válida; = R4-2). RQ3 como comprobación de implementación; límite de recursos del
+- [~] **R5-6. El certificado cubre movimientos que el atacante no haría; (A1) sin exportadores
+      reales** (22:40 UTC, redacción hecha: RQ3 presentada como comprobación de la implementación y de (A1); «sin presupuesto» condicionado a que el exportador y la tabla de estado aguanten los registros. Faltan los exportadores reales) (válida; = R4-2). RQ3 como comprobación de implementación; límite de recursos del
       exportador frente a «sin presupuesto».
 - [ ] **R5-7. Atacante propio y débil** (válida; = R4-6, R3-5, R2-6): semilla 0; la búsqueda por
       consultas queda por debajo del ataque sin modificar en el escaneo del jueves (12 frente a 104);
       sin atacante aprendido ni caja blanca; sin banco de pruebas (= R4-7).
 - [ ] **R5-8. Defensas externas sin ejecutar** (válida; = R3-6): CertTA/BARS con su código, Whisper
       o HyperVision; o reducir la tabla 1 y RQ5.
-- [ ] **R5-9. Muestras pequeñas y pseudo-replicación** (válida; = O5, R4-3): episodios de escaneo
+- [~] **R5-9. Muestras pequeñas y pseudo-replicación** (22:40 UTC: las semillas 3 y 4 estaban marcadas como hechas pero se habían saltado, `~/tools/m/SKIPPED`; lanzadas las semillas 3–9 de 18 → 17 en una unidad con tope, `seedc_1817_*`, y las 3 y 4 de 17 → 18 bajo el candado, `seedc_1718_*`; las 5–9 de 17 → 18 son unas 14 h más y se encolan después) (válida; = O5, R4-3): episodios de escaneo
       como campañas, 3 semillas, diseño ajustado en las redes de prueba; quitar el sub-núcleo de
       origen mejora en 18 → 17 (ablación). Hacer: agrupar por ataque y víctima, ≥ 10 semillas,
       evaluación retenida.
 - [ ] **R5-10. Calibración y cómputo no realizables en despliegue** (válida; = V4): etiquetas de la
       red de prueba, días posteriores, orden de evento y no de llegada, TTD sin el retraso de
       exportación. Hacer: evaluación causal en orden de llegada.
-- [ ] **R5-11. Motivación sobre Apollon no sustentada por los 79 flujos** (válida): dejarla en el
+- [x] **R5-11. Motivación sobre Apollon no sustentada por los 79 flujos** (22:40 UTC: §3.2 dice que el argumento es analítico y que la muestra de 79 flujos es demasiado pequeña para establecerlo; «no more often») (válida): dejarla en el
       argumento analítico; redacción respetuosa (un solo sistema).
 - [ ] **R5-12. Componentes no evaluados extremo a extremo** (capa por flujo, contador de
       realimentación, compuesto METIS). Justificar o retirar.
-- [ ] **R5-13. Claridad y extensión** (= R4-5): objetivo 16–18 páginas; resultados en prosa a tablas;
+- [~] **R5-13. Claridad y extensión** (22:40 UTC: columnas «P-fast» y «P-cert» para los detectores y «Certified» solo para alertas certificadas, también en `tables.py`; comentarios internos del `.tex` fuera; φ(r) con paquete testigo para los contadores de RST, cota 2Δ; resumen 248 palabras. Falta la extensión) (= R4-5): objetivo 16–18 páginas; resultados en prosa a tablas;
       puntos de operación mezclados (FPR 1e-3 en apéndices, §6.3 y S2 sin decirlo); «Certified»
       frente a «Cert.»; comentarios internos del `.tex`; φ(r) de los contadores de RST en el ap. C.
-- [~] **R5-14. Discrepancias texto–tablas** (corregidas en el paper la 3–12 salvo la 2: umbral de §6.3 y S2 declarado (FPR 1e-3), rango con > 887, 681, 12 días completos, bots de CTU-13, atacante por consultas sin «confirms», 0,08/0,07, «no more often»; la 2, LOIC-UDP del miércoles, en diagnóstico: `diag_udp.py` encolado bajo el candado; falta la 13, compuestos de S1) (13; redacción salvo la 2): LOIC-UDP del miércoles
+- [~] **R5-14. Discrepancias texto–tablas** (corregidas en el paper la 3–12 salvo la 2: umbral de §6.3 y S2 declarado (FPR 1e-3), rango con > 887, 681, 12 días completos, bots de CTU-13, atacante por consultas sin «confirms», 0,08/0,07, «no more often»; la 2, LOIC-UDP del miércoles, en diagnóstico: `diag_udp.py` encolado bajo el candado; la 13 corregida a las 22:40: S1 dice que λ cambia en los dos niveles) (13; redacción salvo la 2): LOIC-UDP del miércoles
       certificada al 99 % en la tabla de detección y «nada certificado» en frontera y adaptativo;
       «behind in both directions» del núcleo sin restricción (9+0 a 0,28 frente a 8+1 a 0,20);
       «certifies nearly everything it alerts on»; §6.3 y S2 con otro umbral; rango de inundaciones sin
