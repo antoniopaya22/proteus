@@ -3001,3 +3001,32 @@ en UGR'16 y mejora clara sobre la regla única.
   manipulaciones implementadas; aquí es el óptimo con el coste mínimo por unidad de daño (peticiones de
   18 bytes, 100 por conexión). Queda como dato para la discusión: un umbral de volumen por servicio no
   acota al atacante óptimo en una red real con este presupuesto.
+
+### 6.120 Atacante adaptativo contra `proteus_cert_f` solo, 17 → 18 (`adaptf_1718`): no se adopta
+
+Misma rejilla y semilla que `g16`, presupuesto 0,5. Parte del ritmo real que conserva el atacante
+(media sobre 10 campañas; mediana; campañas que pasan enteras):
+
+| Detector | Sin adaptar | Adaptado |
+|---|---|---|
+| `proteus_cert_f` | 57 % (66 %; 5) | **77 % (100 %; 7)** |
+| Proteus-fast | 32 % (17 %; 2) | 40 % (32 %; 2) |
+| Proteus-cert-R | 48 % (38 %; 4) | 48 % (38 %; 4) |
+| Reglas / reglas seleccionadas | 38 % / 36 % | 47 % / 41 % |
+
+`proteus_cert_f` no cierra el paso de Slowloris (pasa entero sin adaptar nada) ni el de GoldenEye,
+SSH, los dos LOIC-UDP y los escaneos (100 %); solo mejora LOIC-HTTP (4,5 % frente a 51 % de
+Proteus-fast y 100 % de cert-R). Con §6.113 (no añade detección en 18 → 17) y §6.117 (13+1 a 0,67
+frente a 12+1 a 0,26), queda descartado: una campaña mejor a cambio de 2,6 veces las alarmas. El
+sistema del paper no cambia.
+
+### 6.121 Balance «tipo y entidad» en 18 → 17 (`bal_type_entity_1817`)
+
+Presupuesto 0,5: sistema (`proteus_pcr`) **11+7 a 0,87** alarmas de entidad/h (el del paper: 11+3 a
+1,35; «por tipo»: 11+2 a 1,83). Proteus-fast 11+2 a 0,31; Proteus-cert-R 9+6 a 0,60 (detecta fuerza
+bruta web, SQLi, XSS y las dos infiltraciones; pierde dos de los escaneos del viernes). Es mejor que
+el balance del paper en esta red, pero «por tipo» ya mostró que el otro sentido es el que decide
+(§6.118: 6+1): no se concluye nada hasta tener `bal_type_entity_1718` (en marcha). Aunque saliera
+mejor en los dos sentidos, cambiar el balance ahora sería elegir el diseño con las redes de prueba
+(objeción O6): iría como sensibilidad en el apéndice, no como cifra de cabecera, salvo evaluación
+retenida (R4-3).
