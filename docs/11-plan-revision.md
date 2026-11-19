@@ -170,7 +170,7 @@ Casillas (R4):
       otro), calibración sin etiquetas (V4: veredictos del analista) y CTU-13 con los sospechosos.
 - [ ] **R4-4. Un punto de operación:** UGR'16 (en cola), CIC-DDoS-2019, ablación, tabla de evidencia,
       S2 y S3 al presupuesto; resumen con el tráfico real.
-- [~] **R4-5. Extensión ~10k palabras** (2026-11-19: envenenamiento y ataques a la capa por flujo al suplementario, S5 y S6, con resumen en el texto; «otros detectores» más corto; 17 905 → 17 407 palabras, 25 páginas; siguen RQ5, diseño y apéndice); capa por flujo y Apollon más cortos (sin perder el linaje v1→v2);
+- [~] **R4-5. Extensión ~10k palabras** (2026-11-19: envenenamiento y ataques a la capa por flujo al suplementario, S5 y S6, con resumen en el texto; «otros detectores» más corto; RQ5 más corto y atacante por consultas al suplementario, S7; 17 905 → 17 216 palabras con tablas, 14 400 de prosa sin apéndice (evaluación 7 000, diseño 2 600), 25 páginas; siguen preparación, RQ1, RQ3, RQ4, tráfico real y diseño); capa por flujo y Apollon más cortos (sin perder el linaje v1→v2);
       puntuación de Apollon justa (voto blando o desempate) para el presupuesto.
 - [ ] **R4-6. Atacante sobre lo no cubierto:** pulsos ajustados a τ, reparto a escala de botnet,
       búsqueda de caja blanca.
@@ -239,6 +239,10 @@ del atacante en fórmula cerrada). No está medido ni aprobado como rumbo del pa
   peor que la del sistema actual. Diagnóstico: el pico diario por servicio no es estable en una red
   real (márgenes de 40× a 4 300×) y en los servidores grandes la holgura absoluta supera a los
   ataques; no es cuestión de un parámetro.
+- Resultados retenidos (19:30 UTC): `adaptf_1718` (docs/06 §6.120: `proteus_cert_f` solo deja al
+  atacante el 77 % del ritmo, no cierra Slowloris; descartado) y `bal_type_entity_1817` (§6.121:
+  11+7 a 0,87, mejor que el balance del paper en esa red; pendiente el otro sentido, y en todo caso
+  es sensibilidad de apéndice, no cabecera: O6).
 - Consecuencias: el paper sigue siendo el de `main` (sistema actual, nota 5/10 de la ronda 4); la
   rama `residual-harm` queda archivada sin fusionar; la web, el README y la cita no cambian.
   Relanzados `extra11.sh` y `extra.sh` a las 18:31 UTC. Se retoma la ronda 4 (R4-2 a R4-7). El óptimo
