@@ -3460,3 +3460,16 @@ minuto no se cruzan nunca: Proteus da 60–127 en todos los presupuestos y ning�
 en esa métrica no hay punto de alarmas iguales y la comparación no favorece a ninguno. Paper:
 §6.4, tabla `tab:damage-budget` y párrafo «These comparisons are not at equal alarms». Falta el
 presupuesto 1 (`adaptb1_1817`, ~18:00 UTC), que entra como columna.
+
+### 6.141 Primeros resultados de la segunda máquina: semilla 5 de 17 → 18 y semilla 1 del atacante (R5-9, R5-2)
+
+- **Semilla 5 de entrenamiento, 17 → 18** (`seedc_1718_5`, presupuesto 0,5): Proteus (`proteus_pcr`)
+  **13+1 a 0,33** alarmas de entidad/h (a presupuesto 1: 13+1 a 0,55); certificadas 6+1; umbrales de
+  tasa 13+2 a 1,18. Semillas 0–2: 12+1 a 0,26, 13+1 a 0,32, 12+1 a 0,26 (pierde LOIC-HTTP). Con
+  cuatro semillas el rango del resumen pasa de «12–13 a 0,26–0,32» a 12–13 a 0,26–0,33. Se cambia el
+  paper cuando lleguen las semillas 3, 4 y 6–9 (~02:00 UTC).
+- **Semilla 1 del atacante adaptativo, 18 → 17** (`adaptseed1_1817`, presupuesto 0,5, todos los
+  planes, cuota media geométrica de la tasa real / ataques que pasan): Proteus 5,3 %/1 (semilla 0:
+  5,9 %), P-fast 6,1 % (7,1 %), umbrales de tasa 13,0 % (13,0 %), seleccionadas 38,1 % (36,3 %), sin
+  restricción 26,8 % (30,8 %). El cociente reglas/Proteus sube de 2,2 a 2,5; el orden no cambia.
+  Faltan las semillas 2–4.
