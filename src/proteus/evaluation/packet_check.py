@@ -98,8 +98,22 @@ def main() -> None:
     ap.add_argument("--taus", type=float, nargs="+", default=[10, 60, 600, 3600, 21600])
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--out", type=Path, default=Path("experiments/outputs/packet_check"))
+    ap.add_argument("--exporter", choices=["own", "nfstream"], default="own",
+                    help="who turns the packets into flow records: our exporter, or NFStream "
+                         "reading each variant from a pcap (needs the nfstream package)")
     args = ap.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
+
+    def to_flows(packets: pd.DataFrame) -> pd.DataFrame:
+        if args.exporter == "own":
+            return exporter.export(packets, active_s=args.delta)
+        import tempfile
+
+        from proteus.packets.external import export_nfstream
+        with tempfile.TemporaryDirectory() as tmp:
+            pcap.write(packets, Path(tmp) / "variant.pcap")
+            return export_nfstream(Path(tmp) / "variant.pcap", active_s=args.delta)
+
     if args.packets is not None and args.packets.exists():
         pk = pd.read_parquet(args.packets)
     else:
@@ -108,7 +122,7 @@ def main() -> None:
             pk.to_parquet(args.packets, index=False)
     print(f"{len(pk):,} packets", flush=True)
     atk = pk["src"].isin(args.attackers).to_numpy()
-    base = exporter.export(pk, active_s=args.delta)
+    base = to_flows(pk)
     print(f"{len(base):,} flows, {int(atk.sum()):,} attacker packets", flush=True)
     taus = tuple(args.taus)
     rng = np.random.default_rng(args.seed)
@@ -128,7 +142,7 @@ def main() -> None:
         if p["decoys"]:
             v = ops.decoys(v, args.attackers, [(args.victim, args.port), (args.victim, 22)],
                            p["decoys"], rng)
-        var = exporter.export(v, active_s=args.delta)
+        var = to_flows(v)
         r = check(base, var, args.victim, args.port, args.delta, taus, args.attackers)
         r["variant"], r["flows"] = k, len(var)
         for key, val in p.items():
@@ -137,7 +151,8 @@ def main() -> None:
         print(f"variant {k} {p}: {len(var):,} flows, violations {int(r['violations'].sum())}, "
               f"min ratio / bound {float((r['min_ratio'] / r['bound']).min()):.3f}", flush=True)
     res = pd.concat(results, ignore_index=True)
-    res.to_csv(args.out / f"packet_check_{args.victim}_{args.port}.csv", index=False)
+    suffix = "" if args.exporter == "own" else f"_{args.exporter}"
+    res.to_csv(args.out / f"packet_check_{args.victim}_{args.port}{suffix}.csv", index=False)
     print(res.groupby("counter")[["violations", "min_ratio", "bound"]]
           .agg({"violations": "sum", "min_ratio": "min", "bound": "first"}).to_string())
 

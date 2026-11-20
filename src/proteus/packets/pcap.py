@@ -1,5 +1,5 @@
 """Read IPv4 TCP/UDP packets from a pcap or pcapng file into the packet table of
-``exporter``."""
+``exporter``, and write such a table back to a pcap for other exporters to read."""
 
 from __future__ import annotations
 
@@ -56,3 +56,31 @@ def read(path: Path, hosts: set[str] | None = None, t0: float | None = None,
                  ("size", np.int64), ("flags", np.int16)):
         df[c] = df[c].astype(t)
     return df
+
+
+def write(pk: pd.DataFrame, path: Path) -> None:
+    """The packet table ``pk`` as a pcap of Ethernet/IPv4 frames: every packet with its
+    time, addresses, ports, TCP flags and IP payload length (zeros as data), which is
+    all a flow exporter accounts. UDP packets get their 8-byte header, TCP ones a
+    20-byte header; a ``size`` below the header is written as a bare header."""
+    import dpkt
+
+    pk = pk.sort_values("ts", kind="stable")
+    mac = b"\x02\x00\x00\x00\x00\x01"
+    with open(path, "wb") as fh:
+        out = dpkt.pcap.Writer(fh, snaplen=65535)
+        for ts, src, dst, sport, dport, proto, size, flags in zip(
+                pk["ts"].to_numpy(np.float64), pk["src"], pk["dst"], pk["sport"].to_numpy(),
+                pk["dport"].to_numpy(), pk["proto"].to_numpy(), pk["size"].to_numpy(),
+                pk["flags"].to_numpy(), strict=True):
+            if proto == dpkt.ip.IP_PROTO_TCP:
+                l4 = dpkt.tcp.TCP(sport=int(sport), dport=int(dport), flags=int(flags),
+                                  data=bytes(max(int(size) - 20, 0)))
+            else:
+                l4 = dpkt.udp.UDP(sport=int(sport), dport=int(dport),
+                                  data=bytes(max(int(size) - 8, 0)))
+                l4.ulen = len(l4)
+            ip = dpkt.ip.IP(src=socket.inet_aton(src), dst=socket.inet_aton(dst), p=int(proto),
+                            data=l4)
+            ip.len = len(ip)
+            out.writepkt(bytes(dpkt.ethernet.Ethernet(src=mac, dst=mac, data=ip)), ts=float(ts))

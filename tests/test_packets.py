@@ -60,3 +60,38 @@ def test_free_operations_respect_the_bound():
     # Identity: the counter only decays during Δ, ratio exp(-Δ/τ) above the bound.
     same = check(base, base, "10.0.0.1", 80, 120.0, (600.0,)).dropna()
     assert np.allclose(same["min_ratio"], np.exp(-120.0 / 600.0), rtol=1e-3)
+
+
+def test_pcap_write_keeps_what_an_exporter_accounts(tmp_path):
+    pytest = __import__("pytest")
+    pytest.importorskip("dpkt")
+    from proteus.packets import pcap
+
+    pk = pd.DataFrame({
+        "ts": [10.0, 10.5, 11.25, 12.0], "src": ["10.0.0.1", "10.0.0.2", "10.0.0.1", "10.0.0.3"],
+        "dst": ["10.0.0.2", "10.0.0.1", "10.0.0.2", "10.0.0.2"], "sport": [40000, 80, 40000, 5353],
+        "dport": [80, 40000, 80, 53], "proto": [6, 6, 6, 17], "size": [20, 1480, 420, 60],
+        "flags": [exporter.SYN, exporter.SYN | 0x10, 0x18, 0]})
+    pcap.write(pk, tmp_path / "x.pcap")
+    back = pcap.read(tmp_path / "x.pcap")
+    for c in ("src", "dst", "sport", "dport", "proto", "size", "flags"):
+        assert back[c].tolist() == pk[c].tolist(), c
+    assert np.allclose(back["ts"], pk["ts"], atol=1e-5)
+
+
+def test_nfstream_reads_the_packets_we_write(tmp_path):
+    pytest = __import__("pytest")
+    pytest.importorskip("dpkt")
+    pytest.importorskip("nfstream")
+    from proteus.packets import pcap
+    from proteus.packets.external import export_nfstream
+
+    rows = [(t, "10.0.0.1", "10.0.0.2", 40000, 80, 6, 120, 0x18) for t in (1.0, 2.0, 3.0)]
+    rows += [(2.5, "10.0.0.2", "10.0.0.1", 80, 40000, 6, 1000, 0x18)]
+    pk = pd.DataFrame(rows, columns=["ts", "src", "dst", "sport", "dport", "proto", "size", "flags"])
+    pcap.write(pk, tmp_path / "x.pcap")
+    flows = export_nfstream(tmp_path / "x.pcap")
+    assert len(flows) == 1
+    f = flows.iloc[0]
+    assert (f["src_ip"], f["dst_port"], f["fwd_pkts"], f["bwd_pkts"]) == ("10.0.0.1", 80, 3, 1)
+    assert (f["fwd_bytes"], f["bwd_bytes"]) == (360, 1000)
