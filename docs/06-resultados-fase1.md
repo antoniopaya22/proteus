@@ -3254,3 +3254,77 @@ ellas se compara a alarmas iguales, que es lo que pide la objeción.
 - Capa por flujo fuera del sistema (R5-12): al presupuesto añadiría una campaña (la botnet de 2017)
   por hasta 0,57 y 0,45 alarmas más por hora (tabla de detección); dicho en el paper.
 
+### 6.133 Diez semillas de 18 → 17 (`seedc_1817_3…9`; revisión 5, R5-9)
+
+Presupuesto por detector; volumétricas y escaneos + otros, alarmas de entidad por hora.
+
+| Semilla | Proteus, 0,5 | Proteus, 1 | Certificadas, 0,5 | Umbrales de tasa, 0,5 |
+|---|---|---|---|---|
+| 0 | 11+3 (1,35) | 11+3 (1,57) | 4+2 | 9+4 (5,28) |
+| 1 | 11+2 (1,57) | 11+3 (2,13) | 4+2 | 9+4 (4,93) |
+| 2 | 9+2 (1,25) | 9+3 (2,20) | 4+2 | 9+4 (4,98) |
+| 3 | 10+2 (1,32) | 11+3 (1,86) | 4+2 | 9+4 (4,93) |
+| 4 | 9+2 (1,59) | 9+2 (2,14) | 4+2 | 9+4 (5,31) |
+| 5 | 9+2 (1,57) | 9+2 (2,15) | 4+2 | 9+4 (4,98) |
+| 6 | 9+2 (1,30) | 11+3 (1,89) | 4+2 | 9+4 (4,98) |
+| 7 | 9+2 (1,55) | 10+2 (2,03) | 5+2 | 9+5 (5,52) |
+| 8 | 9+2 (1,25) | 11+3 (1,84) | 4+2 | 9+4 (4,98) |
+| 9 | 9+2 (0,81) | 11+3 (1,23) | 2+2 | 9+4 (4,98) |
+
+- La semilla 0, la de las tablas del paper, es el mejor caso: once de once solo en dos de diez
+  ajustes, diez en uno y nueve en siete. Lo que se pierde es siempre lo mismo: los dos escaneos
+  más pequeños del viernes (118 y 226 flujos; en la semilla 3 solo el de 118), los mismos que
+  pierden los umbrales de tasa en los diez ajustes.
+- Al presupuesto 0,5 la mediana de Proteus (9 de 11) iguala la detección de los umbrales de tasa,
+  con la cuarta parte de las alarmas (0,81–1,59 frente a unas 5). A presupuesto 1, siete de diez
+  ajustes detectan los once a 1,23–2,20.
+- Paper: resumen («9 in seven of ten seeds», 0,81–1,59), §6.2 (párrafo nuevo: «The eleven of 2017
+  are the best case over training seeds»), «In short», conclusión y S10.3. `reproduce.sh` ajusta
+  ahora las semillas 1–9 en 18 → 17. Faltan las semillas 3 y 4 de 17 → 18.
+
+### 6.134 UGR'16 con los detectores entrenados en CIC-IDS-2017, al presupuesto (`ugr17_nox`; R5-1, R5-5)
+
+Trece días, sin exclusión, campañas de al menos cinco flujos.
+
+| Umbral | Detector | DoS | Escaneos | Botnet | Alarmas de entidad/h (destino-minuto) |
+|---|---|---|---|---|---|
+| presupuesto 0,5 | Proteus | 0/46 | 0/42 | 0/11 | 0,10 (0,1) |
+| presupuesto 0,5 | umbrales de tasa | 0/46 | 0/42 | 0/11 | 1,14 (6,0) |
+| presupuesto 1 | Proteus | 20/46 | 0/42 | 0/11 | 0,64 (9,5) |
+| presupuesto 1 | umbrales de tasa | 0/46 | 0/42 | 0/11 | 1,37 (6,8) |
+| FPR 1e-3 | Proteus-fast | 31/46 | 4/42 | 0/11 | 6,87 (26,7) |
+| FPR 1e-3 | Proteus (los dos) | 35/46 | 4/42 | 0/11 | 142 (521) |
+| FPR 1e-3 | umbrales de tasa | 0/46 | 0/42 | 0/11 | 7,01 (17,2) |
+
+- Entrenado en una red de laboratorio y llevado a un ISP, al presupuesto de 0,5 Proteus no
+  detecta nada (y casi no alerta: 0,10). A presupuesto 1 detecta 20 de los 46 DoS a 0,64; los
+  umbrales de tasa, nada a ningún presupuesto. Proteus-cert satura a FPR (140 alarmas/h), otra
+  razón para el presupuesto.
+- La frase del paper que citaba 32 de 46 DoS y 31 de 42 escaneos a 25,1 alarmas era de la
+  ejecución con exclusión de saturados y a FPR; sustituida por estas cifras. Fila nueva en la
+  tabla de tráfico real («UGR'16, CIC»). Ya no queda ninguna cifra a FPR en esa sección salvo la
+  frontera de CTU-13.
+
+### 6.135 Calibración causal en 18 → 17 (`causal_1817`, `causal2_1817`; revisión 5, R5-10)
+
+Líneas base solo con días anteriores y sin enmascarar minutos de ataque; umbrales, distribuciones
+benignas y presupuestos solo con días anteriores. Miércoles a viernes (los once volumétricos y
+escaneos están ahí), presupuesto 0,5:
+
+| Protocolo | Proteus | Proteus-fast | Proteus-cert | Umbrales de tasa |
+|---|---|---|---|---|
+| causal (dos días de calentamiento) | 11+2 a 2,04 | 11+0 a 0,20 | 8+2 a 1,88 | 9+3 a 7,10 |
+| dejar un día fuera, líneas base causales | 11+2 a 0,97 | 11+0 a 0,45 | 8+2 a 0,56 | 9+3 a 6,29 |
+| dejar un día fuera, con etiquetas (paper) | 11+2 a 1,13 | 11+0 a 0,57 | 8+2 a 0,65 | 9+3 a 6,18 |
+
+- La detección no cambia. Las alarmas del sistema pasan de 1,13 a 2,04 por hora: el exceso es de
+  Proteus-cert el jueves (4,20, calibrado solo con martes y miércoles); miércoles 1,30 y viernes
+  0,50 quedan como en el protocolo del paper. Por destino y minuto, 5,3 frente a 2,0.
+- Primera ejecución (`causal_1817`) inválida y guardada como aviso: usaba el lunes para calibrar
+  el martes, y el lunes no tiene línea base propia (sus excesos son NaN), así que sus
+  puntuaciones no son comparables: 534 alarmas/h el martes. Corregido: con líneas base causales
+  el primer día no calibra a ningún otro y hay dos días de calentamiento (`reference_days(...,
+  warm=1)`, con test).
+- Paper: frase en §6.1 (umbrales y métricas) y en la discusión (líneas base). Sigue declarado que
+  el tráfico «limpio» se elige con etiquetas.
+

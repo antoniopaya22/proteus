@@ -105,7 +105,7 @@ add_real $O/ctu13__ctu13__loo_labels__foldB_r2 "CTU-13, fold 1"
 add_real $O/ctu13__ctu13__loo_labels__foldA_r2 "CTU-13, fold 2"
 add_real $O/ugr16__ugr16__loo_labels__julaug_r2 "UGR'16, August"
 add_real $O/ugr16__ugr16__loo_labels__augjul_r2 "UGR'16, July"
-add_real $O/cicids2017__ugr16__loo_labels__r2 "UGR'16, from 2017"
+add_real $O/cicids2017__ugr16__loo_labels__r2 "UGR'16, CIC"
 [ ${#real[@]} -gt 0 ] && $PY proteus.evaluation.tables real --alarm-budget 0.5 --runs "${real[@]}" \
   --labels "${labels[@]}" --out $T/real.tex > /dev/null
 ls "$T"

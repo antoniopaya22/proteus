@@ -33,7 +33,7 @@ de registro que se muestra en el terminal indica el comando exacto.
 | `budget` | Certificado de presupuesto (suavizado aleatorizado, el mecanismo de BARS) frente a operaciones gratuitas | |
 | `real` | CTU-13 y UGR'16 (dos particiones cada uno) y CIC-DDoS2019; fronteras del lado del origen en CTU-13 | |
 | `shell` | Ataques basados en decisión y en puntuación contra detectores por flujo; calibración del contador de realimentación | Necesita el extra `attacks` (ART); tarda horas |
-| `robustness` | Cuatro semillas más, líneas base calculadas sin etiquetas, balance de clases del conjunto de entrenamiento | Vuelve a ajustar los detectores |
+| `robustness` | Más semillas de entrenamiento (nueve en una dirección, dos en la otra), líneas base y calibración solo con días anteriores y sin etiquetas, balance de clases del conjunto de entrenamiento | Vuelve a ajustar los detectores |
 | `packets` | Comprobación del certificado a nivel de paquete sobre el pcap del viernes de CIC-IDS2017 | Necesita el pcap y el extra `packets` (`dpkt`) |
 | `kitsune` | Kitsune tal como se publicó, sobre los paquetes del viernes de CIC-IDS2017, frente a operaciones gratuitas a nivel de paquete | Necesita el pcap y el extra `packets` |
 | `cost` | Rendimiento del cálculo de evidencia, rendimiento de la puntuación y estado por entidad | Medido en un núcleo de CPU |

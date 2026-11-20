@@ -74,12 +74,14 @@ def days(ds: str) -> list[Path]:
     return sorted(paths, key=start.get)
 
 
-def reference_days(test_days: list[Path], day: Path, mode: str = "loo") -> list[Path]:
+def reference_days(test_days: list[Path], day: Path, mode: str = "loo", warm: int = 0) -> list[Path]:
     """Days whose clean benign traffic calibrates ``day``: every other test day
-    (``loo``) or only the earlier ones (``prior``, what a deployment has; the first day
-    then has none: it is a warm-up that feeds the later days and is not evaluated)."""
+    (``loo``) or only the earlier ones (``prior``, what a deployment has). With ``prior``
+    the first ``warm`` days never calibrate another (with baselines from earlier days the
+    first day has none, so its scores are not those of the later days), and a day left
+    without reference days is a warm-up: it is not evaluated."""
     i = test_days.index(day)
-    return test_days[:i] if mode == "prior" else test_days[:i] + test_days[i + 1:]
+    return test_days[warm:i] if mode == "prior" else test_days[:i] + test_days[i + 1:]
 
 
 def evidence(ds: str, day: Path) -> tuple[pd.DataFrame, dict[str, str]]:
@@ -1069,6 +1071,8 @@ def main() -> None:
         for _, m in models.values():
             if isinstance(m, CalibratedMax):
                 m.exclude_fpr = args.exclude_saturated
+    # Causal calibration over causal baselines: the first day has no baseline of its own.
+    warm = int(args.calibration == "prior" and args.baseline == "prior")
     # Pass 1: score every test day; keep a sample of clean benign scores per day.
     test_days = [d for d in days(args.test) if not args.test_days or d.stem in args.test_days]
     local = {n: c for n, (c, m) in models.items() if n in LOCAL or getattr(m, "local", False)}
@@ -1160,7 +1164,7 @@ def main() -> None:
     # the test network (no attack labels needed in deployment, only benign traffic).
     results = []
     for day in test_days:
-        others = reference_days(test_days, day, args.calibration)
+        others = reference_days(test_days, day, args.calibration, warm)
         # A warm-up day (no earlier day to calibrate on) is not evaluated; its local
         # detectors, fitted on its own benign sample, only pick its candidate flows.
         fit_days = others or [day]
@@ -1273,7 +1277,7 @@ def main() -> None:
     # the budget of (destination, minute) alarms on them. No labels are used.
     cands = {d: pd.read_parquet(p_) for d, p_ in budget_cand.items()}
     for day in list(local_scores):
-        others = reference_days(test_days, day, args.calibration)
+        others = reference_days(test_days, day, args.calibration, warm)
         if not others:
             local_scores.pop(day)
             continue
@@ -1332,7 +1336,7 @@ def main() -> None:
     # Every requested model must be in the results for every test day.
     got = res.groupby("model", observed=True)["day"].nunique()
     want = [n for n in models if not n.startswith("__")]
-    evaluated = sum(bool(reference_days(test_days, d, args.calibration)) for d in test_days)
+    evaluated = sum(bool(reference_days(test_days, d, args.calibration, warm)) for d in test_days)
     missing = [n for n in want if got.get(n, 0) < evaluated]
     if missing:
         raise SystemExit(f"incomplete run: {missing} lack results on some test day")

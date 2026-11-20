@@ -204,7 +204,8 @@ stage_shell() {  # tab:aml (decision-based attacks on per-flow detectors) and ta
 stage_robustness() {  # Seeds, baselines without labels, class balance of the training set.
   local ms="proteus proteus_cert_r proteus_free rate_rules_local"
   while read -r train test dir tag; do
-    for s in 1 2; do
+    local seeds="1 2"; [ "$test" = cicids2017 ] && seeds="1 2 3 4 5 6 7 8 9"
+    for s in $seeds; do
       run $O/run_${tag}_r2_s$s.log $PY proteus.evaluation.h1 --train $train --test $test --models $ms $BUD --seed $s --tag r2_s$s
     done
     for b in type type_entity none; do
@@ -214,6 +215,10 @@ stage_robustness() {  # Seeds, baselines without labels, class balance of the tr
   done < <(pairs)
   run $O/run_18_17_r2_prior_none.log $PY proteus.evaluation.h1 --train csecicids2018 --test cicids2017 \
     --baseline prior --mask none --models proteus proteus_cert_r rate_rules_local $BUD --tag r2
+  # Thresholds, benign distributions and budgets from earlier days only, as well.
+  run $O/run_18_17_r2_causal.log $PY proteus.evaluation.h1 --train csecicids2018 --test cicids2017 \
+    --baseline prior --mask none --calibration prior --reuse $O/csecicids2018__cicids2017__prior_none__r2 \
+    --models proteus proteus_cert_r rate_rules_local $BUD --tag r2_causal
 }
 
 stage_kitsune() {  # Kitsune as published on the Friday packets (needs the pcap and dpkt).
