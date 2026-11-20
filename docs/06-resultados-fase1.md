@@ -3503,3 +3503,17 @@ ataques y el orden no cambia. Lo que limita al atacante es el espacio de formas,
 Paper: §6.4 («An attacker that searches»), S7 (párrafo «An informed attacker») y amenazas a la
 validez (el más fuerte lee puntuaciones y umbrales; ninguno usa el interior de los modelos).
 `reproduce.sh` y la guía de la web (`--informed`).
+
+### 6.144 Daño frente a alarmas, presupuesto 1 en 18 → 17 (`adaptb1_1817`; revisión 5, R5-3)
+
+| Detector | B = 1 (cuota/pasan (alarmas de entidad; de destino y minuto)) |
+|---|---|
+| Proteus | 4,2 %/1 (1,57; 63,8) |
+| P-fast | 4,9 %/1 (1,16; 60,8) |
+| Umbrales de tasa | 13,0 %/1 (5,28; 22,2) (igual que a 0,5: no bajan de ~5 alarmas en ningún umbral) |
+| Seleccionadas | 33,1 %/4 (0,61; 1,6) |
+| Sin restricción | 24,4 %/3 (1,63; 3,8) |
+
+Punto de alarmas de entidad casi iguales: sin restricción a 1,63 deja 24,4 %, Proteus a 1,57 deja
+4,2 %. La tabla `tab:damage-budget` tiene ya los cuatro presupuestos (pasa a `table*`); el texto de
+§6.4 cita ese punto. Por destino y minuto sigue sin haber punto de alarmas iguales.
