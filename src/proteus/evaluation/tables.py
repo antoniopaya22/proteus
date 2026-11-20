@@ -639,6 +639,45 @@ def plan_family_table(csvs: list[Path], floor: float = GRID_MIN_FLOWS_PER_H) -> 
     return "\n".join(lines) + "\n"
 
 
+DAMAGE_ALARMS = {r"\sysname": "proteus_pcr", "P-fast": "proteus", "Rules": "rate_rules_local",
+                 "Sel.": "rate_rules_sel", "Unc.": "proteus_free", "KitNET": "kitnet_local"}
+
+
+def damage_budget_table(csvs: list[Path], runs: list[Path], floor: float = GRID_MIN_FLOWS_PER_H) -> str:
+    """Damage against alarms: for each alarm budget (one ``adaptive_b<B>_*.csv`` each, all
+    of one direction), the geometric mean of the share of the real rate that the adaptive
+    attacker keeps with every plan, and in parentheses the alarms per hour that the
+    detector realises at that budget, per entity and per destination and minute (mean
+    over the test days, from the first of ``runs`` whose ``false_alarms.csv`` has it)."""
+    fas = [x[x["threshold"] == "entity"] for x in (pd.read_csv(r / "false_alarms.csv") for r in runs)]
+    plans = PLAN_FAMILIES[-1][1]
+    cols: dict[float, dict[str, str]] = {}
+    for path in csvs:
+        b = float(path.name.split("_b", 1)[1].split("_", 1)[0])
+        a = pd.read_csv(path)
+        ladder = pd.read_csv(path.with_name(path.name.replace("adaptive_", "adaptive_ladder_", 1)))
+        real = a.drop_duplicates(["day", "attack"]).set_index(["day", "attack"])["real_flows_per_h"]
+        cols[b] = {}
+        for name, members in FAMILY_DETECTORS:
+            if not set(members) <= set(ladder["detector"]):
+                continue
+            d = ladder_damage(ladder[ladder["plan"].isin(plans)], list(members)).reindex(real.index).fillna(0.0)
+            keep = np.clip(np.maximum(d, floor) / real, None, 1.0)
+            hits = [x[(x["model"] == DAMAGE_ALARMS[name]) & np.isclose(x["target_fpr"], b)] for x in fas]
+            f = next((h for h in hits if len(h)), hits[0])  # the first run that has the detector
+            alarms = (f"{f['entity_alarms_per_hour'].mean():.2f}; {f['alarms_per_hour'].mean():.1f}"
+                      if len(f) else "--")
+            cols[b][name] = f"{100 * np.exp(np.log(keep).mean()):.1f}\\%/{int((d >= real).sum())} ({alarms})"
+    budgets = sorted(cols)
+    lines = [r"\begin{tabular}{l" + "r" * len(budgets) + "}", r"\toprule",
+             "Detector & " + " & ".join(f"$B = {b:g}$" for b in budgets) + r" \\", r"\midrule"]
+    for name, _ in FAMILY_DETECTORS:
+        if any(name in cols[b] for b in budgets):
+            lines.append(f"{name} & " + " & ".join(cols[b].get(name, "--") for b in budgets) + r" \\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    return "\n".join(lines) + "\n"
+
+
 QUERY = [("proteus", "Proteus"), ("proteus_sys_r", "System"), ("proteus_cert_r", "Cert.-R"),
          ("rate_rules_local", "Rules"), ("rate_rules_sel", "Sel. rules")]
 # The paper: the system is the union that the query attacker was run against (``pcr``).
@@ -826,7 +865,7 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("table", choices=["h1", "summary", "ablation", "ablation_pair", "frontier", "frontier_system",
                                        "frontier_budget", "adaptive", "plan_families", "curves", "query", "budgets", "injection",
-                                       "intervals", "real"])
+                                       "intervals", "real", "damage_budget"])
     ap.add_argument("--labels", nargs="*", default=[], help="real: one row label per run")
     ap.add_argument("--csv", type=Path, nargs="*", default=[], help="frontier or adaptive CSVs")
     ap.add_argument("--data-out", type=Path, default=None)
@@ -871,6 +910,10 @@ def main() -> None:
         return
     if args.table == "frontier":
         args.out.write_text(frontier_table(args.csv, args.data_out))
+        print(args.out.read_text())
+        return
+    if args.table == "damage_budget":
+        args.out.write_text(damage_budget_table(args.csv, args.runs + args.extra))
         print(args.out.read_text())
         return
     if args.table == "plan_families":

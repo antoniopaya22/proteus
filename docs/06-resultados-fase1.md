@@ -3216,3 +3216,25 @@ alarmas de entidad por hora (entre paréntesis, por destino y minuto).
   real`), sin las cifras a FPR de estas dos direcciones; quitado el `\todo` de UGR'16. La frase del
   entrenamiento en CIC-IDS-2017 sigue a FPR 1e-3 hasta que acabe `ugr17_nox`.
 - Semilla 6 de 18 → 17: 9+2 a 1,30 (Proteus-fast 9+0 a 0,76, Proteus-cert 8+2 a 0,56).
+- Semilla 7 de 18 → 17 (20-nov 03:12 UTC): 9+2 a 1,55 (Proteus-cert 8+2 a 0,51); a presupuesto 1,
+  10+2 a 2,03. Con ocho ajustes (semillas 0–7) el rango sigue en 9–11 de 11 a 1,25–1,59 alarmas.
+
+### 6.131 Tabla daño–alarmas por presupuesto (`tables.py damage_budget`; revisión 5, R5-3)
+
+Generador nuevo con test: para cada presupuesto, la parte de la tasa real que conserva el atacante
+adaptativo con todos sus planes y, entre paréntesis, las alarmas que el detector realiza a ese
+presupuesto (de entidad; por destino y minuto). Comprobado en la máquina con el presupuesto 0,5 de
+18 → 17, donde reproduce las cifras del paper:
+
+| Detector | Conserva / pasan | Alarmas (entidad; destino-minuto) |
+|---|---|---|
+| Proteus | 5,9 % / 1 | 1,35; 60,4 |
+| Proteus-fast | 7,1 % / 1 | 1,01; 57,7 |
+| umbrales de tasa | 13,0 % / 1 | 5,28; 22,2 |
+| umbrales seleccionados | 36,3 % / 4 | 0,24; 0,8 |
+| sin restricción | 30,8 % / 3 | 0,71; 1,8 |
+| KitNET | 51,3 % / 6 | 0,64; 0,8 |
+
+Faltan las columnas de los presupuestos 1, 3 y 10 (`adaptb3_1817` en marcha, luego 10 y 1); con
+ellas se compara a alarmas iguales, que es lo que pide la objeción.
+

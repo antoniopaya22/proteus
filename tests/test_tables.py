@@ -414,3 +414,29 @@ def test_real_table_groups_campaigns_and_leaves_tiny_ones_out(tmp_path):
         "UGR'16", "\\sysname", "1/2", "1/2", "1/1", "0/1", "1/1", "0.40"]
     assert [c.strip() for c in rules_row.rstrip("\\").split("&")] == [
         "", "Rules", "0/1", "--", "--", "1/1", "--", "1.50"]
+
+
+def test_damage_budget_table_pairs_damage_with_realised_alarms(tmp_path):
+    import pandas as pd
+
+    from proteus.evaluation.tables import damage_budget_table
+
+    run = tmp_path / "csecicids2018__cicids2017__loo_labels__r2"
+    run.mkdir()
+    fa = []
+    for b, quiet, ent in ((0.5, 100.0, 5.0), (3.0, 10.0, 6.0)):
+        pd.DataFrame([{"day": "wed", "attack": "dos_hulk", "detector": "rate_rules_local",
+                       "real_flows_per_h": 1000.0}]).to_csv(run / f"adaptive_b{b:g}_g30.csv", index=False)
+        ladder = [{"day": "wed", "attack": "dos_hulk", "detector": "rate_rules_local", "plan": "reuse",
+                   "flows_per_h": r, "detected": r > quiet} for r in (10.0, 100.0, 1000.0)]
+        pd.DataFrame(ladder).to_csv(run / f"adaptive_ladder_b{b:g}_g30.csv", index=False)
+        fa += [{"model": "rate_rules_local", "threshold": "entity", "target_fpr": b,
+                "entity_alarms_per_hour": ent + d, "alarms_per_hour": 20.0} for d in (-1.0, 1.0)]
+    fa.append({"model": "rate_rules_local", "threshold": "local", "target_fpr": 3.0,
+               "entity_alarms_per_hour": 99.0, "alarms_per_hour": 99.0})
+    pd.DataFrame(fa).to_csv(run / "false_alarms.csv", index=False)
+    table = damage_budget_table([run / "adaptive_b3_g30.csv", run / "adaptive_b0.5_g30.csv"], [run])
+    assert "$B = 0.5$ & $B = 3$" in table
+    row = next(x for x in table.splitlines() if x.startswith("Rules"))
+    assert row.removesuffix(" \\\\").split(" & ")[1:] == ["10.0\\%/0 (5.00; 20.0)", "1.0\\%/0 (6.00; 20.0)"]
+

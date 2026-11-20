@@ -63,6 +63,10 @@ done
 csvs=$(files $A/adaptive_b0.5_g30.csv $B/adaptive_b0.5_g16.csv)
 [ -n "$csvs" ] && $PY proteus.evaluation.tables adaptive --set paper --csv $csvs --out $T/adaptive.tex > /dev/null
 [ -n "$csvs" ] && $PY proteus.evaluation.tables plan_families --csv $csvs --out $T/plan_families.tex > /dev/null
+# Damage against alarms at every budget, 2018 -> 2017 (tab:damage-budget).
+csvs=$(files $A/adaptive_b0.5_g30.csv $A/adaptive_b1_g30.csv $A/adaptive_b3_g30.csv $A/adaptive_b10_g30.csv)
+[ -n "$csvs" ] && $PY proteus.evaluation.tables damage_budget --csv $csvs \
+  --runs $(exists ${A}_pcr ${A}c ${A}b $A ${A}_sel ${A}_p2 ${A}_kitnet) --out $T/damage_budget.tex > /dev/null
 csvs=$(files $A/query_attack_b0.5_all.csv $B/query_attack_b0.5_all.csv)
 [ -n "$csvs" ] && $PY proteus.evaluation.tables query --set paper --csv $csvs --out $T/query.tex > /dev/null
 
