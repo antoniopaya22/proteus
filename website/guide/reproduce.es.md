@@ -30,7 +30,7 @@ de registro que se muestra en el terminal indica el comando exacto.
 | `injection` | Cada ataque de un día de prueba contra muchas víctimas reales de carga distinta: cientos de casos en lugar de una víctima por ataque | Varias horas |
 | `ablation` | Ablación de subnúcleos (`proteus-K` elimina el subnúcleo K) | Reutiliza los modelos de `h1` |
 | `poisoning` | Fronteras bajo envenenamiento de la línea base | |
-| `budget` | Certificado de presupuesto (suavizado aleatorizado, el mecanismo de BARS) frente a operaciones gratuitas | |
+| `budget` | Certificados con presupuesto frente a operaciones gratuitas: suavizado aleatorizado reimplementado, y el código publicado de BARS y CertTA | BARS y CertTA necesitan PyTorch, GPU y sus propios entornos |
 | `real` | CTU-13 y UGR'16 (dos particiones cada uno) y CIC-DDoS2019; fronteras del lado del origen en CTU-13 | |
 | `shell` | Ataques basados en decisión y en puntuación contra detectores por flujo; calibración del contador de realimentación | Necesita el extra `attacks` (ART); tarda horas |
 | `robustness` | Más semillas de entrenamiento (nueve en una dirección, dos en la otra), líneas base y calibración solo con días anteriores y sin etiquetas, balance de clases del conjunto de entrenamiento | Vuelve a ajustar los detectores |

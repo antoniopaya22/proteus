@@ -30,7 +30,7 @@ terminal shows the exact command.
 | `injection` | Every attack of a test day against many real victims of varying load: hundreds of cases instead of one victim per attack | Several hours |
 | `ablation` | Sub-core ablation (`proteus-K` drops sub-core K) | Reuses the `h1` models |
 | `poisoning` | Baseline poisoning frontiers | |
-| `budget` | Budget certificate (randomised smoothing, the mechanism of BARS) against free operations | |
+| `budget` | Budget certificates against free operations: randomised smoothing reimplemented, and the released code of BARS and CertTA | BARS and CertTA need PyTorch, a GPU and their own environments |
 | `real` | CTU-13 and UGR'16 (two folds each) and CIC-DDoS2019; source-side frontiers on CTU-13 | |
 | `shell` | Decision- and score-based attacks on per-flow detectors; calibration of the feedback counter | Needs the `attacks` extra (ART); takes hours |
 | `robustness` | More training seeds (nine in one direction, two in the other), baselines and calibration from earlier days only and without labels, class balance of the training set | Refits the detectors |

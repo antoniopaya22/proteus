@@ -167,9 +167,19 @@ stage_poisoning() {  # tab:poisoning: baselines raised over days, at the operati
     --model proteus --rounds 8 --caps none --alarm-budget 0.5
 }
 
-stage_budget() {  # tab:budget (randomised smoothing, the mechanism of BARS).
+stage_budget() {  # tab:budget, tab:bars and CertTA: budget certificates against free operations.
   run $O/smoothing_r2_18_17.log $PY proteus.evaluation.smoothing --run $A --test cicids2017 \
     --base core_free_dst_b --certified proteus_cert_r
+  # The released code of BARS and of CertTA needs PyTorch and a GPU, in environments of their
+  # own: set BARS_DIR and BARS_PY (a clone of KaiWangGitHub/BARS and its Python) to run it.
+  run $O/bars_export_1817.log $PY proteus.evaluation.bars_export --run $A --train csecicids2018 \
+    --test cicids2017 --out experiments/outputs/bars
+  if [ -n "${BARS_DIR:-}" ] && [ -n "${BARS_PY:-}" ]; then
+    run $O/bars_gauss_1817.log "$BARS_PY" scripts/external/bars_certify.py --bars "$BARS_DIR" \
+      --data experiments/outputs/bars --out experiments/outputs/bars/acid_gaussian --noise gaussian
+  fi
+  # CertTA: python -m proteus.evaluation.certta_export, then scripts/external/certta_run.sh and
+  # scripts/external/certta_region.py (see their headers for the environment they expect).
 }
 
 stage_real() {  # sec:evaluation:real and the appendix: CTU-13, UGR'16, CIC-DDoS-2019.
