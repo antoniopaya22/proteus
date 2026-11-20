@@ -3095,10 +3095,11 @@ Sistema (`proteus_pcr`) al presupuesto 0,5, volumétricas y escaneos + otras, al
 | 2 | 9+2 a 1,25 | 9+0 a 0,84 | 8+2 a 0,49 | 9+4 a 4,98 |
 | 3 | 10+2 a 1,32 | 10+0 a 0,79 | 8+2 a 0,54 | 9+4 a 4,93 |
 | 4 | 9+2 a 1,59 | 9+0 a 1,21 | 8+2 a 0,39 | 9+4 a 5,31 |
+| 5 | 9+2 a 1,57 | 9+0 a 0,89 | 8+2 a 0,68 | 9+4 a 4,98 |
 
-Con cinco semillas el rango sigue en 9–11 de 11 a 1,25–1,59 alarmas; lo que varía es Proteus-fast
+Con seis semillas el rango sigue en 9–11 de 11 a 1,25–1,59 alarmas; lo que varía es Proteus-fast
 sobre los escaneos pequeños (lo que falla siempre es `portscan`). Proteus-cert es estable: 8+2 en las
-cinco, con los mismos fallos (LOIC-HTTP y escaneos), y certifica 4+2 en todas. Faltan las semillas 5–9
+seis, con los mismos fallos (LOIC-HTTP y escaneos), y certifica 4+2 en todas. Faltan las semillas 6–9
 (en marcha) antes de cambiar «three seeds» en el paper.
 
 ### 6.127 Discrepancia 2 de la revisión 5: la segunda inundación UDP de 2018, certificada en la captura y nunca alertada en las réplicas
@@ -3164,3 +3165,23 @@ gana al completo cuando el atacante reparte (73 % frente a 84 %) y pierde cuando
 Proteus-fast sigue alertando (§ atacante con consultas). No se adopta la variante: se declara en el
 paper que la cobertura certificada de los DoS en la red pequeña descansa en evidencia de origen y de
 par, y se da esta medida.
+
+### 6.129 Detección agrupada por ataque y día (revisión 5, R5-9: pseudo-replicación de los escaneos)
+
+De los `campaigns.csv` de las ejecuciones del paper, presupuesto 0,5. Cada tipo de ataque de un día
+cuenta una vez y se da por detectado solo si lo están todos sus episodios (entre paréntesis, si lo
+está alguno). Volumétricos y escaneos: 7 en 2017 (cuatro DoS, LOIC-HTTP, escaneos del jueves y del
+viernes) y 9 en 2018.
+
+| Detector | 18 → 17 (de 7) | 17 → 18 (de 9) |
+|---|---|---|
+| Proteus | 7 (7) | 8 (8) |
+| Proteus-fast | 7 (7) | 6 (7) |
+| Proteus-cert | 5 (6) | 8 (8) |
+| Proteus-cert, certificadas | 4 (4) | 6 (6) |
+| Sin restricción | 5 (7) | 5 (5) |
+| Umbrales de tasa | 6 (7) | 9 (9) |
+| Umbrales seleccionados | 6 (7) | 9 (9) |
+
+El orden entre detectores no cambia respecto al recuento por episodios (11 y 13). Llevado a la
+discusión del paper (§ Datasets).

@@ -384,3 +384,33 @@ def test_plan_families_separate_additive_plans_from_reuse(tmp_path):
     row = next(x for x in plan_family_table([run / "adaptive_b0.5_g30.csv"]).splitlines()
                if x.startswith("Unc."))
     assert row.removesuffix(" \\\\").split(" & ")[1:] == ["1.0\\%/0", "100.0\\%/1", "100.0\\%/1", "100.0\\%/1"]
+
+
+def test_real_table_groups_campaigns_and_leaves_tiny_ones_out(tmp_path):
+    import pandas as pd
+
+    from proteus.evaluation.tables import real_table
+
+    d = tmp_path / "ugr16__ugr16__loo_labels__julaug"
+    d.mkdir()
+    rows = [("proteus_pcr", "dos", 900, True), ("proteus_pcr", "dos", 40, False),
+            ("proteus_pcr", "dos", 3, False),  # fewer than five flows: not a campaign
+            ("proteus_pcr", "scan11", 60, True), ("proteus_pcr", "scan44", 60, False),
+            ("proteus_pcr", "nerisbotnet", 70, True), ("proteus_pcr", "anomaly-spam", 80, False),
+            ("proteus_pcr", "anomaly-udpscan", 30, True), ("proteus_pcr", "(none)", 0, False),
+            ("rate_rules_local", "dos", 900, False), ("rate_rules_local", "anomaly-spam", 80, True)]
+    c = [{"model": m, "threshold": "entity", "target_fpr": 0.5, "attack": a, "flows": n,
+          "detected_strict": k} for m, a, n, k in rows]
+    c.append({"model": "proteus_pcr", "threshold": "local", "target_fpr": 1e-3, "attack": "dos",
+              "flows": 900, "detected_strict": True})
+    fa = [{"model": "proteus_pcr", "threshold": "entity", "target_fpr": 0.5, "entity_alarms_per_hour": e}
+          for e in (0.2, 0.6)] + [{"model": "rate_rules_local", "threshold": "entity", "target_fpr": 0.5,
+                                   "entity_alarms_per_hour": 1.5}]
+    pd.DataFrame(c).to_csv(d / "campaigns.csv", index=False)
+    pd.DataFrame(fa).to_csv(d / "false_alarms.csv", index=False)
+    table = real_table([d], ["UGR'16"])
+    sys_row, rules_row = (line for line in table.splitlines() if "/" in line)
+    assert [c.strip() for c in sys_row.rstrip("\\").split("&")] == [
+        "UGR'16", "\\sysname", "1/2", "1/2", "1/1", "0/1", "1/1", "0.40"]
+    assert [c.strip() for c in rules_row.rstrip("\\").split("&")] == [
+        "", "Rules", "0/1", "--", "--", "1/1", "--", "1.50"]

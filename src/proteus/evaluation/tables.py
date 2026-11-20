@@ -783,11 +783,51 @@ def curves_figure(points: pd.DataFrame, x: str = "entity_alarms_per_hour",
     return "\n".join(lines) + "\n"
 
 
+# Campaign groups of the captures with real backgrounds (CTU-13, UGR'16), by attack name.
+REAL_GROUPS = [("DoS", lambda a: a == "dos" or a.endswith("_ddos")),
+               ("Scans", lambda a: a in ("scan11", "scan44") or a.endswith("_portscan")),
+               ("Botnet", lambda a: a == "nerisbotnet" or a.endswith("_fastflux")),
+               ("Spam", lambda a: a.endswith("spam")),
+               ("Bg. scans", lambda a: a in ("anomaly-sshscan", "anomaly-udpscan"))]
+REAL_DETECTORS = [("proteus_pcr", r"\sysname"), ("rate_rules_local", "Rules")]
+
+
+def real_table(runs: list[Path], labels: list[str], budget: float = 0.5,
+               detectors: list[tuple[str, str]] | None = None, min_flows: int = 5) -> str:
+    """Captures with real backgrounds at an alarm budget: per run (one split of a
+    capture, named by ``labels``) and detector, campaigns detected under the strict
+    criterion of those with at least ``min_flows`` flows, by group, and entity alarms
+    per hour. A group without campaigns in a run is a dash."""
+    detectors = detectors or REAL_DETECTORS
+    lines = [r"\begin{tabular}{ll" + "r" * (len(REAL_GROUPS) + 1) + "}", r"\toprule",
+             "Capture & Detector & " + " & ".join(h for h, _ in REAL_GROUPS) + r" & Alarms \\",
+             r"\midrule"]
+    for i, (run, label) in enumerate(zip(runs, labels, strict=True)):
+        c = pd.read_csv(run / "campaigns.csv")
+        fa = pd.read_csv(run / "false_alarms.csv")
+        c, fa = (d[(d["threshold"] == "entity") & np.isclose(d["target_fpr"], budget)] for d in (c, fa))
+        c = c[(c["attack"] != "(none)") & (c["flows"] >= min_flows)]
+        if i:
+            lines.append(r"\addlinespace")
+        for j, (m, head) in enumerate(detectors):
+            g = c[c["model"] == m]
+            cells = []
+            for _, belongs in REAL_GROUPS:
+                x = g[g["attack"].map(belongs)]
+                cells.append(f"{int(x['detected_strict'].sum())}/{len(x)}" if len(x) else "--")
+            a = fa.loc[fa["model"] == m, "entity_alarms_per_hour"]
+            alarms = f"{a.mean():.2f}" if len(a) else "--"
+            lines.append(f"{label if j == 0 else ''} & {head} & " + " & ".join(cells) + f" & {alarms} \\\\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    return "\n".join(lines) + "\n"
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("table", choices=["h1", "summary", "ablation", "ablation_pair", "frontier", "frontier_system",
                                        "frontier_budget", "adaptive", "plan_families", "curves", "query", "budgets", "injection",
-                                       "intervals"])
+                                       "intervals", "real"])
+    ap.add_argument("--labels", nargs="*", default=[], help="real: one row label per run")
     ap.add_argument("--csv", type=Path, nargs="*", default=[], help="frontier or adaptive CSVs")
     ap.add_argument("--data-out", type=Path, default=None)
     ap.add_argument("--detectors", nargs="*", default=None)
@@ -813,6 +853,10 @@ def main() -> None:
         else:
             t.to_csv(args.out, index=False)
         print(t.round(3).to_string())
+        return
+    if args.table == "real":
+        args.out.write_text(real_table(args.runs, args.labels, args.alarm_budget or 0.5))
+        print(args.out.read_text())
         return
     if args.table == "budgets":
         args.out.write_text(budget_table(args.runs, args.extra))

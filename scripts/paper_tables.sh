@@ -86,4 +86,15 @@ for pair in "A:18_17:g30" "B:17_18:g16"; do
     $(f=$(files $R/adaptive_b0.5_$grid.csv); [ -n "$f" ] && echo --adaptive $f) \
     --alarm-budget 0.5 --detectors $DEF --out $T/bench_$tag.csv > /dev/null
 done
+# Captures with real backgrounds at the operating point (tab:real): the two folds of
+# CTU-13, UGR'16 in both directions and UGR'16 with the detectors trained on CIC-IDS-2017.
+real=(); labels=()
+add_real() { if [ -f "$1/campaigns.csv" ]; then real+=("$1"); labels+=("$2"); fi; }
+add_real $O/ctu13__ctu13__loo_labels__foldB_r2_nox "CTU-13, fold 1"
+add_real $O/ctu13__ctu13__loo_labels__foldA_r2_nox "CTU-13, fold 2"
+add_real $O/ugr16__ugr16__loo_labels__julaug_r2_nox 'UGR'"'"'16, Jul.$\to$Aug.'
+add_real $O/ugr16__ugr16__loo_labels__augjul_r2_nox 'UGR'"'"'16, Aug.$\to$Jul.'
+add_real $O/cicids2017__ugr16__loo_labels__r2_nox '2017$\to$UGR'"'"'16'
+[ ${#real[@]} -gt 0 ] && $PY proteus.evaluation.tables real --alarm-budget 0.5 --runs "${real[@]}" \
+  --labels "${labels[@]}" --out $T/real.tex > /dev/null
 ls "$T"
