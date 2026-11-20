@@ -3083,3 +3083,71 @@ dirección. A cambio la evidencia de destino certifica escaneos que el detector 
 (el umbral común lo fija el sub-núcleo más ruidoso). Falta 17 → 18 (`dst_1718`, bajo el candado) y el
 atacante que reparte (`qadst_1817`, en marcha).
 
+
+### 6.126 Semillas 3 y 4 en 18 → 17 (`seedc_1817_3`, `seedc_1817_4`; revisión 5, R5-9)
+
+Sistema (`proteus_pcr`) al presupuesto 0,5, volumétricas y escaneos + otras, alarmas de entidad por hora:
+
+| Semilla | Sistema | Proteus-fast | Proteus-cert | Umbrales de tasa |
+|---|---|---|---|---|
+| 0 (paper) | 11+3 a 1,35 | 11+1 a 1,01 | 8+2 a 0,41 | 9+4 a 5,28 |
+| 1 | 11+2 a 1,57 | 11+0 a 0,99 | 8+2 a 0,73 | 9+4 a 4,93 |
+| 2 | 9+2 a 1,25 | 9+0 a 0,84 | 8+2 a 0,49 | 9+4 a 4,98 |
+| 3 | 10+2 a 1,32 | 10+0 a 0,79 | 8+2 a 0,54 | 9+4 a 4,93 |
+| 4 | 9+2 a 1,59 | 9+0 a 1,21 | 8+2 a 0,39 | 9+4 a 5,31 |
+
+Con cinco semillas el rango sigue en 9–11 de 11 a 1,25–1,59 alarmas; lo que varía es Proteus-fast
+sobre los escaneos pequeños (lo que falla siempre es `portscan`). Proteus-cert es estable: 8+2 en las
+cinco, con los mismos fallos (LOIC-HTTP y escaneos), y certifica 4+2 en todas. Faltan las semillas 5–9
+(en marcha) antes de cambiar «three seeds» en el paper.
+
+### 6.127 Discrepancia 2 de la revisión 5: la segunda inundación UDP de 2018, certificada en la captura y nunca alertada en las réplicas
+
+`diag_udp.py` y `diag_udp2.py` (17 → 18, Proteus-cert, martes 20 y miércoles 21 de febrero). Hechos:
+
+1. **El umbral de Proteus-cert al presupuesto es el máximo benigno.** En los logs de `h1`, el umbral
+   de `proteus_cert_r` en 17 → 18 es «> 1» en los diez días y en los cuatro presupuestos (0,5 a 10), y
+   en 18 → 17 en los cinco días a 0,5 y 1. Tras la calibración, 1 es la puntuación más alta del
+   tráfico benigno de referencia; tantos flujos benignos empatan ahí (38–45 en el sub-núcleo de
+   destino, ~700 en el de origen, 66–87 en el de par, 1–4 400 en el de destino en bruto, sobre 1,8 M)
+   que ningún umbral inferior cumple el presupuesto. Proteus-cert alerta, por tanto, solo cuando un
+   sub-núcleo puntúa por encima de todo lo visto en el tráfico benigno de referencia; por eso su fila
+   de la tabla de presupuestos es idéntica (12+1 a 0,08) en los cuatro presupuestos de 17 → 18.
+2. **Las dos inundaciones UDP reales lo superan por el sub-núcleo de destino en bruto**, con margen de
+   3·10⁻⁷ a 4·10⁻⁶ en la puntuación (modelo saturado: el margen es pequeño en valor pero es un cambio de
+   hoja, no ruido numérico; se repite con tres muestras benignas distintas y en las ejecuciones con
+   semillas 1 y 2 y sin pesos). El 99,5–100 % de sus flujos queda por encima.
+3. **La réplica del miércoles empata con el máximo benigno y no lo supera** (puntuación exactamente 1 en
+   el 99,7 % de los flujos de ataque, a 1 y a 200 flujos/s). La diferencia con la captura no está en
+   los bytes (la réplica lleva más: 26,8 frente a 21,4 en escala logarítmica a 10 min) sino en los
+   recuentos de distintos del host víctima a una y seis horas: puertos de destino distintos 4,2 en la
+   captura frente a 1,4–2,4 en la réplica, orígenes distintos 4,9 frente a 2,6–3,3. La réplica da a la
+   víctima una hora de su tráfico benigno antes del ataque (`scenarios`: ventana de ±1 h alrededor del
+   centro del día), así que los contadores de seis horas empiezan casi vacíos. El martes la réplica sí
+   alerta porque ahí el recuento de puertos a 10 min de la réplica ya basta.
+
+Lectura: la celda «Certified 2/2» de la tabla de detección es correcta; la réplica subestima la
+evidencia de la víctima porque arranca con una hora de historia. Es un límite de las réplicas (frontera
+y atacante adaptativo), conservador para el defensor: con menos historia hay menos evidencia y el
+atacante pasa a tasas a las que en la captura no pasaría. `diag_udp3.py` (en marcha) repite la réplica
+del miércoles con seis horas de historia y con el inicio real del ataque para confirmarlo.
+
+### 6.128 Atacante con consultas contra Proteus-cert solo con evidencia de destino, 18 → 17 (`qadst_1817`; R5-4)
+
+150 consultas por ataque, presupuesto 0,5, nueve ataques; parte de la tasa real que conserva el
+atacante (media) y ataques que pasan a su tasa real:
+
+| Detector (solo) | Formas gratuitas | Además hasta 100 orígenes |
+|---|---|---|
+| Proteus-cert (cuatro sub-núcleos) | 58 %, 3 de 9 | 84 %, 6 de 9 |
+| solo destino | 73 %, 5 de 9 | 73 %, 5 de 9 |
+
+Por ataque (formas gratuitas → con orígenes): contra el detector completo GoldenEye 17 % → 100 %,
+Slowloris 32 % → 100 %, Slowhttptest 65 % → 100 %, Hulk 2 % → 49 %; contra el de solo destino esos
+cuatro están ya en 100 %, 100 %, 100 % y 49 % sin repartir, y los escaneos bajan a 9 % y 11 % (20 % y
+100 % contra el completo). Repartir no cambia nada contra el de solo destino, como debe ser, pero solo
+gana al completo cuando el atacante reparte (73 % frente a 84 %) y pierde cuando no (73 % frente a
+58 %). Ninguno de los dos aguanta solo; contra el sistema repartir gana como mucho 0,7 puntos porque
+Proteus-fast sigue alertando (§ atacante con consultas). No se adopta la variante: se declara en el
+paper que la cobertura certificada de los DoS en la red pequeña descansa en evidencia de origen y de
+par, y se da esta medida.
