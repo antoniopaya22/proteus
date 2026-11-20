@@ -51,10 +51,10 @@ uv run pytest                                     # about 175 tests, three minut
 ```
 
 Without the lockfile: `uv venv && uv pip install -e ".[dev,attacks,packets]"` (ART is only needed for
-the attacks on the per-flow shell, dpkt for packet captures).
+the attacks on the per-flow shell, dpkt and NFStream for packet captures).
 
 Versions used for the paper: numpy 2.5.4, pandas 3.1.1, scikit-learn 1.9.1, scipy
-1.18.1, numba 0.68.1, pyarrow 26.0.1, adversarial-robustness-toolbox 1.20.1, dpkt 1.9.8.
+1.18.1, numba 0.68.1, pyarrow 26.0.1, adversarial-robustness-toolbox 1.20.1, dpkt 1.9.8, nfstream 6.6.0.
 
 ## Command line
 

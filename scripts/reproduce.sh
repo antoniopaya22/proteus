@@ -234,6 +234,11 @@ stage_packets() {  # sec:evaluation:packets. Needs the CIC-IDS-2017 Friday pcap 
     --pcap $R/cicids2017_pcap/Friday-WorkingHours.pcap --packets experiments/outputs/packet_check/loic_packets.parquet \
     --victim 192.168.10.50 --attackers 172.16.0.1 --port 80 --start 1499453400 --minutes 25 \
     --out experiments/outputs/packet_check_v3
+  # The same check with NFStream, an exporter we did not write, reading every variant from a pcap.
+  run experiments/outputs/packet_check_v3_nfstream.log $PY proteus.evaluation.packet_check \
+    --pcap $R/cicids2017_pcap/Friday-WorkingHours.pcap --packets experiments/outputs/packet_check/loic_packets.parquet \
+    --victim 192.168.10.50 --attackers 172.16.0.1 --port 80 --start 1499453400 --minutes 25 \
+    --exporter nfstream --out experiments/outputs/packet_check_v3
 }
 
 stage_cost() {  # Deployment and cost (sec:evaluation:cost): one thread, pinned to one core.
