@@ -3354,3 +3354,24 @@ lee NFStream 6.6.0 con tiempo activo 120 s, inactivo 60 s y bytes desde la cabec
 - Paper: §6.3.1, «In short» de RQ3, conclusión y S9.4. `reproduce.sh` (etapa `packets`), extra
   `packets` con `nfstream` y `uv.lock`.
 
+### 6.137 Daño frente a alarmas, presupuesto 3 en 18 → 17 (`adaptb3_1817`; revisión 5, R5-3)
+
+Parte de la tasa real que conserva el atacante adaptativo / ataques que pasan a su tasa real, y
+alarmas realizadas (de entidad; por destino y minuto).
+
+| Detector | Presupuesto 0,5 | Presupuesto 3 |
+|---|---|---|
+| Proteus | 5,9 % / 1 (1,35; 60,4) | 2,9 % / 1 (4,08; 82,6) |
+| Proteus-fast | 7,1 % / 1 (1,01; 57,7) | 3,3 % / 1 (2,64; 76,4) |
+| umbrales de tasa | 13,0 % / 1 (5,28; 22,2) | 10,7 % / 1 (5,90; 23,8) |
+| umbrales seleccionados | 36,3 % / 4 (0,24; 0,8) | 31,6 % / 4 (1,86; 4,1) |
+| sin restricción | 30,8 % / 3 (0,71; 1,8) | 14,6 % / 2 (2,83; 6,7) |
+
+- A alarmas de entidad iguales o mayores, los demás siguen dejando más daño: los umbrales
+  seleccionados a 1,86 alarmas conservan 31,6 % frente al 5,9 % de Proteus a 1,35; el núcleo sin
+  restricción a 2,83 conserva 14,6 % frente al 3,3 % de Proteus-fast a 2,64. La diferencia no es
+  de sensibilidad.
+- Por destino y minuto Proteus sigue siendo el que más alarmas da (60–83 frente a 1–24): con esa
+  métrica no hay punto de alarmas iguales, y hay que decirlo así.
+- Faltan los presupuestos 10 y 1 (en marcha) para llevar la tabla al paper.
+
