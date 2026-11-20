@@ -3535,3 +3535,9 @@ tasa en todas las variables: 13+2 a 0,88. Rango de semillas hasta ahora (0, 1, 2
   28,1 %/3. Con cuatro semillas del atacante (0–3): Proteus 4,6–5,9 %, umbrales de tasa
   11,3–13,0 %, cociente 2,2–2,8; seleccionadas 36,3–38,1 %, sin restricción 26,8–30,8 %. Pasan
   los mismos ataques en todas. Falta la semilla 4 (máquina de equipo).
+
+### 6.147 Semilla 8 de 17 → 18 (`seedc_1718_8`, segunda máquina; R5-9)
+
+Proteus (`pcr`) a 0,5: **12+1 a 0,31** (pierde LOIC-HTTP del martes, como las semillas 0 y 2; a 1:
+12+1 a 0,63); certificadas 6+1 a 0,08; umbrales de tasa 13+2 a 1,08. Con nueve semillas (0–8):
+12–13 de 13 a 0,22–0,34 (13 en seis, 12 en tres). Falta la 9.
