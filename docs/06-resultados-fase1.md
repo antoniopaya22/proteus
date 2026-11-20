@@ -3328,3 +3328,29 @@ escaneos están ahí), presupuesto 0,5:
 - Paper: frase en §6.1 (umbrales y métricas) y en la discusión (líneas base). Sigue declarado que
   el tráfico «limpio» se elige con etiquetas.
 
+### 6.136 La cota del certificado con un exportador que no es nuestro: NFStream (revisión 5, R5-6; = R4-2)
+
+Misma ventana que la comprobación de paquetes del paper (25 min de la captura del viernes de
+CIC-IDS-2017 alrededor del DDoS LOIC-HTTP, 1.211.907 paquetes hacia o desde la víctima, 715.952
+del atacante) y las mismas variantes (relleno, paquetes insertados, cambio de puerto de origen cada
+3 o 20 paquetes, 500 o 5.000 señuelos SYN). Cada variante se escribe como pcap (`pcap.write`) y la
+lee NFStream 6.6.0 con tiempo activo 120 s, inactivo 60 s y bytes desde la cabecera de transporte
+(`packets/external.py`, `packet_check --exporter nfstream`, `PROTEUS_EVIDENCE=v3`).
+
+| Exportador | Registros del original | Máximo en variantes | Contadores | Puntos | Violaciones |
+|---|---|---|---|---|---|
+| el nuestro | 90.396 | 412.271 (4,6×) | 119 | 1,03e8 | 0 |
+| NFStream | 87.736 | 348.504 (4,0×) | 119 | 0,97e8 | 0 |
+
+- Ninguna violación de E'(t+Δ) ≥ e^(−2Δ/τ)·E(t) con ninguno de los dos. (A1) queda comprobada en
+  dos implementaciones; siguen fuera los exportadores que muestrean o expulsan registros bajo
+  carga.
+- Dos correcciones de paso: la variante 1 sale idéntica al original (el sorteo da todo ceros), así
+  que son diez variantes distintas, no once: corregido en el paper y en S9.4. Los 20 contadores de
+  RST valen cero en toda la ventana para estas entidades (se cumplen trivialmente), con los dos
+  exportadores.
+- Una primera pasada en local sin `PROTEUS_EVIDENCE=v3` cubría 79 contadores; repetida con v3.
+- Cita verificada en Crossref: Aouini y Pekar, Computer Networks 204 (2022) 108719.
+- Paper: §6.3.1, «In short» de RQ3, conclusión y S9.4. `reproduce.sh` (etapa `packets`), extra
+  `packets` con `nfstream` y `uv.lock`.
+
