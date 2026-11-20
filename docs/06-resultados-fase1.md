@@ -3550,3 +3550,18 @@ cociente 2,2–3,2 (2,2; 2,5; 2,8; 2,2; 3,2); seleccionadas 36,3–38,1 %; sin r
 26,8–30,8 %; pasan los mismos ataques en todas. Paper: frase en §6.4 tras el intervalo bootstrap
 («The search itself is random…») y S10.3. `reproduce.sh`: bucle de semillas 1–4 del atacante y
 semillas 1–9 en las dos direcciones.
+
+### 6.149 Calibración causal en 17 → 18 (`causal_1718`; R5-10 cerrada)
+
+Líneas base, umbrales, distribuciones y presupuestos solo con días anteriores, sin enmascarar;
+calentamiento miércoles 14 y jueves 15 de febrero; ocho días de prueba con 11 volumétricos y
+escaneos, presupuesto 0,5. Comparado con la semilla 0 (`loo_labels__r2c`) en los mismos días:
+
+| Protocolo | Proteus (`pcr`) | Proteus-cert | Umbrales de tasa |
+|---|---|---|---|
+| causal | 10+0 a 0,56 (destino-minuto 18,5) | 4+0 a 0,06 | 11+1 a 4,48 |
+| dejar un día fuera, con etiquetas (paper) | 10+0 a 0,30 (15,7) | 4+0 a 0,06 | 11+1 a 1,12 |
+
+Misma detección (pierde LOIC-HTTP del martes, como la semilla 0); las alarmas de Proteus casi se
+doblan (×1,9), las de los umbrales de tasa se cuadruplican. Paper: §6.1 y discusión
+(«Baselines»). `reproduce.sh`: ejecución causal 17 → 18.

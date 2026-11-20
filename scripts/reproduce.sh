@@ -239,6 +239,9 @@ stage_robustness() {  # Seeds, baselines without labels, class balance of the tr
   run $O/run_18_17_r2_causal.log $PY proteus.evaluation.h1 --train csecicids2018 --test cicids2017 \
     --baseline prior --mask none --calibration prior --reuse $O/csecicids2018__cicids2017__prior_none__r2 \
     --models proteus proteus_cert_r rate_rules_local $BUD --tag r2_causal
+  run $O/run_17_18_r2_causal.log $PY proteus.evaluation.h1 --train cicids2017 --test csecicids2018 \
+    --baseline prior --mask none --calibration prior \
+    --models proteus proteus_cert_r rate_rules_local $BUD --tag r2_causal
 }
 
 stage_kitsune() {  # Kitsune as published on the Friday packets (needs the pcap and dpkt).
