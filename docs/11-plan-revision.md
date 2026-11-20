@@ -165,7 +165,7 @@ unidades del ataque, ablación de la monotonía «el experimento más limpio», 
 1+2+7, 7 con 1–3 y 5–7, 7,5–8 con todo (exige un conjunto retenido con fondo real donde el núcleo
 gane a umbrales igual calibrados con diferencia significativa y P-cert certifique alertas reales).
 
-- [ ] **R6-1. Incoherencias numéricas (obligatorio).** (a) Atacante por consultas, 17 → 18: contra
+- [~] **R6-1. Incoherencias numéricas (obligatorio).** (21-nov 00:50 UTC: (b)–(k) corregidas en el paper, commit e33edcd: S9.3 con la media aritmética dicha y las geométricas de S7; tabla S12 y su texto sin peticiones mínimas, que se dan aparte también en §6.3 (28 % frente a 27 %); CertTA con 3 y 20 paquetes; Table S8/S9; cabecera del atacante por consultas con la base dicha; «nearly all»; semilla de los umbrales; familias de planes; KitNET a 0,64 en la curva 18 → 17 (a mano en `figures/curves.tex`: el generador no lo toma); «entity alarms» en el resumen; monotonía por construcción. Falta (a): hipótesis, el atacante por consultas trata como gratuitas las ráfagas de periodo 300 s y ciclo 0,1, que adelantan flujos hasta 270 s > Δ = 120 s y quedan fuera de (A2); los planes usan ráfagas de 60 s (≤ 54 s, dentro de la holgura). Comprobar la forma de Hulk contra P-cert en los CSV de `qab_1718`/`qabp_1718` en la máquina de equipo, apagada) (a) Atacante por consultas, 17 → 18: contra
       P-cert conserva Hulk a 91k (^c) y contra Proteus 60k^c, frente a la cota certificada de 12k
       («Hulk must still run 681 times slower»): explicar (¿unidades con reutilización, ráfagas que
       adelantan paquetes, fallo?); SSH y GoldenEye también por encima, dentro de la rejilla. (b) S9.3
