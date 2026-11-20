@@ -3425,3 +3425,38 @@ Paper: §6.3.1 (BARS y CertTA con su código), discusión (defensas ejecutadas: 
 CertTA; PANTS y APELID+ solo comparadas por garantía), S2 (tabla `tab:bars` y párrafo de CertTA),
 S9.3 (ablación en las dos direcciones).
 
+
+### 6.139 Proteus-cert solo con evidencia de destino, 17 → 18 (`dst_1718`; revisión 5, R5-4)
+
+Presupuesto 0,5, criterio estricto, volumétricas y escaneos + otras:
+
+| Detector | Todas las alertas | Certificadas (también frente a reutilización) |
+|---|---|---|
+| Proteus-cert (cuatro sub-núcleos) | 12+1 a 0,08 alarmas/h | 6+1 (Hulk, GoldenEye, Slowloris, HOIC, los dos LOIC-UDP y SSH) |
+| solo destino | 12+1 a 0,04 | las mismas 6+1 |
+
+En la red grande la evidencia de destino basta: detecta lo mismo con la mitad de alarmas y certifica
+lo mismo. Con §6.125, la fragilidad al reparto entre orígenes es de la red pequeña (2017), donde los
+DoS certificados descansan en origen y par. El diseño no cambia (elegir sub-núcleos por sentido sería
+ajustar sobre la evaluación). Paper: S9.3 y discusión (§7.1).
+
+### 6.140 Daño frente a alarmas, presupuesto 10 en 18 → 17 (`adaptb10_1817`; revisión 5, R5-3)
+
+`tables.py damage_budget` con 0,5, 3 y 10 (cuota media geométrica de la tasa real que conserva el
+atacante / ataques que pasan a su tasa real (alarmas de entidad/h; de destino y minuto/h)):
+
+| Detector | B = 0,5 | B = 3 | B = 10 |
+|---|---|---|---|
+| Proteus | 5,9 %/1 (1,35; 60,4) | 2,9 %/1 (4,08; 82,6) | 0,7 %/0 (9,41; 127,0) |
+| P-fast | 7,1 %/1 (1,01; 57,7) | 3,3 %/1 (2,64; 76,4) | 1,1 %/0 (6,95; 108,8) |
+| Reglas | 13,0 %/1 (5,28; 22,2) | 10,7 %/1 (5,90; 23,8) | 8,5 %/1 (9,39; 34,4) |
+| Seleccionadas | 36,3 %/4 (0,24; 0,8) | 31,6 %/4 (1,86; 4,1) | 26,2 %/4 (8,50; 13,3) |
+| Sin restricción | 30,8 %/3 (0,71; 1,8) | 14,6 %/2 (2,83; 6,7) | 11,1 %/2 (7,09; 15,1) |
+
+Por alarmas de entidad los detectores se cruzan: a alarmas iguales o mayores (seleccionadas a B = 3,
+1,86; sin restricción a B = 3, 2,83) el atacante conserva 31,6 % y 14,6 % frente al 5,9 % de Proteus
+a 1,35; a B = 10, con 7–9,4 alarmas todos, Proteus deja 0,7 % y los demás 8,5–26,2 %. Por destino y
+minuto no se cruzan nunca: Proteus da 60–127 en todos los presupuestos y ningún otro pasa de 34,4;
+en esa métrica no hay punto de alarmas iguales y la comparación no favorece a ninguno. Paper:
+§6.4, tabla `tab:damage-budget` y párrafo «These comparisons are not at equal alarms». Falta el
+presupuesto 1 (`adaptb1_1817`, ~18:00 UTC), que entra como columna.
