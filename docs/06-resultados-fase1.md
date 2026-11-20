@@ -3185,3 +3185,34 @@ viernes) y 9 en 2018.
 
 El orden entre detectores no cambia respecto al recuento por episodios (11 y 13). Llevado a la
 discusión del paper (§ Datasets).
+
+### 6.130 UGR'16 al presupuesto, las dos direcciones (`ugrJA_nox`, `ugrAJ_nox`; revisión 5, R5-1 y R5-5)
+
+Modelos r2 reutilizados, sin exclusión, presupuesto por detector; campañas de al menos cinco flujos;
+alarmas de entidad por hora (entre paréntesis, por destino y minuto).
+
+| Prueba | Presupuesto | Detector | DoS | Escaneos | Botnet | Spam | Alarmas |
+|---|---|---|---|---|---|---|---|
+| agosto (entrenado en julio) | 0,5 | Proteus | 21/26 | 4/26 | 7/7 | 1/21 | 0,37 (18,7) |
+| | 0,5 | umbrales de tasa | 0/26 | 0/26 | 0/7 | 4/21 | 1,55 (9,6) |
+| | 0,5 | sin restricción | 23/26 | 4/26 | 3/7 | 2/21 | 0,29 (6,8) |
+| | 1 | Proteus | 26/26 | 26/26 | 7/7 | 3/21 | 0,70 (31,5) |
+| | 1 | umbrales de tasa | 0/26 | 0/26 | 0/7 | 4/21 | 1,80 (10,4) |
+| julio (entrenado en agosto) | 0,5 | Proteus | 1/20 | 16/16 | 3/4 | 0/23 | 0,32 (1,4) |
+| | 0,5 | umbrales de tasa | 19/20 | 5/16 | 4/4 | 0/23 | 3,45 (21,1) |
+| | 0,5 | sin restricción | 4/20 | 14/16 | 3/4 | 0/23 | 0,12 (0,6) |
+| | 1 | Proteus | 10/20 | 16/16 | 3/4 | 1/23 | 0,58 (1,8) |
+| | 1 | umbrales de tasa | 19/20 | 5/16 | 4/4 | 0/23 | 4,06 (27,1) |
+
+- Frente a las cifras a FPR 1e-3 que citaba el paper (19–20 alarmas/h), al presupuesto las alarmas
+  bajan 50 veces. En agosto Proteus mantiene los DoS (21 de 26) y las botnets; en julio pierde los
+  DoS (1 de 20), que los umbrales de tasa sí detectan (19 de 20) a once veces las alarmas. Medio
+  punto de alarma por hora es poco para una red de ISP: a presupuesto 1 Proteus detecta todo agosto
+  (26, 26 y 7) a 0,70 y diez de los 20 DoS de julio a 0,58.
+- Proteus-cert está casi mudo en las dos direcciones (0,04 y 0,05 alarmas; solo un escaneo UDP del
+  fondo): como en CTU-13, el sistema es Proteus-fast. El exportador no documenta su tiempo activo, así
+  que no hay certificado que citar.
+- Paper: sección de tráfico real reescrita con tabla (`tables/real.tex`, generada con `tables.py
+  real`), sin las cifras a FPR de estas dos direcciones; quitado el `\todo` de UGR'16. La frase del
+  entrenamiento en CIC-IDS-2017 sigue a FPR 1e-3 hasta que acabe `ugr17_nox`.
+- Semilla 6 de 18 → 17: 9+2 a 1,30 (Proteus-fast 9+0 a 0,76, Proteus-cert 8+2 a 0,56).

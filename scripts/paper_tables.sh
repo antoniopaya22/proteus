@@ -89,12 +89,19 @@ done
 # Captures with real backgrounds at the operating point (tab:real): the two folds of
 # CTU-13, UGR'16 in both directions and UGR'16 with the detectors trained on CIC-IDS-2017.
 real=(); labels=()
-add_real() { if [ -f "$1/campaigns.csv" ]; then real+=("$1"); labels+=("$2"); fi; }
-add_real $O/ctu13__ctu13__loo_labels__foldB_r2_nox "CTU-13, fold 1"
-add_real $O/ctu13__ctu13__loo_labels__foldA_r2_nox "CTU-13, fold 2"
-add_real $O/ugr16__ugr16__loo_labels__julaug_r2_nox 'UGR'"'"'16, Jul.$\to$Aug.'
-add_real $O/ugr16__ugr16__loo_labels__augjul_r2_nox 'UGR'"'"'16, Aug.$\to$Jul.'
-add_real $O/cicids2017__ugr16__loo_labels__r2_nox '2017$\to$UGR'"'"'16'
+# reproduce.sh writes these runs without the exclusion of saturated sub-cores under the
+# tag r2; our own runs with that tag predate the rule and were redone as r2_nox.
+add_real() {
+  local d
+  for d in "${1}_nox" "$1"; do
+    if [ -f "$d/campaigns.csv" ]; then real+=("$d"); labels+=("$2"); return; fi
+  done
+}
+add_real $O/ctu13__ctu13__loo_labels__foldB_r2 "CTU-13, fold 1"
+add_real $O/ctu13__ctu13__loo_labels__foldA_r2 "CTU-13, fold 2"
+add_real $O/ugr16__ugr16__loo_labels__julaug_r2 "UGR'16, August"
+add_real $O/ugr16__ugr16__loo_labels__augjul_r2 "UGR'16, July"
+add_real $O/cicids2017__ugr16__loo_labels__r2 "UGR'16, from 2017"
 [ ${#real[@]} -gt 0 ] && $PY proteus.evaluation.tables real --alarm-budget 0.5 --runs "${real[@]}" \
   --labels "${labels[@]}" --out $T/real.tex > /dev/null
 ls "$T"
