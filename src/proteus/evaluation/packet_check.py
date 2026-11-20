@@ -83,6 +83,30 @@ def check(base: pd.DataFrame, var: pd.DataFrame, victim: str, port: int, delta: 
     return pd.DataFrame(rows)
 
 
+def combination(rng: np.random.Generator, k: int) -> dict:
+    """The ``k``-th random combination of free operations (the 0-th is the identity,
+    drawn anyway so that the stream of ``rng`` does not depend on it)."""
+    p = {"pad": int(rng.choice([0, 40, 400])), "insert": float(rng.choice([0, 0.2, 1.0])),
+         "hop": int(rng.choice([0, 3, 20])), "decoys": int(rng.choice([0, 500, 5000]))}
+    return {"pad": 0, "insert": 0.0, "hop": 0, "decoys": 0} if k == 0 else p
+
+
+def apply(pk: pd.DataFrame, p: dict, rng: np.random.Generator, attackers, victim: str,
+          port: int) -> pd.DataFrame:
+    """Packets of ``pk`` after the free operations of combination ``p``, in this order:
+    padding, extra packets, port hopping, SYN decoys to the service and to port 22."""
+    v = pk
+    if p["pad"]:
+        v = ops.pad(v, v["src"].isin(attackers).to_numpy(), p["pad"])
+    if p["insert"]:
+        v = ops.insert(v, v["src"].isin(attackers).to_numpy(), rng, p["insert"])
+    if p["hop"]:
+        v = ops.hop_ports(v, v["src"].isin(attackers).to_numpy(), rng, p["hop"])
+    if p["decoys"]:
+        v = ops.decoys(v, list(attackers), [(victim, port), (victim, 22)], p["decoys"], rng)
+    return v
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--pcap", type=Path, required=True)
@@ -128,20 +152,8 @@ def main() -> None:
     rng = np.random.default_rng(args.seed)
     results = []
     for k in range(args.variants):
-        p = {"pad": int(rng.choice([0, 40, 400])), "insert": float(rng.choice([0, 0.2, 1.0])),
-             "hop": int(rng.choice([0, 3, 20])), "decoys": int(rng.choice([0, 500, 5000]))}
-        if k == 0:
-            p = {"pad": 0, "insert": 0.0, "hop": 0, "decoys": 0}  # identity: sanity check
-        v = pk
-        if p["pad"]:
-            v = ops.pad(v, v["src"].isin(args.attackers).to_numpy(), p["pad"])
-        if p["insert"]:
-            v = ops.insert(v, v["src"].isin(args.attackers).to_numpy(), rng, p["insert"])
-        if p["hop"]:
-            v = ops.hop_ports(v, v["src"].isin(args.attackers).to_numpy(), rng, p["hop"])
-        if p["decoys"]:
-            v = ops.decoys(v, args.attackers, [(args.victim, args.port), (args.victim, 22)],
-                           p["decoys"], rng)
+        p = combination(rng, k)
+        v = apply(pk, p, rng, args.attackers, args.victim, args.port)
         var = to_flows(v)
         r = check(base, var, args.victim, args.port, args.delta, taus, args.attackers)
         r["variant"], r["flows"] = k, len(var)

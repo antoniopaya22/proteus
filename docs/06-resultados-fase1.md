@@ -3375,3 +3375,53 @@ alarmas realizadas (de entidad; por destino y minuto).
   métrica no hay punto de alarmas iguales, y hay que decirlo así.
 - Faltan los presupuestos 10 y 1 (en marcha) para llevar la tabla al paper.
 
+### 6.138 BARS y CertTA con su código publicado frente a las operaciones gratuitas (revisión 5, R5-8; = R3-6)
+
+**BARS** (`bars_export` + `scripts/external/bars_certify.py`, GPU T4, entorno `~/tools/ext/bars-env`):
+clasificador ACID de BARS con sus hiperparámetros, entrenado en la evidencia de destino de
+CSE-CIC-IDS-2018 (la de `core_free_dst_b`, la misma que suaviza nuestra reimplementación),
+ruido gaussiano aprendido (forma y escala, t = 0,399), certificación con n = 10.000 y
+α = 0,001. Mismos 300 flujos por campaña de 2017 y mismas seis variantes que S2. Entrenamiento:
+exactitud 0,9996, recall de ataques 0,997.
+
+| Ataque | ACID | Certificados | Radio | Desplazamiento | Cubiertas | Aún ataque |
+|---|---|---|---|---|---|---|
+| Hulk | 100 % | 100 % | 2,86 | 69,0 | 0 % | 100 % |
+| GoldenEye | 100 % | 100 % | 2,37 | 57,7 | 3 % | 100 % |
+| Slowloris | 100 % | 100 % | 1,53 | 3,7 | 16 % | 100 % |
+| Slowhttptest | 100 % | 100 % | 2,17 | 2,6 | 32 % | 100 % |
+| Escaneo jueves | 60 % | 62 % | 0,43 | 20,1 | 0 % | 100 % |
+| Escaneo viernes | 19 % | 8 % | 0,23 | 44,6 | 0 % | 100 % |
+| LOIC-HTTP | 100 % | 100 % | 2,60 | 72,9 | 0 % | 100 % |
+| Fuerza bruta SSH, FTP | 0 % | 0 % | – | – | – | – |
+
+- Con su código la conclusión de la reimplementación se mantiene: BARS certifica más alertas de DoS
+  que Proteus-cert (también LOIC-HTTP y Slowhttptest), pero las operaciones gratuitas sacan del
+  radio entre el 68 % y el 100 % de las variantes. El clasificador suavizado sigue diciendo ataque
+  en todas: las operaciones suben la evidencia, y el certificado no lo prueba.
+
+**CertTA** (agente; `certta_export`, `packets/sequences.py`, `scripts/external/certta_region.py`,
+`certta_run.sh`; copia parcheada `~/tools/ext/CertTA-run`, entorno `certta-env`): DF con el
+suavizado de CertTA y sus parámetros por defecto (β_len 100, β_time 40 ms, pr_sel 0,15, 1000
+muestras), sobre la ventana LOIC-HTTP de la comprobación de paquetes: flujos de ≥ 3 paquetes,
+1.605 benignos y 1.605 de ataque, 80/10/10.
+
+- Limpio: certifica los 160 flujos de ataque de prueba (p_A mediana 0,993), pero solo acierta el
+  36 % de los benignos. Casi todos los benignos van de la víctima a la dirección del atacante y
+  CertTA, al quedarse con 2–3 paquetes de unos 13, pierde la dirección. No es un detector usable
+  aquí; sirve para ver la forma de su región: como mucho 3–5 paquetes insertados.
+- Cambiar el puerto de origen cada 3 paquetes parte todos los flujos (quita paquetes del flujo
+  original): la región no cubre ninguna variante, y el modelo suavizado marca como ataque todas las
+  piezas de solo el 0–2 % de los flujos. Cada 20 paquetes: cubre el 19–82 %. Los señuelos SYN
+  salen benignos siempre. Ningún flujo cubierto acabó benigno, como garantiza el certificado.
+- Desviaciones: flujos de ≥ 3 paquetes (CertTA pide ≥ 30), Python 3.10 / torch 2.1.2, dos parches
+  menores en la copia (nombres de dataset y float32 en DF), sin semilla fija en CertTA.
+
+**Ablación de Proteus-cert en 17 → 18** (`ablr_1718`): todos los sub-núcleos 12/13 a 7,28 (FPR
+1e-3); sin el de destino o sin el de origen, igual; sin el de pares pierde la fuerza bruta SSH a
+4,38; sin el de destino en bruto baja a 8/13 a 15,1. Cerrado el último `\todo` del suplementario.
+
+Paper: §6.3.1 (BARS y CertTA con su código), discusión (defensas ejecutadas: Kitsune, BARS y
+CertTA; PANTS y APELID+ solo comparadas por garantía), S2 (tabla `tab:bars` y párrafo de CertTA),
+S9.3 (ablación en las dos direcciones).
+

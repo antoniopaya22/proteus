@@ -95,3 +95,38 @@ def test_nfstream_reads_the_packets_we_write(tmp_path):
     f = flows.iloc[0]
     assert (f["src_ip"], f["dst_port"], f["fwd_pkts"], f["bwd_pkts"]) == ("10.0.0.1", 80, 3, 1)
     assert (f["fwd_bytes"], f["bwd_bytes"]) == (360, 1000)
+
+
+def test_sequences_match_the_exporter():
+    from proteus.packets.sequences import sequences
+
+    rows = conn(0.0) + conn(2.0, a="10.0.0.5", sp=7000, close=False)
+    rows += conn(30.0, n=30, gap=10.0, close=False)  # active timeout: three flows
+    rows += conn(400.0, sp=5001, n=2, close=False)
+    rows += [(401.5, "10.0.0.1", "10.0.0.9", 80, 5001, 6, 20, RST)]
+    rows += conn(500.0, sp=5002, n=1, close=False) + conn(600.0, sp=5002, n=1)  # idle
+    rows += [(700.0 + i, "10.0.0.3", "10.0.0.1", 5353, 53, 17, 60 + i, 0) for i in range(3)]
+    pk = packets(rows).sample(frac=1.0, random_state=0)
+    seq = sequences(pk)
+    flows = exporter.export(pk)
+    assert len(seq) == len(flows)
+    got = pd.DataFrame({
+        "t": seq["t_start"], "src": seq["src"], "sport": seq["sport"],
+        "fp": [int((x > 0).sum()) for x in seq["length"]],
+        "bp": [int((x < 0).sum()) for x in seq["length"]],
+        "fb": [int(x[x > 0].sum()) for x in seq["length"]],
+        "bb": [int(-x[x < 0].sum()) for x in seq["length"]]})
+    want = pd.DataFrame({
+        "t": flows["t_start"].astype("int64") / 1e6, "src": flows["src_ip"].astype(str),
+        "sport": flows["src_port"].astype(int), "fp": flows["fwd_pkts"], "bp": flows["bwd_pkts"],
+        "fb": flows["fwd_bytes"], "bb": flows["bwd_bytes"]})
+    key = ["t", "src", "sport"]
+    got = got.sort_values(key).reset_index(drop=True)
+    want = want.sort_values(key).reset_index(drop=True)
+    assert np.allclose(got["t"], want["t"])
+    for c in ("src", "sport", "fp", "bp", "fb", "bb"):
+        assert got[c].tolist() == want[c].tolist(), c
+    assert (seq["packets"] == seq["length"].map(len)).all()
+    assert all(x[0] == 0.0 and (np.diff(x) >= 0).all() for x in seq["ts"])
+    back = np.concatenate(seq["rows"].tolist())
+    assert sorted(back.tolist()) == list(range(len(pk)))
