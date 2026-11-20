@@ -159,3 +159,35 @@ def test_shape_pool_does_not_offer_minimal_requests_to_a_search_that_may_not_use
     small = entry("a", True, Shape(reuse=20, shrink=True), 9)
     assert shape_pool(free, [free, small]) == []
     assert shape_pool(small, [free, small]) == [("a", Shape(reuse=20), 5)]
+
+
+def test_descend_finds_a_combination_that_no_single_change_reaches():
+    from proteus.evaluation.query_attack import MODES, descend
+
+    # Quiet below a cap that rises with reuse, and further only with padding on top of it:
+    # padding alone gains nothing, so a search that reads labels sees no reason to keep it.
+    def margin(shape, i):
+        cap = 4 + 6 * (shape.reuse == 20) + 8 * (shape.reuse == 20 and shape.pad == 400)
+        cap += 0.5 * (shape.pad == 400)  # closer to the threshold, not past it
+        return i - cap
+
+    res = descend(margin, 30, 400, np.random.default_rng(0), keys=MODES["free"])
+    assert res["index"] == 18 and res["shape"].reuse == 20 and res["shape"].pad == 400
+    assert res["queries"] <= 400 and res["trace"][0]["index"] == 3
+
+
+def test_descend_scans_the_rates_because_they_are_not_monotone():
+    from proteus.evaluation.query_attack import descend
+
+    # The plain attack is alerted between rates 3 and 9 and quiet again up to 24.
+    res = descend(lambda shape, i: 1.0 if 3 <= i <= 9 or i > 24 else -1.0, 30, 40,
+                  np.random.default_rng(0))
+    assert res["index"] == 24 and res["shape"] == Shape()
+
+
+def test_descend_stops_when_nothing_is_quiet_or_everything_is():
+    from proteus.evaluation.query_attack import descend
+
+    assert descend(lambda s, i: 1.0, 20, 60, np.random.default_rng(0))["index"] == -1
+    top = descend(lambda s, i: -1.0, 20, 60, np.random.default_rng(0))
+    assert top["index"] == 19 and top["queries"] == 1

@@ -178,6 +178,97 @@ def search(quiet: Callable[[Shape, int], bool], n_rates: int, budget: int,
     return {"index": best_i, "shape": best, "queries": used, "trace": trace}
 
 
+def neighbours(shape: Shape, keys: tuple[str, ...]) -> list[Shape]:
+    """Every shape that differs from ``shape`` in one parameter of ``keys``."""
+    return [replace(shape, **{k: v}) for k in keys for v in CHOICES[k] if v != getattr(shape, k)]
+
+
+def descend(margin: Callable[[Shape, int], float], n_rates: int, budget: int,
+            rng: np.random.Generator, keys: tuple[str, ...] | None = None,
+            start: Shape | None = None, coarse: int = 10) -> dict:
+    """The search of an attacker that knows the detector: it reads scores, not labels.
+
+    ``margin(shape, i)`` is how far the attack with ``shape`` at the ``i``-th rate is
+    from an alert (negative: quiet). The search is a steepest descent on that margin:
+
+    1. the starting shape on a coarse grid of rates from the top, then bisection
+       below the first alerted one (the rate is not monotone: a bisection alone can
+       stop far below a rate that passes);
+    2. every one-parameter neighbour of the current shape, one rate step above the best
+       quiet rate. A quiet neighbour (the one furthest from the threshold) becomes the
+       best shape and its rate is pushed up; else the search moves to the neighbour
+       closest to the threshold if it is closer than the current shape, and otherwise
+       jumps to a random neighbour of the best shape.
+
+    Returns what ``search`` returns."""
+    keys = tuple(keys or MODES["free"])
+    used, cache = 0, {}
+
+    def ask(shape: Shape, i: int) -> float:
+        nonlocal used
+        if (shape, i) not in cache:
+            used += 1
+            cache[(shape, i)] = float(margin(shape, i))
+        return cache[(shape, i)]
+
+    def climb(shape: Shape, i: int) -> int:
+        step, hi = 1, None
+        while i + step < n_rates and used < budget:
+            if ask(shape, i + step) < 0:
+                i, step = i + step, step * 2
+            else:
+                hi = i + step
+                break
+        hi = n_rates if hi is None else hi
+        while hi - i > 1 and used < budget:
+            mid = (i + hi) // 2
+            if ask(shape, mid) < 0:
+                i = mid
+            else:
+                hi = mid
+        return i
+
+    best = start or Shape()
+    grid = sorted({*range(n_rates - 1, -1, -max(n_rates // coarse, 1)), 0}, reverse=True)
+    lo, hi = -1, n_rates
+    for g in grid:
+        if used >= budget:
+            break
+        if ask(best, g) < 0:
+            lo = g
+            break
+        hi = g
+    while hi - lo > 1 and used < budget:
+        mid = (lo + hi) // 2
+        if ask(best, mid) < 0:
+            lo = mid
+        else:
+            hi = mid
+    best_i, cur, stalled = lo, best, 0
+    trace = [{"queries": used, "index": lo, "shape": asdict(best)}]
+    while used < budget and best_i < n_rates - 1 and stalled < 20:
+        before, i = used, best_i + 1
+        here = ask(cur, i)
+        scored = []
+        for cand in neighbours(cur, keys):
+            if used >= budget:
+                break
+            scored.append((ask(cand, i), len(scored), cand))
+        if not scored:
+            break
+        m, _, cand = min(scored)
+        if m < 0:
+            best = cur = cand
+            best_i = climb(cand, i)
+            trace.append({"queries": used, "index": best_i, "shape": asdict(best)})
+        elif m < here:
+            cur = cand
+        else:
+            cur = mutate(best, rng, keys=keys)
+        stalled = stalled + 1 if used == before else 0
+    return {"index": best_i, "shape": best, "queries": used, "trace": trace}
+
+
 def transfer(quiet: Callable[[Shape, int], bool], n_rates: int, index: int,
              shapes: list[tuple[Shape, int]]) -> dict:
     """Replay shapes that other searches found: the highest quiet index over them.
@@ -249,25 +340,29 @@ def shape_pool(own: dict, found: list[dict]) -> list[tuple[str, Shape, int]]:
 
 def submit(full: pd.DataFrame, sc, oracle: Oracle, rates: np.ndarray, rmax: float,
            members: list[str], sent: dict[int, int],
-           max_flows: int | None = None) -> Callable[[Shape, int], bool]:
+           max_flows: int | None = None, scores: bool = False) -> Callable[[Shape, int], bool | float]:
     """The attacker's query for one scenario and target: send the nested attack
     ``full`` at the ``i``-th rate with a shape and read whether every member detector
     stays quiet. ``sent`` records how many attack flows each rate index carries. A rate
     that needs more than ``max_flows`` flows is not tried and counts as alerted, so the
-    damage reported stays a lower bound (``sent[-1]`` marks that the cap was reached)."""
+    damage reported stays a lower bound (``sent[-1]`` marks that the cap was reached).
+    With ``scores`` the answer is the margin to an alert instead (``Oracle.margin``;
+    negative when quiet): the query of an attacker that knows the detectors."""
 
-    def quiet(shape: Shape, i: int) -> bool:
+    def quiet(shape: Shape, i: int) -> bool | float:
         a = full[full["u"] < rates[i] / rmax].drop(columns=["u"])
         if max_flows is not None and len(a) > max_flows:
             sent[-1] = 1
-            return False
+            return np.inf if scores else False
         sent[i] = len(a)
         if a.empty:
-            return True  # nothing sent: quiet, and worth nothing
+            return -np.inf if scores else True  # nothing sent: quiet, and worth nothing
         df = pd.concat([sc.background.assign(_atk=False), a.assign(_atk=True)],
                        ignore_index=True)
         df["orig_id"] = np.arange(len(df))
         v = apply(df, shape, sc.target_ip, sc.target_port, np.random.default_rng(3000))
+        if scores:
+            return oracle.margin(v, members)
         q, _ = oracle.query(v, members)
         return all(q.values())
 
@@ -302,6 +397,9 @@ def main() -> None:
                     help="thresholds at this many alarms per hour instead of --fpr")
     ap.add_argument("--costly", action="store_true",
                     help="also let the attacker spread over sources (reported apart)")
+    ap.add_argument("--informed", action="store_true",
+                    help="the attacker knows the detectors: it reads the margin to the threshold "
+                         "of every query and searches by steepest descent (descend)")
     ap.add_argument("--no-transfer", action="store_true",
                     help="do not replay against each target the shapes found against the others")
     ap.add_argument("--seed", type=int, default=0)
@@ -358,12 +456,12 @@ def main() -> None:
                     costly, shrink = mode == "costly", mode == "shrink"
                     sent: dict[int, int] = {}
                     quiet = submit(full, sc, oracle, rates, args.rmax, list(ms), sent,
-                                   args.max_flows)
+                                   args.max_flows, scores=args.informed)
                     # The searches with more freedom start from the best free shape; the
                     # transfer pass below then keeps them from reporting less than the free one.
-                    res = search(quiet, len(rates), args.budget,
-                                 np.random.default_rng(args.seed + 1), keys=MODES[mode],
-                                 start=free_shape)
+                    res = (descend if args.informed else search)(
+                        quiet, len(rates), args.budget, np.random.default_rng(args.seed + 1),
+                        keys=MODES[mode], start=free_shape)
                     free_shape = res["shape"] if mode == "free" else free_shape
                     ok = res["index"] >= 0 and sent.get(res["index"], 0) > 0
                     rate = float(rates[res["index"]]) if ok else 0.0

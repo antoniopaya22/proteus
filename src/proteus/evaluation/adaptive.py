@@ -194,6 +194,26 @@ class Oracle:
                 cert[n] = not (hit & ~np.isin(minute, self.noisy_cert[n])).any()
         return quiet, cert
 
+    def margin(self, v: pd.DataFrame, names: list[str]) -> float:
+        """How far the traffic ``v`` is from an alert: the highest score over its
+        threshold among the detectors ``names``, in the minutes that count for
+        ``query`` (negative exactly when ``query`` finds every one of them quiet). This
+        is what an attacker that knows the detectors and their thresholds can compute."""
+        cols = list(dict.fromkeys(c for n in names for c in self.models[n][0]))
+        feats = _features(v, cols, self.base) if cols else None
+        minute = v["t_end"].astype("int64").to_numpy() // 60_000_000
+        self.queries += 1
+        worst = -np.inf
+        for n in names:
+            mcols, m = self.models[n]
+            keep = ~np.isin(minute, self.noisy[n])
+            if hasattr(m, "flow_alerts"):  # no score to read: alerted or not
+                worst = max(worst, 0.0 if (m.flow_alerts(v) & keep).any() else -1.0)
+            elif keep.any():
+                s = m.predict_proba(feats[mcols].to_numpy(np.float64))[:, 1]
+                worst = max(worst, float(s[keep].max() - self.thr[n]))
+        return worst
+
 
 def main() -> None:
     ap = argparse.ArgumentParser()
