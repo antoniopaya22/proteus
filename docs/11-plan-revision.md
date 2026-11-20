@@ -26,6 +26,8 @@ Antonio pide iterar hasta la máxima nota posible. Protocolo:
 | 1 (diagnóstico 2, a mitad de ronda) | 2026-11-17 22:00 | 5/10 | revisión mayor | puntos de operación mezclados (envenenamiento, consultas, ablación, servidor con carga, tab:h1 a FPR 10⁻³; la conclusión del envenenamiento no vale al presupuesto); el certificado cubre lo que menos importa y el título vende de más; novedad limitada frente a reglas; «daño» en flujos y no en servicio denegado; validez externa y ajuste sobre las redes de prueba; calibración con etiquetas (umbrales); comparación con alarmas reales distintas; atacantes aprendidos no ejecutados; certificado de reutilización sin prueba formal; (A4) demasiado fuerte; desalojo de estado; exportador del chequeo de paquetes; extensión |
 | 2 (tras los cambios de R2, pedida por Antonio) | 2026-11-17 23:50 | 4/10 | revisión mayor | el certificado protege donde no hace falta y peticiones mínimas + reutilización tumban a Proteus-cert (Slowloris ~370 conexiones > 256); lo que añade el modelo frente a reglas no está establecido (por ataque las reglas dejan menos daño en 5 de 9 en 18 → 17; métrica de alarmas por destino-minuto al revés); frontera/adaptativo contradicen tab:h1 al mismo punto (escaneos 2018, LOIC-HTTP 2018, FTP 2017); validez externa (víctimas ociosas, etiquetas en la calibración, UGR'16 y CTU-13 no al presupuesto, Δ desconocido en tráfico real); saturación de los árboles monótonos; supuestos (caché del exportador, muestreo, «free» inconsistente); atacante adaptativo débil (sin optimizador de caja blanca); faltan defensas robustas publicadas; novedad estrecha; extensión |
 | 4 | 2026-11-19 04:00 | 5/10 | revisión mayor | el certificado cubre el movimiento más débil y la detección viene de Proteus-fast sin certificar; novedad estrecha (Incer, Fleshman, Tong); (A1) en manos del atacante (FIN/RST insertados, caché) y sin probar con exportadores reales; ventaja sobre reglas débil (p = 0,08, una semilla, rejilla gruesa, inyección 6,5 frente a 8,8 %); diseño ajustado en las redes de prueba y etiquetas en la calibración; tráfico real flojo y fuera del punto de operación; «daño» en flujos/h; atacante limitado en lo no cubierto (pulsos frente a τ, botnets, caja blanca); capa por flujo/Apollon débiles; extensión |
+| 5 | 2026-11-19 21:45 | 5/10 | revisión mayor | (ver «Revisión 5») |
+| 6 | 2026-11-21 00:10 | 5/10 | revisión mayor | Hulk 91k frente a la cota 12k en el atacante por consultas; cifras viejas en S9.3, víctimas con carga y peticiones mínimas, CertTA, referencias S7/S8; el certificado cubre lo que ya tienen las reglas monótonas; ventaja sobre umbrales no significativa y alarmas por destino-minuto; semilla 0 es la mejor; saturación en tráfico real; (A5) con HTTP/2/TLS; atacante sin caja blanca; métrica con tope y suelo; extensión y vocabulario |
 
 **Criterio de parada (Antonio, 2026-11-17):** cuando los resultados y la funcionalidad estén a nivel de
 un 8, se para de añadir experimentos y se hace una revisión a fondo del paper: coherencia de principio a
@@ -152,6 +154,50 @@ publicado sin garantía.
       de UGR'16, bots «dos o tres órdenes por debajo»); «todo detector se enfrenta al mismo atacante»;
       una evaluación extra frente a dos en el algoritmo; 119 frente a 152 contadores; bytes
       «forward» frente a «payload»; leyenda de la figura; la nota de la bibliografía.
+
+### Revisión 6 (2026-11-21 00:10, al cerrar la ronda 5)
+
+Nota **5/10** (revisión mayor). Tercera ronda seguida en 5. Recalculó ~60 cifras (medias
+geométricas, test de signos, Wilson, METIS, frontera ≤ certificada) y casi todo cuadra. Fuertes:
+alcance explícito y honesto, prueba sencilla y correcta con la holgura del exportador, frontera en
+unidades del ataque, ablación de la monotonía «el experimento más limpio», evaluación amplia
+(presupuestos, TRW/CUSUM, BARS/CertTA, envenenamiento, semillas, calibración causal). Estima 6 con
+1+2+7, 7 con 1–3 y 5–7, 7,5–8 con todo (exige un conjunto retenido con fondo real donde el núcleo
+gane a umbrales igual calibrados con diferencia significativa y P-cert certifique alertas reales).
+
+- [ ] **R6-1. Incoherencias numéricas (obligatorio).** (a) Atacante por consultas, 17 → 18: contra
+      P-cert conserva Hulk a 91k (^c) y contra Proteus 60k^c, frente a la cota certificada de 12k
+      («Hulk must still run 681 times slower»): explicar (¿unidades con reutilización, ráfagas que
+      adelantan paquetes, fallo?); SSH y GoldenEye también por encima, dentro de la rejilla. (b) S9.3
+      da 58 %/84 % para P-cert frente a 37,2 %/76,2 % de S7. (c) Víctimas con carga: el texto y la
+      tabla S12 dicen 0 %, S9.5 dice 28 % con peticiones mínimas. (d) CertTA «no cubre ningún flujo
+      dividido» solo vale con cambio de puerto cada 3 paquetes (19–82 % cada 20). (e) Referencias a
+      mano «Table S7»/«Table S8» desplazadas (son S8 y S9). (f) Cabecera del atacante por consultas:
+      5,0 % (formas libres) frente a 13 % (con dispersión); la tabla da 5,8 %. (g) Lunes 303
+      destino-minuto: «most» es casi «all». (h) Umbrales de tasa varían con la semilla: explicar dónde
+      entra. (i) Familias de planes: «Proteus and rate thresholds … 2.6 % and 2.7 %» mal atribuido.
+      (j) Curva de KitNET sin el punto del presupuesto. (k) Resumen: «false alarms per hour» →
+      alarmas de entidad.
+- [ ] **R6-2. Posicionamiento (O1).** Reformular la contribución: monotonía sobre evidencia
+      conservada como principio para detectores aprendidos (que ceden 3–4× más a lo aditivo),
+      certificado consciente del exportador con reutilización, frontera como métrica; comparación
+      precisa con Incer, Tong, Fleshman, Chen; renombrar «certified frontier»/«Bound» o definir la
+      clase (una traza, un adelgazamiento); «Our main result» más sobrio.
+- [ ] **R6-3. Presentación (O10, O9).** Resumen en torno a tres afirmaciones; ejemplo trabajado de
+      una alerta; vocabulario unificado; monotonía por construcción (`monotonic_cst`), no
+      «comprobada empíricamente»; Apollon y la capa por flujo más cortos.
+- [ ] **R6-4. Métrica (O7).** Sensibilidad al tope en la tasa real y al suelo de la rejilla;
+      medianas y distribución por ataque (con lo que ya hay, sin máquina).
+- [ ] **R6-5. Supuestos (O5), redacción.** (A5) frente a HTTP/2/3 y TLS como límite declarado; regla
+      de minutos ruidosos justificada frente a un atacante que la aproveche; la entidad alertada
+      puede cambiar (respuesta en línea no garantizada); duración en la frontera.
+- Límites del método o experimentos con máquina, no se hacen sin decisión de Antonio: umbrales
+  monótonos sobre la evidencia de P-cert con la misma unión y calibración (O2); análisis
+  jerárquico sobre los 268 pares víctima–ataque (O2, posible sin máquina si los CSV están en local);
+  semilla mediana y daño por semillas de entrenamiento (O3); conjunto retenido con fondo real y
+  exportador configurado (O3, ya declarado); modelos monótonos que extrapolan (O4, saturación ya
+  declarada); peor caso exacto/MILP sobre las dimensiones no cubiertas y 10⁴ orígenes (O6);
+  precisión por alerta y latencia extremo a extremo (O8).
 
 ### Revisión 5 (2026-11-19 21:45; la pidió Antonio a mitad de la ronda 4, con R4-2 a R4-7 abiertas)
 
