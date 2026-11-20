@@ -3541,3 +3541,12 @@ tasa en todas las variables: 13+2 a 0,88. Rango de semillas hasta ahora (0, 1, 2
 Proteus (`pcr`) a 0,5: **12+1 a 0,31** (pierde LOIC-HTTP del martes, como las semillas 0 y 2; a 1:
 12+1 a 0,63); certificadas 6+1 a 0,08; umbrales de tasa 13+2 a 1,08. Con nueve semillas (0–8):
 12–13 de 13 a 0,22–0,34 (13 en seis, 12 en tres). Falta la 9.
+
+### 6.148 Semilla 4 del atacante, 18 → 17 (`adaptseed4_1817`; R5-2 cerrada)
+
+Proteus 4,2 %/1, P-fast 4,9 %, umbrales de tasa 13,6 %/1, seleccionadas 36,3 %/4, sin restricción
+26,8 %/3. Con cinco semillas del atacante (0–4): Proteus 4,2–5,9 %, umbrales de tasa 11,3–13,6 %,
+cociente 2,2–3,2 (2,2; 2,5; 2,8; 2,2; 3,2); seleccionadas 36,3–38,1 %; sin restricción
+26,8–30,8 %; pasan los mismos ataques en todas. Paper: frase en §6.4 tras el intervalo bootstrap
+(«The search itself is random…») y S10.3. `reproduce.sh`: bucle de semillas 1–4 del atacante y
+semillas 1–9 en las dos direcciones.

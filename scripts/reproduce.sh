@@ -125,6 +125,10 @@ stage_adaptive() {  # tab:adaptive, tab:frontier: fixed plans on a grid of rates
   run $O/adaptive_r2g_17_18_b0.5.log $PY proteus.evaluation.adaptive --run $B --extra-runs ${B}_p2 \
     --test csecicids2018 --models proteus proteus_cert_r proteus_free rate_rules_sel --local rate_rules_local \
     $c --variants 2 --grid 16 --tag g16
+  for s in 1 2 3 4; do  # the attacker's own search with other seeds (Section 6.4)
+    run $O/adaptive_r2g_18_17_s$s.log $PY proteus.evaluation.adaptive --run $A --extra-runs ${A}_p2 ${A}_sel \
+      --test cicids2017 --models $m --local rate_rules_local $c --grid 30 --seed $s --tag g30s$s
+  done
   # The system's two detectors as rate thresholds (union rules_pcr), same attacker.
   run $O/adaptive_r2g_18_17_b0.5_rules.log $PY proteus.evaluation.adaptive --run $A --test cicids2017 \
     --models --local rate_rules_local rate_rules_cr --certify --alarm-budget 0.5 --grid 30 --tag rules
@@ -220,7 +224,7 @@ stage_shell() {  # tab:aml (decision-based attacks on per-flow detectors) and ta
 stage_robustness() {  # Seeds, baselines without labels, class balance of the training set.
   local ms="proteus proteus_cert_r proteus_free rate_rules_local"
   while read -r train test dir tag; do
-    local seeds="1 2"; [ "$test" = cicids2017 ] && seeds="1 2 3 4 5 6 7 8 9"
+    local seeds="1 2 3 4 5 6 7 8 9"
     for s in $seeds; do
       run $O/run_${tag}_r2_s$s.log $PY proteus.evaluation.h1 --train $train --test $test --models $ms $BUD --seed $s --tag r2_s$s
     done
