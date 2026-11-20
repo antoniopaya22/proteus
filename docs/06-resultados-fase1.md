@@ -3524,3 +3524,14 @@ Proteus (`pcr`) a 0,5: 13+1 de 13+12 a 0,24 alarmas/h (a 1: 13+1 a 0,27). Proteu
 6+1 a 0,06 (falla las mismas: escaneos de miércoles y jueves y la inundación HTTP LOIC). Umbrales de
 tasa en todas las variables: 13+2 a 0,88. Rango de semillas hasta ahora (0, 1, 2, 3, 5, 6, 7):
 12–13 de 13 a 0,22–0,34. Faltan 4 (máquina de equipo), 8 y 9 (segunda).
+
+### 6.146 Semilla 4 de 17 → 18 y semilla 3 del atacante (R5-9, R5-2)
+
+- **Entrenamiento, semilla 4** (`seedc_1718_4`, máquina de equipo, presupuesto 0,5): Proteus
+  (`pcr`) **13+1 a 0,24** (a 1: 13+1 a 0,33); certificadas 6+1 a 0,05; umbrales de tasa 13+2 a
+  1,16. Con ocho semillas (0–7): 12–13 de 13 a 0,22–0,34. Faltan 8 y 9.
+- **Atacante adaptativo, semilla 3, 18 → 17** (`adaptseed3_1817`, segunda máquina): Proteus
+  5,1 %/1, P-fast 5,6 %, umbrales de tasa 11,3 %/1, seleccionadas 36,3 %/4, sin restricción
+  28,1 %/3. Con cuatro semillas del atacante (0–3): Proteus 4,6–5,9 %, umbrales de tasa
+  11,3–13,0 %, cociente 2,2–2,8; seleccionadas 36,3–38,1 %, sin restricción 26,8–30,8 %. Pasan
+  los mismos ataques en todas. Falta la semilla 4 (máquina de equipo).
