@@ -3565,3 +3565,14 @@ escaneos, presupuesto 0,5. Comparado con la semilla 0 (`loo_labels__r2c`) en los
 Misma detección (pierde LOIC-HTTP del martes, como la semilla 0); las alarmas de Proteus casi se
 doblan (×1,9), las de los umbrales de tasa se cuadruplican. Paper: §6.1 y discusión
 («Baselines»). `reproduce.sh`: ejecución causal 17 → 18.
+
+### 6.150 Semillas de 17 → 18 en el paper (R5-9 cerrada)
+
+Las dos máquinas se apagaron solas tras la semilla 9 (hacia las 23:00 UTC); su resultado está en el
+disco de la máquina de equipo (`experiments/outputs/h1/cicids2017__csecicids2018__loo_labels__r2_s9`,
+copiado por `finish.sh`) y no se ha leído. El paper usa las nueve semillas leídas (0–8): Proteus 13
+de 13 en seis (1, 3, 4, 5, 6, 7) y 12 en tres (0, 2, 8; las tres pierden LOIC-HTTP del martes), a
+0,22–0,34 alarmas de entidad/h; umbrales de tasa 13 en todas, a 0,88–1,37. Cambiado: resumen
+(«0.22--0.34»), §6.2 (las ocho semillas además de la 0), «In short» («thirteen in six of nine»),
+conclusión («ten and nine training seeds») y S10.3 (semillas 1 a 8). `reproduce.sh`: semillas 1–8
+en 17 → 18. Pendiente: leer la semilla 9 cuando se encienda la máquina.

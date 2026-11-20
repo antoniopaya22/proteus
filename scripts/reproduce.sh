@@ -224,7 +224,7 @@ stage_shell() {  # tab:aml (decision-based attacks on per-flow detectors) and ta
 stage_robustness() {  # Seeds, baselines without labels, class balance of the training set.
   local ms="proteus proteus_cert_r proteus_free rate_rules_local"
   while read -r train test dir tag; do
-    local seeds="1 2 3 4 5 6 7 8 9"
+    local seeds="1 2 3 4 5 6 7 8"; [ "$test" = cicids2017 ] && seeds="1 2 3 4 5 6 7 8 9"
     for s in $seeds; do
       run $O/run_${tag}_r2_s$s.log $PY proteus.evaluation.h1 --train $train --test $test --models $ms $BUD --seed $s --tag r2_s$s
     done
