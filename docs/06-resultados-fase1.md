@@ -3517,3 +3517,10 @@ validez (el más fuerte lee puntuaciones y umbrales; ninguno usa el interior de 
 Punto de alarmas de entidad casi iguales: sin restricción a 1,63 deja 24,4 %, Proteus a 1,57 deja
 4,2 %. La tabla `tab:damage-budget` tiene ya los cuatro presupuestos (pasa a `table*`); el texto de
 §6.4 cita ese punto. Por destino y minuto sigue sin haber punto de alarmas iguales.
+
+### 6.145 Semilla 7 de 17 → 18 (`seedc_1718_7`, segunda máquina; R5-9)
+
+Proteus (`pcr`) a 0,5: 13+1 de 13+12 a 0,24 alarmas/h (a 1: 13+1 a 0,27). Proteus-cert certifica
+6+1 a 0,06 (falla las mismas: escaneos de miércoles y jueves y la inundación HTTP LOIC). Umbrales de
+tasa en todas las variables: 13+2 a 0,88. Rango de semillas hasta ahora (0, 1, 2, 3, 5, 6, 7):
+12–13 de 13 a 0,22–0,34. Faltan 4 (máquina de equipo), 8 y 9 (segunda).
