@@ -3129,8 +3129,21 @@ cinco, con los mismos fallos (LOIC-HTTP y escaneos), y certifica 4+2 en todas. F
 Lectura: la celda «Certified 2/2» de la tabla de detección es correcta; la réplica subestima la
 evidencia de la víctima porque arranca con una hora de historia. Es un límite de las réplicas (frontera
 y atacante adaptativo), conservador para el defensor: con menos historia hay menos evidencia y el
-atacante pasa a tasas a las que en la captura no pasaría. `diag_udp3.py` (en marcha) repite la réplica
-del miércoles con seis horas de historia y con el inicio real del ataque para confirmarlo.
+atacante pasa a tasas a las que en la captura no pasaría.
+
+Confirmación (`diag_udp3.py`, réplica del miércoles, parte de los flujos de ataque por encima del
+máximo benigno, con dos muestras benignas; la de la semilla 0 contiene un flujo benigno casi en el
+tope del sub-núcleo de destino en bruto):
+
+| Colocación de la réplica | Semilla 0 | Semilla 1 |
+|---|---|---|
+| como en el paper (centro del día, 1 h de historia) | 0 % (empata) | 0 % (empata) |
+| centro del día, 6 h de historia | 0 % (empata) | |
+| hora real del ataque, 1 h de historia | 13 % | |
+| hora real del ataque, 6 h de historia | 65 % | 99,9 % |
+
+Lo que decide es la hora: a la hora real la víctima ya llevaba acumulados los orígenes y puertos
+distintos (4,85 y 4,25 a seis horas) que en el centro del día no tiene ni con seis horas de historia.
 
 ### 6.128 Atacante con consultas contra Proteus-cert solo con evidencia de destino, 18 → 17 (`qadst_1817`; R5-4)
 
