@@ -3473,3 +3473,12 @@ presupuesto 1 (`adaptb1_1817`, ~18:00 UTC), que entra como columna.
   5,9 %), P-fast 6,1 % (7,1 %), umbrales de tasa 13,0 % (13,0 %), seleccionadas 38,1 % (36,3 %), sin
   restricción 26,8 % (30,8 %). El cociente reglas/Proteus sube de 2,2 a 2,5; el orden no cambia.
   Faltan las semillas 2–4.
+
+### 6.142 Semillas 3 y 6 de 17 → 18 y semilla 2 del atacante (R5-9, R5-2)
+
+- **Entrenamiento, 17 → 18, presupuesto 0,5** (Proteus `proteus_pcr`; umbrales de tasa): semilla 3
+  **13+1 a 0,22** (13+2 a 1,13); semilla 6 **13+1 a 0,34** (13+2 a 1,28). Con seis semillas (0, 1,
+  2, 3, 5, 6): 12–13 de 13 a 0,22–0,34; las que pierden una pierden LOIC-HTTP (0 y 2).
+- **Atacante adaptativo, semilla 2, 18 → 17:** Proteus 4,6 %/1, P-fast 5,3 %, umbrales de tasa
+  13,0 %, seleccionadas 36,3 %, sin restricción 26,8 %. Con tres semillas del atacante Proteus deja
+  4,6–5,9 % y los umbrales de tasa 13,0 % en las tres: cociente 2,2–2,8.
