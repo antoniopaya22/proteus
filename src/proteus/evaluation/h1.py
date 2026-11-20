@@ -74,6 +74,14 @@ def days(ds: str) -> list[Path]:
     return sorted(paths, key=start.get)
 
 
+def reference_days(test_days: list[Path], day: Path, mode: str = "loo") -> list[Path]:
+    """Days whose clean benign traffic calibrates ``day``: every other test day
+    (``loo``) or only the earlier ones (``prior``, what a deployment has; the first day
+    then has none: it is a warm-up that feeds the later days and is not evaluated)."""
+    i = test_days.index(day)
+    return test_days[:i] if mode == "prior" else test_days[:i] + test_days[i + 1:]
+
+
 def evidence(ds: str, day: Path) -> tuple[pd.DataFrame, dict[str, str]]:
     """Evidence features for one day (cached)."""
     cache = _edir(ds) / day.name
@@ -943,6 +951,10 @@ def main() -> None:
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--baseline", choices=["loo", "prior"], default="loo")
     ap.add_argument("--mask", choices=["labels", "none"], default="labels")
+    ap.add_argument("--calibration", choices=["loo", "prior"], default="loo",
+                    help="days that calibrate each test day (thresholds, benign distributions, "
+                         "budgets): every other day, or only the earlier ones (the first day is "
+                         "then a warm-up and is not evaluated)")
     ap.add_argument("--models", nargs="*", default=None,
                     help="only these detectors (default: all)")
     ap.add_argument("--tag", default="", help="suffix for the output directory")
@@ -1148,7 +1160,10 @@ def main() -> None:
     # the test network (no attack labels needed in deployment, only benign traffic).
     results = []
     for day in test_days:
-        others = [d for d in test_days if d != day]
+        others = reference_days(test_days, day, args.calibration)
+        # A warm-up day (no earlier day to calibrate on) is not evaluated; its local
+        # detectors, fitted on its own benign sample, only pick its candidate flows.
+        fit_days = others or [day]
         ev, _ = evidence_b(args.test, day, columns=meta_cols)
         path = cache_parts(args.test, day)
         with np.load(day_scores.pop(day)) as z:
@@ -1158,7 +1173,7 @@ def main() -> None:
         refs, local_sides = {}, {}
         for n, c in local.items():
             m = copy.deepcopy(models[n][1]).fit(
-                np.concatenate([benign_feats[d][c].to_numpy() for d in others]))
+                np.concatenate([benign_feats[d][c].to_numpy() for d in fit_days]))
             if isinstance(m, RateRules) and getattr(m, "monotonic_cst", None) is None:
                 # A maximum of per-feature benign CDFs is non-decreasing in every
                 # feature, so rate thresholds are certifiable on conserved evidence.
@@ -1185,7 +1200,7 @@ def main() -> None:
                 scores[f"{n}@certr"] = np.concatenate(acc["certr"])
             if acc["certk"]:
                 scores[f"{n}@certk"] = np.concatenate(acc["certk"])
-            refs[n] = np.concatenate([m.score(benign_feats[d][c].to_numpy()) for d in others])
+            refs[n] = np.concatenate([m.score(benign_feats[d][c].to_numpy()) for d in fit_days])
         if args.entity_budgets and local:
             # Local detectors exist only once fitted on the other days, so their entity
             # budgets are set in pass 3. Keep this day's scores and, as candidates for
@@ -1221,6 +1236,11 @@ def main() -> None:
             feats.to_parquet(spill / f"{day.stem}.cand.parquet")
             budget_cand[day] = spill / f"{day.stem}.cand.parquet"
             del loc, feats
+        if not others:
+            day_sides.pop(day, None)
+            print(f"  warm-up {args.test}/{day.stem} at {time.time() - t0:.0f}s", flush=True)
+            del ev
+            continue
         th = {k: v for k, v in thresholds.items() if k[0] not in local}
         for n in [k for k in scores if not k.endswith(CERT_SUFFIXES)]:
             if n in refs:
@@ -1253,7 +1273,10 @@ def main() -> None:
     # the budget of (destination, minute) alarms on them. No labels are used.
     cands = {d: pd.read_parquet(p_) for d, p_ in budget_cand.items()}
     for day in list(local_scores):
-        others = [d for d in test_days if d != day]
+        others = reference_days(test_days, day, args.calibration)
+        if not others:
+            local_scores.pop(day)
+            continue
         ev, _ = evidence_b(args.test, day, columns=meta_cols)
         with np.load(local_scores.pop(day)) as z:
             scores = {k.replace("__AT__", "@"): z[k] for k in z.files}
@@ -1309,7 +1332,8 @@ def main() -> None:
     # Every requested model must be in the results for every test day.
     got = res.groupby("model", observed=True)["day"].nunique()
     want = [n for n in models if not n.startswith("__")]
-    missing = [n for n in want if got.get(n, 0) < len(test_days)]
+    evaluated = sum(bool(reference_days(test_days, d, args.calibration)) for d in test_days)
+    missing = [n for n in want if got.get(n, 0) < evaluated]
     if missing:
         raise SystemExit(f"incomplete run: {missing} lack results on some test day")
     write_results(res, out)

@@ -3238,3 +3238,19 @@ presupuesto (de entidad; por destino y minuto). Comprobado en la máquina con el
 Faltan las columnas de los presupuestos 1, 3 y 10 (`adaptb3_1817` en marcha, luego 10 y 1); con
 ellas se compara a alarmas iguales, que es lo que pide la objeción.
 
+### 6.132 Semilla 8 y calibración causal (`--calibration prior`; revisión 5, R5-9 y R5-10)
+
+- Semilla 8 de 18 → 17 (20-nov 04:10 UTC): 9+2 a 1,25 (Proteus-cert 8+2 a 0,46); a presupuesto 1,
+  11+3 a 1,84. Nueve ajustes (semillas 0–8): 9–11 de 11 a 1,25–1,59.
+- `h1 --calibration prior` (con test): umbrales, distribuciones benignas y presupuestos de cada
+  día solo con los días anteriores; el primer día es de calentamiento y no se evalúa. Junto con
+  `--baseline prior --mask none` da una evaluación sin días posteriores. Encolado `causal_1817`
+  (unidad con tope, tras la semilla 9), con los modelos de `prior_none__r2`.
+- Orden de llegada: los conjuntos se generaron con una herramienta fuera de línea y no dan el
+  instante de exportación. El paper declara ahora que los tiempos de detección son los del
+  registro y que la alerta llega como mucho un tiempo de inactividad del exportador después
+  (120 s), y que un detector que puntúa al llegar el registro, sin esperar a los que el exportador
+  aún retiene, ve contadores que solo pueden ser menores (alerta más tarde, nunca más).
+- Capa por flujo fuera del sistema (R5-12): al presupuesto añadiría una campaña (la botnet de 2017)
+  por hasta 0,57 y 0,45 alarmas más por hora (tabla de detección); dicho en el paper.
+
