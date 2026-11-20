@@ -222,7 +222,9 @@ Options: `--targets` (detectors), `--union NAME=A,B` (a target that is quiet onl
 every member is), `--budget` (queries per target and scenario), `--grid`, `--rmin`,
 `--rmax`, `--shrink` (one more search that may send minimal requests), `--costly` (one
 more that may spread over sources), `--alarm-budget` (thresholds at that many alarms per
-hour instead of `--fpr`), `--attacks`, `--days`, `--seed`, `--tag`. After the searches of
+hour instead of `--fpr`), `--informed` (an attacker that knows the detectors and their
+thresholds, reads the margin of each query to the threshold and descends on it over the
+shapes), `--attacks`, `--days`, `--seed`, `--tag`. After the searches of
 a scenario, the shapes found against each target are replayed against the others. Results: `query_attack_<fpr>.csv` and
 `query_attack_trace_<fpr>.csv` in the run directory.
 

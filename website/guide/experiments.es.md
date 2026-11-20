@@ -229,7 +229,9 @@ Opciones: `--targets` (detectores), `--union NOMBRE=A,B` (un objetivo que solo c
 cuando callan todos sus miembros), `--budget` (consultas por objetivo y escenario),
 `--grid`, `--rmin`, `--rmax`, `--shrink` (una búsqueda más que puede enviar peticiones
 mínimas), `--costly` (otra que puede repartirse entre orígenes), `--alarm-budget`
-(umbrales a ese número de alarmas por hora en vez de `--fpr`), `--attacks`, `--days`,
+(umbrales a ese número de alarmas por hora en vez de `--fpr`), `--informed` (un atacante
+que conoce los detectores y sus umbrales, lee el margen de cada consulta hasta el umbral y
+desciende por él sobre las formas), `--attacks`, `--days`,
 `--seed`, `--tag`. Tras las búsquedas de un escenario, las formas halladas contra cada
 objetivo se vuelven a probar contra los demás. Resultados:
 `query_attack_<fpr>.csv` y `query_attack_trace_<fpr>.csv` en el directorio de la ejecución.

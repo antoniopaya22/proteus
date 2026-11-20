@@ -140,6 +140,12 @@ stage_query() {  # tab:query: black-box search with hard labels, at the operatin
     --extra-runs ${B}_p2 --test csecicids2018 \
     --targets proteus proteus_cert_r rate_rules_local rate_rules_sel \
     --union pcr=proteus,proteus_cert_r --budget 100 $q
+  # Informed attacker (text of S7): knows the detectors and thresholds, reads the margin
+  # of each query and descends on it over the shapes, with twice the queries.
+  run $O/query_attack_18_17_b0.5_inf.log $PY proteus.evaluation.query_attack --run $A \
+    --extra-runs ${A}_p2 ${A}_sel --test cicids2017 \
+    --targets proteus proteus_cert_r rate_rules_local rate_rules_sel \
+    --union pcr=proteus,proteus_cert_r --budget 300 --informed ${q% --tag all} --tag inf
 }
 
 stage_injection() {  # Every attack against many real victims of varying load (2018 -> 2017).

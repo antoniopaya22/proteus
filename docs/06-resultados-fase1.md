@@ -3482,3 +3482,24 @@ presupuesto 1 (`adaptb1_1817`, ~18:00 UTC), que entra como columna.
 - **Atacante adaptativo, semilla 2, 18 → 17:** Proteus 4,6 %/1, P-fast 5,3 %, umbrales de tasa
   13,0 %, seleccionadas 36,3 %, sin restricción 26,8 %. Con tres semillas del atacante Proteus deja
   4,6–5,9 % y los umbrales de tasa 13,0 % en las tres: cociente 2,2–2,8.
+
+### 6.143 Atacante informado, 18 → 17 (`qainf_1817`; revisión 5, R5-7)
+
+`query_attack --informed --budget 300`: conoce los detectores y sus umbrales, lee el margen de cada
+consulta y desciende por él sobre las formas (barrido grueso de tasas primero). Mediana 304 consultas
+por búsqueda. Cuota media geométrica de la tasa real conservada / ataques que pasan, frente al
+atacante ciego de 150 consultas (`query_attack_b0.5_all.csv`):
+
+| Objetivo | Libre | Repartiendo | Peticiones menores |
+|---|---|---|---|
+| Proteus (`pcr`) | 5,1 %/1 (ciego 5,0 %) | 5,9 %/1 (5,7 %) | 6,9 %/1 (6,7 %) |
+| Proteus-fast | 6,7 %/1 (6,1 %) | 6,7 % (6,1 %) | 6,9 % (6,7 %) |
+| Proteus-cert | 37,2 %/3 (37,2 %) | 76,2 %/6 (76,2 %) | 76,2 %/6 (76,2 %) |
+| Umbrales de tasa | 14,3 %/2 (13,4 %) | 14,3 % (13,4 %) | 19,3 % (18,0 %) |
+| Seleccionadas | 51,1 %/4 (47,7 %) | 51,1 % (47,7 %) | 51,1 % (47,7 %) |
+
+Con el doble de consultas y el margen en vez de un bit, el atacante gana décimas: pasan los mismos
+ataques y el orden no cambia. Lo que limita al atacante es el espacio de formas, no su información.
+Paper: §6.4 («An attacker that searches»), S7 (párrafo «An informed attacker») y amenazas a la
+validez (el más fuerte lee puntuaciones y umbrales; ninguno usa el interior de los modelos).
+`reproduce.sh` y la guía de la web (`--informed`).
