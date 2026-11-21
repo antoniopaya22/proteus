@@ -3616,3 +3616,20 @@ conservada, tope 1, suelo 3,6 flujos/h; tras la barra, parejas que pasan a su ta
 Las adiciones no mueven a los monótonos (igual que el llano) y multiplican por 8 lo que
 conserva el núcleo sin restricción en víctimas con carga, como en las campañas (6,8 → 27 %).
 Llevado a §6.3 y S9.5.
+
+## 6.154 Daño bajo ataque con otras semillas de entrenamiento, 2018 → 2017 (2026-11-21, 13:50)
+
+`tseed1_1817`, `tseed2_1817` (`adaptive_b0.5_g30t.csv` en `…r2_s1`, `…r2_s2`; semilla del
+atacante 0, rejilla 30; media geométrica con tope y suelo de `plan_family_table`, tras la
+barra ataques que pasan a su tasa real; 9 ataques):
+
+| Semilla | Sistema llano | Sistema aditivos | Sistema todo | P-fast todo | P-cert todo | Umbrales todo |
+|---|---|---|---|---|---|---|
+| 0 | 2,6 % / 0 | 2,7 % / 0 | 5,9 % / 1 | 7,1 % / 1 | 36,9 % / 4 | 13,0 % / 1 |
+| 1 | 9,3 % / 1 | 9,3 % / 1 | 11,6 % / 2 | 14,0 % / 2 | 32,2 % / 3 | 13,6 % / 1 |
+| 2 | 13,6 % / 1 | 13,6 % / 1 | 15,3 % / 2 | 23,6 % / 3 | 35,2 % / 4 | 13,6 % / 1 |
+
+La semilla 0 es la mejor de las tres también bajo ataque; en la mediana (11,6 %) Proteus y
+los umbrales en todo (13,6 %) quedan a dos puntos. Los planes aditivos no ganan nada en
+ninguna semilla. Semillas 3 y 4 saltadas por coste. Llevado al resumen (6 %, 12 % en la
+semilla mediana; umbrales 12–14 %), §6 (protocolo y atacante adaptativo) y conclusión.
