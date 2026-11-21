@@ -243,7 +243,7 @@ y envío. **Pendiente de su decisión.**
       reutilizar); Algoritmo 1 «export time t_r» frente a tiempo del evento; parámetros de TRW y
       CUSUM; uso de IA en métodos; Apollon a un párrafo.
 
-- [ ] **R8-4. Pruebas con máquina (Antonio la enciende tras el texto).** Código listo y probado:
+- [~] **R8-4. Pruebas con máquina (Antonio la enciende tras el texto).** (21-nov 07:35 UTC: máquina de equipo encendida a las 06:57; E1 hecho: semilla 9 de 17 → 18 detecta 9+1 a 0,27 (§6.152), llevada al paper; **Hulk 91k contra P-cert es con la forma llana** (sin ráfagas: duty 1, reuse 1, split 1), así que la explicación por ráfagas que puse en R6-1(a)/R7-3 es falsa y hay que quitarla; diagnóstico `hulk_diag2` (umbral del atacante por consultas frente al 0,5 del adaptativo, mismo `nested_attack`) en cola bajo el cerrojo. E2–E4 lanzados a las 07:04: `tseed1-4_1817`, `rt54/270_1817`, `injadd_1817`, `timer60b/300b_1718` y `_1817`; vigilante `finish_r8.sh` apaga tras descargar o 3 h) Código listo y probado:
       `adaptive --retime-s d` (frontera certificada con holgura (2Δ + d)/τ) y `injection --plans`
       con planes aditivos (`mimic random0 random1`). Cola, por valor/coste:
       (E1, minutos) semilla 9 de 17 → 18 y forma de Hulk en `qab_1718`;
