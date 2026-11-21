@@ -229,7 +229,7 @@ certificar UGR'16 estimando Δ 1; parar y enviar: lo que indica la calibración.
 Antonio: no lanzar experimentos; reencuadre y proposición en una rama y un revisor; revisión final
 y envío. **Pendiente de su decisión.**
 
-- [ ] **R8-1. Cifras.** «lets no further attack pass» (discusión) frente a SSH 18 → 17 solo con
+- [x] **R8-1. Cifras.** (21-nov 11:40 UTC: discusión «lets one further attack pass, the SSH brute force»; suelo 5,9 %; mediana de reglas 19 %; sin tope 6,1 % se queda (sale 6,11 de la tabla); 6,5 %; celdas ^c declaradas cota inferior en la leyenda de S7 y en §6.4 (9,0 % es cota inferior: GoldenEye, Hulk y HOIC llegaron al máximo enviado); `tables/h1_1e-4.tex` borrada; nueve semillas en 17 → 18 sigue sin justificar: la décima está sin leer en la máquina. Cerrada) «lets no further attack pass» (discusión) frente a SSH 18 → 17 solo con
       dispersión; suelo 1 flujo/h en 18 → 17: 5,9 % (no 6,0); mediana de reglas 19 % (no 20);
       sin tope 6,0 % (no 6,1); «about 7 %» → 6,5 %; celdas ^c del atacante por consultas no
       permiten decir «pasa» cuando el ritmo real supera el máximo probado; justificar diez y nueve
@@ -239,7 +239,7 @@ y envío. **Pendiente de su decisión.**
       con igual peso; «no budget» con la capacidad del exportador y de la tabla de estado; «worst
       case» → cota superior; peticiones mínimas en la salvedad del resumen; cuarta contribución
       («every layer») rebajada.
-- [ ] **R8-3. Detalle.** Unidades del daño con reutilización (ritmo de peticiones antes de
+- [~] **R8-3. Detalle.** (21-nov 11:40 UTC: hecho: el ritmo es siempre el del ataque antes de reutilizar; Algoritmo 1 con tiempo de evento; parámetros de TRW (0,8/0,2) y CUSUM (20 s, 0,35, 0,9). Falta: uso de IA en métodos y Apollon a un párrafo, que van con el reencuadre pendiente de Antonio) Unidades del daño con reutilización (ritmo de peticiones antes de
       reutilizar); Algoritmo 1 «export time t_r» frente a tiempo del evento; parámetros de TRW y
       CUSUM; uso de IA en métodos; Apollon a un párrafo.
 
