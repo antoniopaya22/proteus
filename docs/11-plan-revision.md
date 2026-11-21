@@ -29,6 +29,7 @@ Antonio pide iterar hasta la máxima nota posible. Protocolo:
 | 5 | 2026-11-19 21:45 | 5/10 | revisión mayor | (ver «Revisión 5») |
 | 6 | 2026-11-21 00:10 | 5/10 | revisión mayor | Hulk 91k frente a la cota 12k en el atacante por consultas; cifras viejas en S9.3, víctimas con carga y peticiones mínimas, CertTA, referencias S7/S8; el certificado cubre lo que ya tienen las reglas monótonas; ventaja sobre umbrales no significativa y alarmas por destino-minuto; semilla 0 es la mejor; saturación en tráfico real; (A5) con HTTP/2/TLS; atacante sin caja blanca; métrica con tope y suelo; extensión y vocabulario |
 | 7 | 2026-11-21 06:00 | 5/10 | revisión mayor | lo certificado es estrecho y no se ve en tráfico real; (A5) en manos del atacante y sin re-temporización en el modelo de amenaza; valor del modelo frente a umbrales no significativo y sin línea base de aumento con variantes aditivas; dos bancos del mismo laboratorio, semilla 0 la mejor; (A1) sin comprobar en CICFlowMeter; atacantes más débiles que la motivación; capa por flujo/Apollon/METIS; 13 incoherencias |
+| 8 | 2026-11-21 10:30 | 5/10 | revisión mayor | ventaja del modelo sobre umbrales no establecida y es lo que se vende; todo lo demás con la mejor semilla; sin captura retenida y calibración con etiquetas; certificado con poca cobertura; (A1) sin probar en CICFlowMeter y caché del exportador como presupuesto oculto; operaciones gratuitas a medida del teorema; novedad moderada; atacante débil en lo no cubierto; líneas base incompletas; unidades con reutilización; extensión |
 
 **Criterio de parada (Antonio, 2026-11-17):** cuando los resultados y la funcionalidad estén a nivel de
 un 8, se para de añadir experimentos y se hace una revisión a fondo del paper: coherencia de principio a
@@ -199,6 +200,51 @@ gane a umbrales igual calibrados con diferencia significativa y P-cert certifiqu
   exportador configurado (O3, ya declarado); modelos monótonos que extrapolan (O4, saturación ya
   declarada); peor caso exacto/MILP sobre las dimensiones no cubiertas y 10⁴ orígenes (O6);
   precisión por alerta y latencia extremo a extremo (O8).
+
+### Revisión 8 (2026-11-21 10:30, al cerrar la ronda 7) y calibración del revisor
+
+Nota **5/10** (revisión mayor). Quinta ronda seguida en 5. Recalculó medias, razón 2,1 e intervalo,
+signos, Wilson, factores, METIS: todo cuadra salvo 5 cifras menores. Fuertes: modelo de amenaza
+«a model for the field», prueba correcta, el experimento de las familias de planes, informa contra
+sí mismo, comprobaciones auxiliares, reproducibilidad. Hoja de ruta: A metodología (≥5 semillas de
+entrenamiento en daño, captura retenida, (A1) con CICFlowMeter, cobertura con d > 0, unidades) → 6;
+B atacante de caja blanca, aumento con variantes aditivas, planes aditivos en víctimas con carga,
+KitNET en 2018, Whisper/HyperVision → 7; C afirmaciones («comparable a umbrales, con una garantía
+que comparten», destino-minuto con igual peso, sin METIS, «no budget», peticiones mínimas en el
+resumen) → 7,5; D presentación (16–18 páginas) → 8.
+
+**Calibración (pedida por Antonio antes de gastar en experimentos).** El mismo encargo de revisor
+sobre dos papers publicados: Apollon (Computers & Security 2024) **3/10**, rechazo; BARS (NDSS 2023)
+**4/10**, revisión mayor. A ambos les pide para llegar a 8 lo mismo que a Proteus (otra red,
+atacante adaptativo, semillas e intervalos). Proteus, con 5, ya está por encima de los dos. Dos
+papers y una revisión cada uno (±1): la señal es que el 8 de este revisor no es un listón realista.
+
+**Opciones valoradas (probabilidad de 1 a 10 de llegar a 8 con este revisor):** línea base con
+variantes aditivas 1 (puede salir en contra); paquete completo del revisor 2 (sin datos públicos
+adecuados: BOUN 8 min, LITNET sin temporizador documentado, MAWILab 15 min/día; en víctimas con
+carga empate con umbrales, P-cert en silencio); reencuadre (principio y medida; umbrales como
+variante de Proteus) 3, sin máquina; proposición de la envolvente monótona 2 sola, 3–4 con el
+reencuadre; detector ajustado al daño 2; Whisper/HyperVision 2; daño residual 1 (ya falló);
+certificar UGR'16 estimando Δ 1; parar y enviar: lo que indica la calibración. Recomendación dada a
+Antonio: no lanzar experimentos; reencuadre y proposición en una rama y un revisor; revisión final
+y envío. **Pendiente de su decisión.**
+
+- [ ] **R8-1. Cifras.** «lets no further attack pass» (discusión) frente a SSH 18 → 17 solo con
+      dispersión; suelo 1 flujo/h en 18 → 17: 5,9 % (no 6,0); mediana de reglas 19 % (no 20);
+      sin tope 6,0 % (no 6,1); «about 7 %» → 6,5 %; celdas ^c del atacante por consultas no
+      permiten decir «pasa» cuando el ritmo real supera el máximo probado; justificar diez y nueve
+      semillas; `tables/h1_1e-4.tex` sin usar (borrar o comprobar).
+- [ ] **R8-2. Afirmaciones (grupo C).** «comparable a umbrales, con una garantía que comparten»
+      en lugar de «about half the damage» y del destacado con p = 0,08; alarmas por destino-minuto
+      con igual peso; «no budget» con la capacidad del exportador y de la tabla de estado; «worst
+      case» → cota superior; peticiones mínimas en la salvedad del resumen; cuarta contribución
+      («every layer») rebajada.
+- [ ] **R8-3. Detalle.** Unidades del daño con reutilización (ritmo de peticiones antes de
+      reutilizar); Algoritmo 1 «export time t_r» frente a tiempo del evento; parámetros de TRW y
+      CUSUM; uso de IA en métodos; Apollon a un párrafo.
+
+Con máquina, si Antonio decide: daño con ≥5 semillas de entrenamiento o la mediana; cobertura
+certificada con d = 60 y 300 s; planes aditivos en víctimas con carga; KitNET en 2018.
 
 ### Revisión 7 (2026-11-21 06:00, al cerrar la ronda 6)
 
