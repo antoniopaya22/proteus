@@ -132,7 +132,9 @@ The factor $c$ is an assumption about the protocol: a connection adds about four
 packets of handshake and teardown, so $c = 5$ holds when every request carries at least
 one forward packet of its own. An alert that survives this second worst case is
 certified against free operations combined with any connection reuse, under that
-assumption.
+assumption and as long as each request keeps its payload. The attacker controls that
+second condition: smaller requests (or HTTP/2 and HTTP/3, which compress headers) lower
+the payload bytes, so they are not covered and their effect is measured instead.
 
 ## Assumptions
 
@@ -143,7 +145,8 @@ The certificate holds when:
    exporters with an active timeout; it does not hold for loggers that emit a long
    connection only when it ends, such as Zeek's `conn.log`.
 2. **Free operations keep the attack.** They keep every packet of the trace with its
-   send time, addresses, destination port and protocol, and only add weight or packets.
+   send time (bursts and pulses re-time packets: a shift of up to $d$ would need the
+   slack $(2\Delta + d)/\tau$, which the check does not use, so they are not covered), addresses, destination port and protocol, and only add weight or packets.
 3. **No merging.** They do not merge the records of different connections. Merging is
    connection reuse, treated as a separate worst case.
 4. **Target-side answers.** The victim resets, or leaves unanswered, the attacker's

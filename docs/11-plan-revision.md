@@ -221,11 +221,11 @@ efectos pareados por semilla), 7,5–8 con D (presentación).
       «certifies the four DoS» frente a 2 %; (12) leyenda de Bound frente a ráfagas del atacante;
       (13) «idle timeout 120 s» de CICFlowMeter (es el de flujo; actividad 5 s); redondeos (5,9/6,0,
       7,1/7,2, 6,7/6,8, 5,7/5,8, 681/699).
-- [ ] **R7-2. Afirmaciones.** Reutilización condicionada a (A5) (en manos del atacante) en
+- [x] **R7-2. Afirmaciones.** (21-nov 07:30 UTC: «reuse with unchanged requests» en introducción, tabla de detectores, tabla de defensas, tablas y frontera; «with a budget of» en resumen, §6.2 y conclusión, con las alarmas realizadas en la conclusión; semilla 0 rotulada en el protocolo como la mejor de diez en 18 → 17, daño solo con semilla 0 y cinco del atacante; web: (A5) y HTTP/2/3. Cerrada) Reutilización condicionada a (A5) (en manos del atacante) en
       resumen, introducción, tabla 4 y algoritmo 1; «loses nothing», «half an alarm per hour»
       (realizado 1,35 en 17), semilla 0 rotulada como la mejor en las tablas o la mediana como
       principal.
-- [ ] **R7-3. Re-temporización en el modelo de amenaza.** Fila «re-time/burst» en la tabla 2 con su
+- [x] **R7-3. Re-temporización en el modelo de amenaza.** (21-nov 07:30 UTC: fila «Re-time flows (bursts, pulses) by up to d», holgura (2Δ+d)/τ no comprobada, medido; (A2) falla también al re-temporizar, desplazamiento d en cualquier sentido suma d/τ; corregido el texto de S7 y de la web, que daba por cubiertas las ráfagas de los planes (≤ 54 s) — no lo están; introducción menciona ráfagas y tiempo; «Cert. fr.» con nota. Cerrada) Fila «re-time/burst» en la tabla 2 con su
       holgura (desplazamientos d ≤ Δ en ambos sentidos cubiertos, más allá no); fila (A2) en la
       tabla 5; renombrar «Bound» y nota de los casos del atacante por consultas.
 - [ ] **R7-4. Exportador.** Temporizadores reales de CICFlowMeter (flujo 120 s, actividad 5 s) y
