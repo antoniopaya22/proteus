@@ -186,7 +186,7 @@ gane a umbrales igual calibrados con diferencia significativa y P-cert certifiqu
 - [ ] **R6-3. Presentación (O10, O9).** Resumen en torno a tres afirmaciones; ejemplo trabajado de
       una alerta; vocabulario unificado; monotonía por construcción (`monotonic_cst`), no
       «comprobada empíricamente»; Apollon y la capa por flujo más cortos.
-- [ ] **R6-4. Métrica (O7).** Sensibilidad al tope en la tasa real y al suelo de la rejilla;
+- [x] **R6-4. Métrica (O7).** (21-nov 01:40 UTC, §6.151: sin tope, suelo 1 y mediana, el orden no cambia; frase en §6.4. Cerrada) Sensibilidad al tope en la tasa real y al suelo de la rejilla;
       medianas y distribución por ataque (con lo que ya hay, sin máquina).
 - [ ] **R6-5. Supuestos (O5), redacción.** (A5) frente a HTTP/2/3 y TLS como límite declarado; regla
       de minutos ruidosos justificada frente a un atacante que la aproveche; la entidad alertada

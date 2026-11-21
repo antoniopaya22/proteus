@@ -3576,3 +3576,17 @@ de 13 en seis (1, 3, 4, 5, 6, 7) y 12 en tres (0, 2, 8; las tres pierden LOIC-HT
 («0.22--0.34»), §6.2 (las ocho semillas además de la 0), «In short» («thirteen in six of nine»),
 conclusión («ten and nine training seeds») y S10.3 (semillas 1 a 8). `reproduce.sh`: semillas 1–8
 en 17 → 18. Pendiente: leer la semilla 9 cuando se encienda la máquina.
+
+### 6.151 Sensibilidad de la métrica de daño (R6-4; desde `paper/tables/adaptive.tex`)
+
+Recalculado con los valores redondeados de la tabla (por eso 6,0 % y no 5,9 %), presupuesto 0,5:
+
+| Variante | Proteus 18→17 / 17→18 | Umbrales de tasa | Seleccionadas | Sin restricción |
+|---|---|---|---|---|
+| tope en la tasa real y suelo 3,6 (paper) | 6,0 / 6,1 % | 13,1 / 12,1 % | 36,6 / 8,5 % | 31,0 / 55,1 % |
+| sin tope (≥720k como 720k) | 6,1 / 10,1 % | 17,0 / 21,2 % | 128 / 16,6 % | 41,5 / 190 % |
+| suelo 1 flujo/h | 6,0 / 5,3 % | 13,1 / 12,1 % | 36,6 / 7,5 % | 31,0 / 55,1 % |
+| mediana | 4,4 / 9,2 % | 20,0 / 28,9 % | 39,2 / 29,2 % | 70 / 100 % |
+
+El orden no cambia con ninguna variante; quitar el tope y la mediana agrandan la distancia a los
+umbrales de tasa. En §6.4 una frase tras la definición de la media.
