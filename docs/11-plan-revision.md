@@ -33,6 +33,7 @@ Antonio pide iterar hasta la máxima nota posible. Protocolo:
 | 9 | 2026-11-21 17:10 | 5,5/10 | revisión mayor | el encuadre vende más certificado del que hay (10/24, 4/11 en la mayoría de semillas, sin escaneos, depende de la muestra de calibración); ventaja frente a umbrales no significativa ni estable entre semillas, y el resumen aún la sugiere; manipulaciones simuladas sobre registros (solo LOIC-HTTP en paquetes); sin atacante de caja blanca (MILP); calibración con etiquetas y frágil; sin red retenida; 17 discrepancias menores; densidad |
 | 10 | 2026-11-21 21:00 | 5,5/10 | revisión mayor | ventaja del núcleo aprendido sobre umbrales no establecida (la única significativa, 3,2× en UGR'16, con un detector que no detecta los DoS propios de UGR'16 y sin planes aditivos); certificado sin mostrar donde importa ((A1) sin verificar en CICFlowMeter, silencioso en tráfico real, cae con el reparto en 2017); semilla 0 y muestras de calibración sin controlar; frontera sin duración ni colocación; sin caja blanca ni núcleo aumentado; densidad; 17 discrepancias |
 | 11 | 2026-11-22 00:10 | 6/10 | revisión mayor | ventaja sobre umbrales en campañas sin establecer (2,1×, 0,97–4,3, p = 0,08; mediana de semillas 11,6 % frente a 13,6 %); cifras de la semilla 0 (mejor de diez, de tres en daño) con varianza entre semillas mayor que las diferencias; alarmas: unión a 2,7× el presupuesto, peor por destino-minuto, tabla 13 solo en 18 → 17; calibración con etiquetas; certificado sin mostrar en registros CICFlowMeter ni en tráfico real; falta núcleo no monótono endurecido (GROOT/Treant/aumento); atacante más débil que el de la motivación; reparto en 2017; densidad, METIS, formato de revisión; 16 discrepancias |
+| 12 | 2026-11-22 02:40 | 5/10 | revisión mayor | alcance real del certificado estrecho para el título (10/24, sin escaneos al presupuesto, nada en tráfico real, (A1) sin probar en CICFlowMeter, reparto en 18 → 17, ráfagas fuera de la holgura por defecto, peticiones mínimas, estado acotado); sin ventaja de robustez sobre umbrales (≈1,8× tomando el máximo sobre atacantes); semilla 0 y muestra de calibración no fija (contradicción en S10.3); pocas campañas y una reproducción; atacante débil (el de consultas ya supera a los planes en 17 → 18); teoría sobrevendida; sin MIDAS; METIS; densidad; 12 discrepancias |
 
 **Criterio de parada (Antonio, 2026-11-17):** cuando los resultados y la funcionalidad estén a nivel de
 un 8, se para de añadir experimentos y se hace una revisión a fondo del paper: coherencia de principio a
@@ -203,6 +204,41 @@ gane a umbrales igual calibrados con diferencia significativa y P-cert certifiqu
   exportador configurado (O3, ya declarado); modelos monótonos que extrapolan (O4, saturación ya
   declarada); peor caso exacto/MILP sobre las dimensiones no cubiertas y 10⁴ orígenes (O6);
   precisión por alerta y latencia extremo a extremo (O8).
+
+### Revisión 12 (2026-11-22 02:40, al cerrar la ronda 11)
+
+Nota **5/10** (revisión mayor), baja de 6 con un texto mejor: la dispersión entre revisores es de
+±1. Mismas objeciones de fondo que la 10 y la 11 (alcance del certificado, ventaja sobre umbrales,
+semillas y calibración, atacante, tamaño de muestra), que requieren máquina. Verificó casi todas
+las cifras («internal numerical consistency is high»); 12 discrepancias. A 7: muestra de
+calibración fija o su varianza; diez semillas en daño con la mediana como titular; daño como
+máximo sobre planes, atacante por consultas e informado; holgura de re-temporización d = 54 s por
+defecto; calibración causal por defecto; escaneos horizontales completos en la frontera;
+discrepancias, título, highlights y contribución 2; definición del contador de bytes; METIS por
+referencias estándar. A 8: CICFlowMeter, captura real con Δ conocido, atacante con aprendizaje o
+de caja blanca, MIDAS-R, más instancias de ataque o red retenida, implementación en flujo con
+temporizador y agotamiento de estado, UGR'16 con detectores entrenados en 2018.
+
+- [ ] **R12-1. Discrepancias 1–12.** (1) S10.3 «seed 0 for sampling» frente a «drawn anew in each
+  run»; (2) 200.000 frente a «up to one million» y el reajuste diario de P-cert sin decir en §5.2
+  y §6.1; (3) Hulk 60k^c contra Proteus y P-fast en S7 sin explicar, y «about what our plans
+  reach» frente a 9,0 % contra 6,1 %; (4) SSH pasa P-cert por su frontera llana, no por la
+  certificada; (5) «none of the scans» solo al presupuesto; (6) el clasificador por flujo detecta
+  GoldenEye y Slowloris, no floods; (7) bytes: «forward payload bytes» frente a «forward bytes» y
+  NFStream desde la cabecera de transporte; (8) (A2) desplazamiento tardío: evaluación en
+  t + Δ + d; (9) highlight 2 sin condiciones; (10) RQ1 «the most of any detector» al presupuesto;
+  (11) conclusión «significant only on busy ISP victims» frente a Sel. 2,8 (1,1–7,1) y Wilcoxon en
+  2017; (12) redondeos de S1.
+- [ ] **R12-2. Encuadre y teoría.** Teorema a su peso (la monotonía es conocida; lo nuevo es la
+  evidencia, la holgura del exportador y la reutilización); «none on two captures» no es empírico
+  en UGR'16 (Δ desconocido); título y highlights con condiciones; METIS con referencias estándar
+  de teoría de la decisión además de METIS.
+- [ ] **R12-3. Con datos locales.** Daño como máximo sobre planes, atacante por consultas e
+  informado por ataque, y razones frente a umbrales recalculadas.
+- [ ] **R12-4. Presentación.** §3 Apollon más corto; menos cifras en prosa en §6.2 y §6.4.
+- Con máquina (pendiente de Antonio): muestra de calibración fija o varianza; diez semillas en
+  daño; d = 54 s por defecto; calibración causal por defecto; escaneos completos en la frontera;
+  CICFlowMeter; MIDAS-R; atacante más fuerte; más reproducciones; UGR'16 con detectores de 2018.
 
 ### Revisión 11 (2026-11-22 00:10, al cerrar la ronda 10)
 
