@@ -3590,3 +3590,12 @@ Recalculado con los valores redondeados de la tabla (por eso 6,0 % y no 5,9 %), 
 
 El orden no cambia con ninguna variante; quitar el tope y la mediana agrandan la distancia a los
 umbrales de tasa. En §6.4 una frase tras la definición de la media.
+
+
+## 6.152 Semilla 9 de 2017 → 2018 y reencuadre (2026-11-21, 07:10)
+
+Leída por fin la semilla 9 (`cicids2017__csecicids2018__loo_labels__r2_s9`): Proteus (pcr) **9+1 a
+0,27** al presupuesto 0,5 (pierde LOIC-HTTP del martes y tres escaneos: uno del jueves y dos del
+miércoles), 12+1 a 0,51 con presupuesto 1; P-cert 6+1 a 0,05; umbrales de tasa 13+2 a 0,96. Con
+diez semillas en 2017 → 2018: trece en seis, doce en tres, nueve en una. El paper decía «12–13»
+con nueve semillas: ahora «9–13 (12 o más en nueve de diez)» en resumen, §6.2 y conclusión.
