@@ -11,7 +11,7 @@ services of that day that no attack touches, chosen to span the range of benign 
 on the attacked port (for scans: hosts, any port), over each victim's own real traffic.
 For every (victim, attack) pair and every detector it reports the highest rate on a
 geometric grid at which the attack raises no alert of its own, for the plain attack and
-for the attacker's plans (connection reuse, bursts; minimal requests apart, since no
+for the attacker's plans (connection reuse, bursts, and with ``--plans`` additive ones; minimal requests apart, since no
 certificate covers them), and the certified rate of the ``--certify`` detectors. With
 tens of victims per attack, comparisons between detectors rest on hundreds of cases
 instead of one campaign per attack type.
@@ -35,14 +35,33 @@ from proteus.evaluation.adaptive import (
     STRUCTURED,
     Oracle,
     day_models,
+    mimic,
     structured,
     threshold_label,
 )
+from proteus.evaluation.free_ops import variant
 from proteus.evaluation.frontier_exp import ATTACKS, FLOW_COLS, Baselines
 from proteus.evaluation.poisoning import combined
 
 STOP_AFTER = 2  # a monotone detector alerted at this many consecutive rates is done
 PLANS = ["plain", "reuse", "reuse+pulse", "shrink", "shrink+reuse"]
+# Additive plans (``--plans ... mimic random0 random1``): what free operations alone do,
+# as in ``evaluation.adaptive``.
+ADDITIVE = ["mimic", "random0", "random1"]
+
+
+def plan_traffic(df: pd.DataFrame, plan: str, sc: Scenario) -> pd.DataFrame:
+    """The attack in ``df`` (column ``_atk``) sent with ``plan``."""
+    if plan == "plain":
+        return df
+    if plan == "mimic":
+        return mimic(df, sc.background)
+    if plan.startswith("random"):
+        k = int(plan[len("random"):])
+        v, _ = variant(df, np.random.default_rng(1000 + k), sc.target_ip, sc.target_port,
+                       retime=bool(k % 2))
+        return v
+    return structured(df, plan, np.random.default_rng(2000))
 
 
 def pick_victims(flows: pd.DataFrame, port: int | None, proto: int, n: int,
@@ -106,7 +125,7 @@ def scan_rates(full: pd.DataFrame, sc: Scenario, oracle: Oracle, rates: np.ndarr
         df["orig_id"] = np.arange(len(df))
         quiet_any = {n: False for n in active}
         for plan in plans:
-            v = df if plan == "plain" else structured(df, plan, np.random.default_rng(2000))
+            v = plan_traffic(df, plan, sc)
             quiet, cert = oracle.query(v, active, certified=plan == "plain")
             for n in active:
                 q = quiet[n]
@@ -155,7 +174,7 @@ def main() -> None:
     ap.add_argument("--resume", action="store_true",
                     help="keep the (victim, attack) pairs already in the output files and skip them")
     args = ap.parse_args()
-    known = ["plain"] + [p for p in STRUCTURED if not p.startswith("spread")]
+    known = ["plain"] + ADDITIVE + [p for p in STRUCTURED if not p.startswith("spread")]
     unknown = sorted(set(args.plans) - set(known))
     if unknown:  # spreading over sources changes the attacker, not its shape: not here
         raise SystemExit(f"unknown plans {unknown}; known: {', '.join(known)}")

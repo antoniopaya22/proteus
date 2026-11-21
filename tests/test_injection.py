@@ -74,3 +74,29 @@ def test_scan_rates_keeps_free_and_minimal_requests_apart_and_stops_monotone_det
     assert any("A" in names for r, names in oracle.calls if r == 32.0)
     assert all("A" not in names for r, names in oracle.calls if r > 33)
     assert {r["plan"] for r in ladder} == {"plain", "reuse", "shrink+reuse"}
+
+
+def test_additive_plans_only_add_to_the_attack():
+    import proteus.evaluation.injection as inj
+    from proteus.core.frontier import Scenario
+    rng = np.random.default_rng(0)
+    n = 60
+    t = pd.Timestamp("2020-01-01") + pd.to_timedelta(np.sort(rng.uniform(0, 600, n)), unit="s")
+    df = pd.DataFrame({
+        "t_start": t.astype("datetime64[us]"), "duration_us": np.full(n, 1_000_000, np.int64),
+        "src_ip": ["10.0.0.1"] * n, "src_port": rng.integers(1024, 65536, n).astype(np.int32),
+        "dst_ip": ["10.0.1.1"] * n, "dst_port": np.full(n, 80, np.int32),
+        "proto": np.full(n, 6, np.int16), "fwd_pkts": np.full(n, 3, np.int64),
+        "bwd_pkts": np.full(n, 2, np.int64), "fwd_bytes": np.full(n, 300, np.int64),
+        "bwd_bytes": np.full(n, 200, np.int64), "f_bwd_rst_flags": np.zeros(n, np.float32),
+    })
+    df["t_end"] = df["t_start"] + pd.to_timedelta(df["duration_us"], unit="us")
+    df["_atk"] = np.arange(n) % 2 == 0
+    df["orig_id"] = np.arange(n)
+    sc = Scenario(df[~df["_atk"]].drop(columns=["_atk", "orig_id"]), df[df["_atk"]],
+                  "10.0.1.1", 80, 6, df["t_start"].min(), 600.0)
+    for plan in inj.ADDITIVE:
+        v = inj.plan_traffic(df, plan, sc)
+        kept = v[v["orig_id"] >= 0]
+        assert set(df["orig_id"]) <= set(kept["orig_id"]), plan
+        assert v["fwd_bytes"].sum() >= df["fwd_bytes"].sum(), plan
