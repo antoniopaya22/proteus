@@ -219,7 +219,7 @@ referencias estándar. A 8: CICFlowMeter, captura real con Δ conocido, atacante
 de caja blanca, MIDAS-R, más instancias de ataque o red retenida, implementación en flujo con
 temporizador y agotamiento de estado, UGR'16 con detectores entrenados en 2018.
 
-- [ ] **R12-1. Discrepancias 1–12.** (1) S10.3 «seed 0 for sampling» frente a «drawn anew in each
+- [x] **R12-1. Discrepancias 1–12.** (22-nov 03:40 UTC: (1)–(2) S10.2/S10.3 y §6.1: generador con semilla 0 cuyo orden de extracciones cambia con la lista de detectores; 200.000 para las distribuciones del máximo calibrado y hasta un millón para los umbrales (comprobado en `h1.py` y `local_benign`); (3) el 60k contra Proteus y P-fast, probablemente la misma muestra (solo diagnosticada para P-cert), y la búsqueda supera a los planes en 17 → 18 sobre todo por su rejilla más fina; (4) frontera llana de P-cert (tabla S5); (5) «at the budget»; (6) GoldenEye y Slowloris; (7) bytes de carga en CIC (`Total Length of Fwd Packet`), desde la cabecera de transporte en la prueba de paquetes, que no comprueba la reutilización; (8) retraso d en (A2); (9) highlight y README con condiciones; (10) «at the budget»; (11) conclusión con Sel. 2,8 (1,1–7,1); (12) redondeos de S1 dentro de la rejilla, sin cambio) (1) S10.3 «seed 0 for sampling» frente a «drawn anew in each
   run»; (2) 200.000 frente a «up to one million» y el reajuste diario de P-cert sin decir en §5.2
   y §6.1; (3) Hulk 60k^c contra Proteus y P-fast en S7 sin explicar, y «about what our plans
   reach» frente a 9,0 % contra 6,1 %; (4) SSH pasa P-cert por su frontera llana, no por la
@@ -229,13 +229,13 @@ temporizador y agotamiento de estado, UGR'16 con detectores entrenados en 2018.
   t + Δ + d; (9) highlight 2 sin condiciones; (10) RQ1 «the most of any detector» al presupuesto;
   (11) conclusión «significant only on busy ISP victims» frente a Sel. 2,8 (1,1–7,1) y Wilcoxon en
   2017; (12) redondeos de S1.
-- [ ] **R12-2. Encuadre y teoría.** Teorema a su peso (la monotonía es conocida; lo nuevo es la
+- [x] **R12-2. Encuadre y teoría.** (22-nov 03:40 UTC: contribución 2 y §2: la garantía viene de la monotonía, lo propio es la evidencia, la cota del exportador y la reutilización; resumen «with real backgrounds and unknown timeouts»; Pratt (Econometrica 32, 1964, doi 10.2307/1913738) verificado y citado para el equivalente cierto junto a METIS) Teorema a su peso (la monotonía es conocida; lo nuevo es la
   evidencia, la holgura del exportador y la reutilización); «none on two captures» no es empírico
   en UGR'16 (Δ desconocido); título y highlights con condiciones; METIS con referencias estándar
   de teoría de la decisión además de METIS.
-- [ ] **R12-3. Con datos locales.** Daño como máximo sobre planes, atacante por consultas e
+- [x] **R12-3. Con datos locales.** (22-nov 03:40 UTC: `tables best_damage` con test: tomando por ataque el máximo de planes, atacante por consultas e informado, Proteus 7,8 %, umbrales 16 % (2,0×, 1,1–3,7; signos 12/4, p = 0,08) y seleccionados 26 % (3,4×, 1,3–8,5); a §6.4.2 y tabla 5) Daño como máximo sobre planes, atacante por consultas e
   informado por ataque, y razones frente a umbrales recalculadas.
-- [ ] **R12-4. Presentación.** §3 Apollon más corto; menos cifras en prosa en §6.2 y §6.4.
+- [x] **R12-4. Presentación.** (22-nov 03:40 UTC: §3 sin el detalle de los 79 flujos; R3 sin «only» (la calibración usa etiquetas para el tráfico limpio). Las cifras en prosa de §6.2 y §6.4 ya se redujeron en R10-4. Ronda 12 completa) §3 Apollon más corto; menos cifras en prosa en §6.2 y §6.4.
 - Con máquina (pendiente de Antonio): muestra de calibración fija o varianza; diez semillas en
   daño; d = 54 s por defecto; calibración causal por defecto; escaneos completos en la frontera;
   CICFlowMeter; MIDAS-R; atacante más fuerte; más reproducciones; UGR'16 con detectores de 2018.

@@ -79,6 +79,9 @@ inj=$(files $A/injection_b0.5_v16.csv $B/injection_b0.5_ugr.csv)
 [ -n "$csvs" ] && $PY proteus.evaluation.tables kept --csv $csvs --injection $inj \
   --data-out $T/kept.csv --out $T/kept.tex > /dev/null
 [ -n "$csvs" ] && $PY proteus.evaluation.tables kept_sensitivity --csv $csvs --out $T/kept_sensitivity.tex > /dev/null
+# Damage as the most any attacker reached (plans, query and informed searches), pooled.
+q=$(files $A/query_attack_b0.5_all.csv $A/query_attack_b0.5_inf.csv $B/query_attack_b0.5_all.csv)
+[ -n "$csvs" ] && $PY proteus.evaluation.tables best_damage --csv $csvs --query $q --out $T/best_damage.csv > /dev/null
 csvs=$(files $A/injection_b0.5_v16.csv $B/injection_b0.5_ugr.csv)
 [ -n "$csvs" ] && $PY proteus.evaluation.tables injection_paired --csv $csvs --out $T/injection_paired.csv > /dev/null
 

@@ -495,3 +495,22 @@ def test_kept_sensitivity_table_columns(tmp_path):
     tex = kept_sensitivity_table([run / "adaptive_x.csv"])
     # Quiet above the real rate: 100% with the cap, 400% without it.
     assert r"\sysname & 100.0\% & 100.0\% & 400.0\% & 100.0\%" in tex
+
+
+def test_best_damage_takes_the_strongest_attacker(tmp_path):
+    from proteus.evaluation.tables import best_damage
+    run = tmp_path / "csecicids2018__cicids2017__loo_labels__r2"
+    run.mkdir()
+    pd.DataFrame({"day": ["d1"], "attack": ["a"], "real_flows_per_h": [100.0]}).to_csv(
+        run / "adaptive_x.csv", index=False)
+    rows = [{"day": "d1", "attack": "a", "plan": "plain", "flows_per_h": 10.0, "detector": det,
+             "detected": False} for det in ("proteus", "proteus_cert_r", "rate_rules_local")]
+    pd.DataFrame(rows).to_csv(run / "adaptive_ladder_x.csv", index=False)
+    pd.DataFrame({"day": ["d1"] * 3, "attack": ["a"] * 3, "target": ["pcr", "pcr", "rate_rules_local"],
+                  "costly": [False, True, False], "shrink": [False, False, False],
+                  "query_flows_per_h": [30.0, 90.0, 5.0]}).to_csv(run / "q.csv", index=False)
+    b = best_damage(run / "adaptive_x.csv", [run / "q.csv"])
+    # The free search beats the plans against the system; spreading does not count;
+    # against the thresholds the plans stay the best.
+    assert b.loc[("d1", "a"), r"\sysname"] == 30.0
+    assert b.loc[("d1", "a"), "Rules"] == 10.0

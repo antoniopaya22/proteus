@@ -708,6 +708,63 @@ def kept_sensitivity_table(csvs: list[Path]) -> str:
     return "\n".join(lines) + "\n"
 
 
+# Detectors of the comparison over every attacker: name, members in the adaptive ladder,
+# target in the query attacker's CSV.
+BEST_DETECTORS = [(r"\sysname", ("proteus", "proteus_cert_r"), "pcr"),
+                  ("Rules", ("rate_rules_local",), "rate_rules_local"),
+                  ("Sel.", ("rate_rules_sel",), "rate_rules_sel")]
+
+
+def best_damage(adaptive: Path, queries: list[Path]) -> pd.DataFrame:
+    """Damage per attack as the defender should count it: the highest rate that passes
+    under any attacker, the adaptive plans (free plans, no spreading and no minimal
+    requests) or a query attacker's search with free shapes. Columns: real rate and one
+    column per detector of ``BEST_DETECTORS``."""
+    a = pd.read_csv(adaptive)
+    ladder = pd.read_csv(adaptive.with_name(adaptive.name.replace("adaptive_", "adaptive_ladder_", 1)))
+    real = a.drop_duplicates(["day", "attack"]).set_index(["day", "attack"])["real_flows_per_h"]
+    out = pd.DataFrame({"real": real})
+    q = pd.concat([pd.read_csv(p) for p in queries], ignore_index=True) if queries else None
+    for name, members, target in BEST_DETECTORS:
+        if not set(members) <= set(ladder["detector"]):
+            continue
+        d = ladder_damage(ladder, list(members)).reindex(real.index).fillna(0.0)
+        if q is not None:
+            t = q[(q["target"] == target) & ~q["costly"].astype(bool) & ~q["shrink"].astype(bool)]
+            qd = t.groupby(["day", "attack"])["query_flows_per_h"].max().reindex(real.index).fillna(0.0)
+            d = np.maximum(d, qd)
+        out[name] = d
+    return out
+
+
+def best_damage_paired(adaptive: list[Path], queries: list[Path], floor: float = GRID_MIN_FLOWS_PER_H,
+                       n_boot: int = 5000) -> pd.DataFrame:
+    """Share kept per detector under every attacker (``best_damage``), capped and
+    floored as in the paper, pooled over the directions in ``adaptive`` (each matched
+    with the query CSVs of its run directory), and the paired comparison of each
+    detector with the system: attacks on which it leaves more and less, sign-test
+    p-value, ratio of geometric means with a bootstrap interval over attacks."""
+    from scipy.stats import binomtest
+    b = pd.concat([best_damage(p, [q for q in queries if q.parent == p.parent]).assign(run=p.parent.name)
+                   .set_index("run", append=True) for p in adaptive])
+    b = b[[c for c in b.columns if b[c].notna().all()]]
+    logs = {c: np.log(np.clip(np.maximum(b[c], floor) / b["real"], None, 1.0))
+            for c in b.columns if c != "real"}
+    base = BEST_DETECTORS[0][0]
+    rows = []
+    for name, v in logs.items():
+        row = {"detector": name, "share": float(np.exp(v.mean()))}
+        if name != base:
+            diff = v - logs[base]
+            more, less = int((diff > 0).sum()), int((diff < 0).sum())
+            r, lo, hi = cluster_ratio(diff, pd.Series(range(len(diff))), n_boot)
+            row.update(more=more, less=less,
+                       sign_p=float(binomtest(more, more + less).pvalue) if more + less else float("nan"),
+                       ratio=r, lo=lo, hi=hi)
+        rows.append(row)
+    return pd.DataFrame(rows)
+
+
 KEPT_STYLE = ["color=pnavy, mark=square*", "color=pblue, mark=*",
               "color=porange, mark=triangle*", "color=pgreen, mark=diamond*"]
 
@@ -1014,10 +1071,12 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("table", choices=["h1", "summary", "ablation", "ablation_pair", "frontier", "frontier_system",
                                        "frontier_budget", "adaptive", "plan_families", "curves", "query", "budgets", "injection", "injection_paired",
-                                       "intervals", "real", "damage_budget", "kept", "kept_sensitivity"])
+                                       "intervals", "real", "damage_budget", "kept", "kept_sensitivity", "best_damage"])
     ap.add_argument("--labels", nargs="*", default=[], help="real: one row label per run")
     ap.add_argument("--csv", type=Path, nargs="*", default=[], help="frontier or adaptive CSVs")
     ap.add_argument("--data-out", type=Path, default=None)
+    ap.add_argument("--query", type=Path, nargs="*", default=[],
+                    help="best_damage: query attacker CSVs of the same direction as --csv")
     ap.add_argument("--injection", type=Path, nargs="*", default=[],
                     help="kept: injection CSVs (busy victims) next to the adaptive --csv")
     ap.add_argument("--detectors", nargs="*", default=None)
@@ -1043,6 +1102,11 @@ def main() -> None:
         else:
             t.to_csv(args.out, index=False)
         print(t.round(3).to_string())
+        return
+    if args.table == "best_damage":
+        t = best_damage_paired(args.csv, args.query)
+        t.to_csv(args.out, index=False)
+        print(t.round(4).to_string())
         return
     if args.table == "kept_sensitivity":
         args.out.write_text(kept_sensitivity_table(args.csv))
