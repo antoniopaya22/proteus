@@ -295,3 +295,28 @@ def test_reuse_respects_the_service_limit_on_requests_per_connection():
     assert len(op.reuse_connections(ftp, np.ones(len(ftp), bool), k=20, timeout_s=120)) == 12
     http = op.reuse_connections(df, np.ones(len(df), bool), k=20, timeout_s=120)
     assert len(http) == 2
+
+
+@pytest.mark.parametrize("period,duty", [(60.0, 0.1), (300.0, 0.1), (300.0, 0.5)])
+@pytest.mark.parametrize("seed", range(3))
+def test_bursts_are_bounded_by_the_retiming_slack(period, duty, seed):
+    """Bursts move flows earlier by up to d = period (1 - duty): evidence read Δ later
+    keeps at least exp(-(2Δ + d)/τ) of the original, the slack of ``--retime-s d``."""
+    from proteus.core.certify import slack
+    rng = np.random.default_rng(seed)
+    x = flows(rng)
+    x2 = op.pulse(x, attacker(x), period, duty)
+    d = period * (1 - duty)
+    both = pd.concat([x.assign(_v=0), x2.assign(_v=1)], ignore_index=True)
+    t0 = both["t_end"].min()
+    t = (both["t_end"] - t0).dt.total_seconds().to_numpy()
+    dsvc = _codes(both["dst_ip"], both["dst_port"])
+    v = both["_v"].to_numpy()
+    a, b = v == 0, v == 1
+    taus = np.asarray(DEFAULT_TAUS)
+    names = [f"f__t{int(tau)}" for tau in taus]
+    s = slack(names, {n: "count" for n in names}, DELTA_S, d)
+    assert np.allclose(s, (2 * DELTA_S + d) / taus)
+    orig = decayed_sum(t[a], dsvc[a], np.ones(a.sum()), taus)
+    later = decayed_sum_at(t[b], dsvc[b], np.ones(b.sum()), t[a] + DELTA_S, dsvc[a], taus)
+    assert np.all(later >= np.exp(-s)[None, :] * orig - 1e-9)

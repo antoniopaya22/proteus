@@ -147,10 +147,12 @@ class Oracle:
     the attack's doing). ``queries`` counts the variants submitted."""
 
     def __init__(self, sc, models: dict, thr: dict[str, float], base: dict, specs: dict,
-                 certify: tuple[str, ...] = (), delta: float = h1.EXPORT_TIMEOUT_S) -> None:
+                 certify: tuple[str, ...] = (), delta: float = h1.EXPORT_TIMEOUT_S,
+                 retime: float = 0.0) -> None:
         self.models, self.thr, self.base, self.specs = models, thr, base, specs
         self.certify = tuple(n for n in certify if n in models)
         self.delta = delta
+        self.retime = retime  # flows moved by up to this many seconds: slack (2Δ + d)/τ
         self.cols = list(dict.fromkeys(c for cols, _ in models.values() for c in cols))
         self.queries = 0
         bg_feats = _features(sc.background, self.cols, base) if self.cols else None
@@ -168,7 +170,7 @@ class Oracle:
     def _worst(self, n: str, X: np.ndarray) -> np.ndarray:
         cols, m = self.models[n]
         W = worst_case_features(X, np.asarray(m.monotonic_cst),
-                                slack(cols, self.specs, self.delta))
+                                slack(cols, self.specs, self.delta, self.retime))
         return m.predict_proba(W)[:, 1]
 
     def query(self, v: pd.DataFrame, names: list[str] | None = None,
@@ -243,6 +245,9 @@ def main() -> None:
                     help="score every detector at every rate (no per-detector stop)")
     ap.add_argument("--resume", action="store_true",
                     help="keep the scenarios already in the output files and skip them")
+    ap.add_argument("--retime-s", type=float, default=0.0,
+                    help="certified frontier also against re-timing flows by up to this "
+                         "many seconds (bursts): slack (2Δ + d)/τ")
     args = ap.parse_args()
     rng = np.random.default_rng(args.seed)
     fitted = h1.load_models(args.run)
@@ -288,7 +293,8 @@ def main() -> None:
             plans = [("plain", None), ("mimic", None)] + [
                 (f"random{k}", k) for k in range(args.variants)] + [
                 (name, None) for name in STRUCTURED if not args.no_structured]
-            oracle = Oracle(sc, models, thr, base, specs, tuple(args.certify), delta)
+            oracle = Oracle(sc, models, thr, base, specs, tuple(args.certify), delta,
+                            args.retime_s)
             noisy = oracle.noisy
             best = {n: {"rate": 0.0, "plan": None} for n in models}
             spread = {n: {"rate": 0.0, "plan": None} for n in models}
