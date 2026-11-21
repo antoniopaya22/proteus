@@ -163,6 +163,9 @@ stage_query() {  # tab:query: black-box search with hard labels, at the operatin
     --extra-runs ${A}_p2 ${A}_sel --test cicids2017 \
     --targets proteus proteus_cert_r rate_rules_local rate_rules_sel \
     --union pcr=proteus,proteus_cert_r --budget 300 --informed ${q% --tag all} --tag inf
+  # Hulk 2017 -> 2018 (text of S7): the plain trace against Proteus-cert under the
+  # calibration draw of the run above and under four fresh draws.
+  run $O/hulk_calibration_draws.log .venv/bin/python -u scripts/hulk_calibration_draws.py
 }
 
 stage_injection() {  # Every attack against many real victims of varying load (2018 -> 2017).

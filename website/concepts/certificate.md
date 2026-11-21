@@ -168,6 +168,10 @@ The certificate holds when:
 
 The certificate is about evidence and the model. It says nothing about whether the
 threshold is well chosen; that is a matter of the false-alarm budget of the network.
+Nor does it cover the calibration sample: the calibrated maximum and its threshold are
+fitted on a sample of local benign flows, and in the evaluation one draw left the Hulk
+flood unalerted up to 91k flows per hour where four other draws alerted it from 28k.
+The certificate holds for the detector as calibrated, not for every draw.
 
 !!! note "Checking it empirically"
     The bound is proved, but its premises are easy to get wrong in code (a feature

@@ -3651,3 +3651,19 @@ idéntica en los 9 ataques; con 270 s sube un punto de rejilla solo en SSH (3,0k
 Al paper: (A2) en la tabla de supuestos, fila de re-temporización del modelo de amenaza,
 §6.4 (familias de planes) y leyenda de la tabla de daño; web certificate.md y
 harm-frontier.md.
+
+## 6.156 Hulk 2017 → 2018: la muestra de calibración de P-cert (2026-11-21, 16:30)
+
+`scripts/hulk_calibration_draws.py` (antes `hulk_diag3`): traza llana de Hulk del viernes
+16-02-2018 contra P-cert, callada (sí/no) a 12,3k, 18k, 28k, 41k, 60k y 91k flujos/h.
+(a) Mismo camino del rng que el atacante por consultas (`day_models` en cada día de ataque
+en orden, rng(0), lista de cuatro detectores): callada a todas las tasas, también 91k.
+(b) Muestras nuevas, rng 1–4 (solo P-cert): las cuatro iguales, callada a 12k y 18k,
+alertada desde 28k. Umbral 0,5 en todos los casos.
+
+Así que los 91k del atacante por consultas no vienen de las ráfagas (la forma es la
+llana) ni del umbral, sino de la muestra benigna (200.000 flujos por cada otro día) con la
+que se calibra P-cert ese día: una muestra de cinco deja Hulk sin alertar hasta 91k. Al
+paper: §6 (atacante por consultas), S7 (reescrito, fuera la explicación por ráfagas) y
+discusión (la calibración depende de la muestra; el certificado vale para el detector
+calibrado). Web: certificate.md y harm-frontier.md.

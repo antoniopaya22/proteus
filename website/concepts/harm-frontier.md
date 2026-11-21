@@ -158,7 +158,10 @@ it could be higher. The target can be one detector or a union of detectors, whic
 quiet only when every member is. The search does not break the certificate. What it
 finds, when it finds something, is what the certificate does not cover: carrying many
 requests in one connection, which is why the deployed system includes sub-cores fitted
-only on evidence that connection reuse cannot lower.
+only on evidence that connection reuse cannot lower. Where it beats the certified
+frontier by a wide margin (Hulk in 2017→2018, 91k against 12k flows per hour) the
+reason is the calibration sample of that run, not its shapes: the plain trace passes
+there too, and four other draws of the sample alert it from 28k.
 
 ## Baseline poisoning
 
