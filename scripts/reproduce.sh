@@ -157,6 +157,10 @@ stage_injection() {  # Every attack against many real victims of varying load (2
     --test cicids2017 --models proteus proteus_cert_r proteus_free rate_rules_sel \
     --local rate_rules_local kitnet_local --certify proteus_cert_r --alarm-budget 0.5 \
     --victims 16 --grid 14 --window 1800 --tag v16
+  # Additive plans on the same victims (Section S9.5).
+  run $O/injection_18_17_add.log $PY proteus.evaluation.injection --run $A --test cicids2017 \
+    --models proteus proteus_free --local rate_rules_local --certify --alarm-budget 0.5 \
+    --victims 16 --grid 14 --window 1800 --plans plain mimic random0 random1 --tag v16add
 }
 
 stage_ablation() {  # tab:ablation (proteus-K drops sub-core K).

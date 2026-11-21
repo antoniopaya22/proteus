@@ -3599,3 +3599,20 @@ Leída por fin la semilla 9 (`cicids2017__csecicids2018__loo_labels__r2_s9`): Pr
 miércoles), 12+1 a 0,51 con presupuesto 1; P-cert 6+1 a 0,05; umbrales de tasa 13+2 a 0,96. Con
 diez semillas en 2017 → 2018: trece en seis, doce en tres, nueve en una. El paper decía «12–13»
 con nueve semillas: ahora «9–13 (12 o más en nueve de diez)» en resumen, §6.2 y conclusión.
+
+## 6.153 Planes aditivos en víctimas con carga, 2018 → 2017 (2026-11-21, 12:30)
+
+`injadd_1817` (`injection_b0.5_v16add.csv`, mismas 92 parejas ataque–víctima de 2017 que
+`v16`, planes plain, mimic, random0, random1; media geométrica de la parte de la tasa real
+conservada, tope 1, suelo 3,6 flujos/h; tras la barra, parejas que pasan a su tasa real):
+
+| Detector | Llano | Planes de `v16` (reutilización, pulsos, mínimas) | Aditivos | Todos |
+|---|---|---|---|---|
+| Proteus-fast | 5,7 % / 10 % | 12,6 % / 10 % | 5,7 % / 10 % | 12,6 % / 10 % |
+| Núcleo sin restricción | 1,7 % / 0 % | 5,2 % / 0 % | 14,2 % / 26 % | 14,5 % / 26 % |
+| Umbrales en todo | 5,5 % / 0 % | 8,8 % / 11 % | 5,5 % / 0 % | 8,8 % / 11 % |
+| Sistema (fast ∪ cert) | 4,7 % / 0 % | 6,5 % / 0 % | — | — |
+
+Las adiciones no mueven a los monótonos (igual que el llano) y multiplican por 8 lo que
+conserva el núcleo sin restricción en víctimas con carga, como en las campañas (6,8 → 27 %).
+Llevado a §6.3 y S9.5.
