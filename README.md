@@ -35,10 +35,11 @@ detection that is robust to adversarial evasion. Instead of hiding which model a
 Proteus detects on **conserved evidence**: per-entity counters that the attacker's free
 operations (padding, inserted packets, split connections, decoys, new source ports) can
 only increase. A **monotone core** scores that evidence, so additive manipulation cannot lower its
-score, and an alert that survives a slack set by the flow exporter is **certified**
-against any combination of those operations with a single extra model evaluation. The
-certificate is narrow (in the paper it covers alerts in 10 of 24 volumetric campaigns
-and scans); what is left to the attacker, going slower, from more sources or with
+score, and an alert that survives a slack set by the flow exporter is **certified**,
+under stated assumptions about the exporter, against any combination of those
+operations with a single extra model evaluation. The certificate is narrow (in the
+paper it covers alerts in 10 of 24 volumetric campaigns and scans at the alarm budget,
+and none on the captures with real backgrounds); what is left to the attacker, going slower, from more sources or with
 smaller requests, is measured as the **harm frontier**.
 
 The paper is in preparation. Full documentation, in English and Spanish, at
