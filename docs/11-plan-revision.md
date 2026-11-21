@@ -216,7 +216,7 @@ captura real con Δ conocido, cobertura con k orígenes, captura retenida) → 7
 adversarios (caja blanca, núcleo aumentado, KitNET/Kitsune completos, comparación primaria
 preespecificada o reencuadre) → 8–8,5.
 
-- [ ] **R10-1. Discrepancias 1–17.** (1) Slowhttptest 2 % certificado en S2 frente a 1,00 en S8
+- [x] **R10-1. Discrepancias 1–17.** (21-nov 22:00 UTC: todas; (1) la ventana de S2 frente a la campaña de S8 explicada y el pie remite a S8; (3) regla de promedio escrita (alarmas de todos los días sobre todas sus horas); (8)–(10) redondeo: la leyenda de la tabla 9 dice que las cuotas salen de tasas sin redondear; (17) 119 es correcto: la descripción de §5.1 omitía los destinos sin respuesta de un origen, ahora en el texto y en la tabla S13) (1) Slowhttptest 2 % certificado en S2 frente a 1,00 en S8
   y 0,71 en la tabla 7; el pie de S2 debe remitir a S8; (2) S9.5: «on these victims» del núcleo
   sin restricción es UGR'16; (3) lunes: 303 destino-minutos/h frente a la media 60,4 (regla de
   promedio); (4) multiplicador de los aditivos con una sola fórmula (1,8 a 8); (5) tabla 5 RQ2:
@@ -227,7 +227,7 @@ preespecificada o reencuadre) → 8–8,5.
   de la envolvente; (14) unidades del escaneo de los bots; (15) CIC-DDoS-2019 sin alertas
   certificadas; (16) contribución 4: en tráfico real solo umbrales; (17) 119 frente a 117
   contadores conservados.
-- [ ] **R10-2. Matizar afirmaciones.** «No detector does better» solo frente al cono ascendente;
+- [x] **R10-2. Matizar afirmaciones.** (21-nov 22:00 UTC: resumen «could raise every counter at will»; nota b de la tabla 1; contribución 4; dos salvedades del 3,2× de UGR'16; (A1) sin probar en CICFlowMeter en amenazas) «No detector does better» solo frente al cono ascendente;
   tabla 1 «across networks» con dos conjuntos del mismo laboratorio; contribución 4; el 3,2× de
   UGR'16 con un detector entrenado en CIC que no detecta los DoS de UGR'16 y sin planes aditivos
   (en el texto y en amenazas); (A1) sin probar en CICFlowMeter en amenazas a la validez.
@@ -239,7 +239,7 @@ preespecificada o reencuadre) → 8–8,5.
   con intervalos); menos prosa numérica en §6.2, §6.4.1 y §6.4.2; valorar mover al suplemento el
   compuesto METIS (o citar el equivalente cierto estándar), el detalle del caparazón y del
   contador de realimentación, BARS y Kitsune en paquetes.
-- [ ] **R10-5. Reproducibilidad.** Tabla en el suplemento con los 152 contadores y los 119
+- [x] **R10-5. Reproducibilidad.** (21-nov 22:00 UTC: tabla S13 con los 152 contadores y los 119 conservados, comprobada con `build(version="v3")`; los siete ataques de UGR'16 en S9.5; regla de promedio en §6.1) Tabla en el suplemento con los 152 contadores y los 119
   conservados; los siete ataques de 2018 inyectados en UGR'16; regla de promedio de alarmas.
 - Con máquina, sin decisión de Antonio no se hace: semillas × muestras de calibración en las
   tablas 7, 10 y 11; frontera por duración y colocación; (A1) con CICFlowMeter; captura real con Δ
