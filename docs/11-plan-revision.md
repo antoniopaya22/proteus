@@ -231,7 +231,7 @@ preespecificada o reencuadre) → 8–8,5.
   tabla 1 «across networks» con dos conjuntos del mismo laboratorio; contribución 4; el 3,2× de
   UGR'16 con un detector entrenado en CIC que no detecta los DoS de UGR'16 y sin planes aditivos
   (en el texto y en amenazas); (A1) sin probar en CICFlowMeter en amenazas a la validez.
-- [ ] **R10-3. Trabajo relacionado (verificar antes de citar).** Superspreaders (Venkataraman et
+- [x] **R10-3. Trabajo relacionado (verificar antes de citar).** (21-nov 23:00 UTC: Estan y Varghese (SIGCOMM 2002, doi 10.1145/633025.633056), Venkataraman et al. (NDSS 2005), Krishnamurthy et al. (IMC 2003, doi 10.1145/948205.948236), Vos y Verwer (ICML 2021, PMLR 139) y Ranzato y Zanella (AAAI 2020, doi 10.1609/aaai.v34i04.5998) verificados y citados en §2; Proteus como generalización aprendida de los detectores de contadores; sketches sin evaluar) Superspreaders (Venkataraman et
   al., NDSS 2005), detección de cambios con sketches (Krishnamurthy et al., IMC 2003), heavy
   hitters; verificación y entrenamiento robusto de árboles (Vos y Verwer; Ranzato y Zanella).
   Proteus como generalización aprendida y certificada de los detectores monótonos de contadores.
