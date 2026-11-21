@@ -145,12 +145,6 @@ stage_adaptive() {  # tab:adaptive, tab:frontier: fixed plans on a grid of rates
       --models proteus_cert_r --local --certify proteus_cert_r --alarm-budget 0.5 --grid 30 --variants 0 \
       --no-structured --retime-s $d --tag g30rt$d
   done
-  # The damage under attack with the sub-cores of training seeds 1 and 2 (Section 6.4).
-  for s in 1 2; do
-    run $O/adaptive_r2g_18_17_t$s.log $PY proteus.evaluation.adaptive --run ${A}_s$s --test cicids2017 \
-      --models proteus proteus_cert_r --local rate_rules_local --certify proteus_cert_r --alarm-budget 0.5 \
-      --grid 30 --tag g30t
-  done
 }
 
 stage_query() {  # tab:query: black-box search with hard labels, at the operating point.
@@ -256,6 +250,12 @@ stage_robustness() {  # Seeds, baselines without labels, class balance of the tr
         --models proteus proteus_cert_r $BUD --tag r2_bal_$b
     done
   done < <(pairs)
+  # The damage under attack with the sub-cores of training seeds 1 and 2 (Section 6.4; needs the seeds above).
+  for s in 1 2; do
+    run $O/adaptive_r2g_18_17_t$s.log $PY proteus.evaluation.adaptive --run ${A}_s$s --test cicids2017 \
+      --models proteus proteus_cert_r --local rate_rules_local --certify proteus_cert_r --alarm-budget 0.5 \
+      --grid 30 --tag g30t
+  done
   run $O/run_18_17_r2_prior_none.log $PY proteus.evaluation.h1 --train csecicids2018 --test cicids2017 \
     --baseline prior --mask none --models proteus proteus_cert_r rate_rules_local $BUD --tag r2
   # Thresholds, benign distributions and budgets from earlier days only, as well.
