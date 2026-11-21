@@ -215,7 +215,7 @@ C validez (CICFlowMeter en paquetes para todos los tipos, MILP, red retenida) �
 (línea base con aumento aditivo, calibración sin etiquetas, envenenamiento de la calibración,
 remedio a la saturación) → 8–8,5.
 
-- [ ] **R9-1. Cifras D1–D17.** D1 «1,8 a 4» → incluir 8× de víctimas con carga; D2 P-fast y Unc.
+- [x] **R9-1. Cifras D1–D17.** (21-nov 18:00 UTC: las 17 corregidas; D6: los datos son los de Liu et al. para los dos conjuntos; D14: P-fast se certifica sin ρ; resumen en 249 palabras con «comparable under attack») D1 «1,8 a 4» → incluir 8× de víctimas con carga; D2 P-fast y Unc.
   difieren ya en el llano; D3 frase de semillas y aditivos (por semilla y columna); D4 tres
   ejecuciones de víctimas con carga con conjuntos de planes distintos (decirlo); D5 cuatro filas,
   la quinta el UDP; D6 qué corrección de CIC (Liu/Engelen) y para qué conjunto; D7 KitNET en la
