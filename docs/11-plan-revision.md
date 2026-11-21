@@ -34,6 +34,7 @@ Antonio pide iterar hasta la máxima nota posible. Protocolo:
 | 10 | 2026-11-21 21:00 | 5,5/10 | revisión mayor | ventaja del núcleo aprendido sobre umbrales no establecida (la única significativa, 3,2× en UGR'16, con un detector que no detecta los DoS propios de UGR'16 y sin planes aditivos); certificado sin mostrar donde importa ((A1) sin verificar en CICFlowMeter, silencioso en tráfico real, cae con el reparto en 2017); semilla 0 y muestras de calibración sin controlar; frontera sin duración ni colocación; sin caja blanca ni núcleo aumentado; densidad; 17 discrepancias |
 | 11 | 2026-11-22 00:10 | 6/10 | revisión mayor | ventaja sobre umbrales en campañas sin establecer (2,1×, 0,97–4,3, p = 0,08; mediana de semillas 11,6 % frente a 13,6 %); cifras de la semilla 0 (mejor de diez, de tres en daño) con varianza entre semillas mayor que las diferencias; alarmas: unión a 2,7× el presupuesto, peor por destino-minuto, tabla 13 solo en 18 → 17; calibración con etiquetas; certificado sin mostrar en registros CICFlowMeter ni en tráfico real; falta núcleo no monótono endurecido (GROOT/Treant/aumento); atacante más débil que el de la motivación; reparto en 2017; densidad, METIS, formato de revisión; 16 discrepancias |
 | 12 | 2026-11-22 02:40 | 5/10 | revisión mayor | alcance real del certificado estrecho para el título (10/24, sin escaneos al presupuesto, nada en tráfico real, (A1) sin probar en CICFlowMeter, reparto en 18 → 17, ráfagas fuera de la holgura por defecto, peticiones mínimas, estado acotado); sin ventaja de robustez sobre umbrales (≈1,8× tomando el máximo sobre atacantes); semilla 0 y muestra de calibración no fija (contradicción en S10.3); pocas campañas y una reproducción; atacante débil (el de consultas ya supera a los planes en 17 → 18); teoría sobrevendida; sin MIDAS; METIS; densidad; 12 discrepancias |
+| 13 | 2026-11-22 04:20 | 5/10 | revisión mayor | (A1) sin probar en CICFlowMeter (la comprobación en paquetes es LOIC-HTTP, que P-cert no certifica); cobertura certificada estrecha, inestable con la muestra de calibración y saturada en 17 → 18 y en tráfico real; ventaja sobre umbrales sin prueba principal preespecificada (2,1× con IC que incluye 1 frente a 2,0× con IC que no) y sobre todo efecto de la reutilización; semilla 0 y diseño sobre las redes de prueba; alarmas por destino-minuto y calibración causal; alcance (líneas base fijas, (A4), no solapamiento en la reutilización, «any number»); atacante; bases débiles; METIS; densidad; 14 discrepancias |
 
 **Criterio de parada (Antonio, 2026-11-17):** cuando los resultados y la funcionalidad estén a nivel de
 un 8, se para de añadir experimentos y se hace una revisión a fondo del paper: coherencia de principio a
@@ -204,6 +205,31 @@ gane a umbrales igual calibrados con diferencia significativa y P-cert certifiqu
   exportador configurado (O3, ya declarado); modelos monótonos que extrapolan (O4, saturación ya
   declarada); peor caso exacto/MILP sobre las dimensiones no cubiertas y 10⁴ orígenes (O6);
   precisión por alerta y latencia extremo a extremo (O8).
+
+### Revisión 13 (2026-11-22 04:20, al cerrar la ronda 12)
+
+Nota **5/10** (revisión mayor). Quinta ronda seguida entre 5 y 6 (5,5 · 5,5 · 6 · 5 · 5): el texto
+está en su techo y las objeciones que quedan piden máquina. Verificó casi todo (medias, razones,
+signos, factores, holguras, Wilson, contadores, METIS); 14 discrepancias. A 7: prueba principal
+preespecificada; alcance (líneas base fijas o certificar con b = ∞, cobertura sin (A4), no
+solapamiento en la reutilización); muestra de calibración y semillas; umbrales sobre la evidencia
+de P-cert atacados; alarmas deduplicadas y calibración causal; (A1) en CICFlowMeter;
+envenenamiento en 17 → 18. A 8: captura retenida con Δ conocido y alertas certificadas, P-cert que
+extrapole (saturación), atacante conjunto con puntuaciones y núcleo aumentado, más instancias.
+
+- [ ] **R13-1. Discrepancias y alcance (texto).** D1 una prueba principal (los planes, 2,1×
+  0,97–4,3, p = 0,08) y el máximo sobre atacantes como análisis secundario, coherente en resumen,
+  highlights, tabla 5 y conclusión; D2 «in one network» para la mediana de semillas; D3 «at every
+  rate tried»; D4 P-cert en CTU-13 con una sola frase; D7 tabla por ataque del máximo sobre
+  atacantes; D8 seis frente a 20 combinaciones; D9 TRW y CUSUM en una tabla; D10 secciones de las
+  razones de víctimas con carga; D11 «4» frente a «<4»; D13 semillas 1 y 2 de daño en S10.3; D14
+  «any number» frente a la capacidad del estado; líneas base y calibración fijas en el teorema
+  (envenenamiento fuera de la garantía); no solapamiento en la reutilización; descomposición de la
+  ventaja sobre umbrales por familia de planes.
+- Con máquina (pendiente de Antonio): (A1) en CICFlowMeter; muestra de calibración fija y
+  semillas; certificar con b = ∞ y sin (A4); umbrales sobre la evidencia de P-cert atacados;
+  alarmas deduplicadas; calibración causal en daño; envenenamiento en 17 → 18; KitNET al
+  presupuesto en 17 → 18.
 
 ### Revisión 12 (2026-11-22 02:40, al cerrar la ronda 11)
 
