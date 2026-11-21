@@ -188,7 +188,7 @@ gane a umbrales igual calibrados con diferencia significativa y P-cert certifiqu
       «comprobada empíricamente»; Apollon y la capa por flujo más cortos.
 - [x] **R6-4. Métrica (O7).** (21-nov 01:40 UTC, §6.151: sin tope, suelo 1 y mediana, el orden no cambia; frase en §6.4. Cerrada) Sensibilidad al tope en la tasa real y al suelo de la rejilla;
       medianas y distribución por ataque (con lo que ya hay, sin máquina).
-- [ ] **R6-5. Supuestos (O5), redacción.** (A5) frente a HTTP/2/3 y TLS como límite declarado; regla
+- [x] **R6-5. Supuestos (O5), redacción.** (21-nov 02:00 UTC: HTTP/2/3 en «Scope of the certificate» como peticiones mínimas gratis; la regla de minutos ruidosos declarada como favorable al atacante; la frontera vale para el ataque reproducido (diez minutos, ese momento del día) y uno más largo se alerta antes; «Above it, for the replayed attack». La entidad alertada no cambia: el teorema da las mismas entidades y las operaciones gratuitas no cambian la IP de origen; no se toca. Cerrada) (A5) frente a HTTP/2/3 y TLS como límite declarado; regla
       de minutos ruidosos justificada frente a un atacante que la aproveche; la entidad alertada
       puede cambiar (respuesta en línea no garantizada); duración en la frontera.
 - Límites del método o experimentos con máquina, no se hacen sin decisión de Antonio: umbrales
