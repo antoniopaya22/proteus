@@ -600,6 +600,53 @@ def injection_summary(csv: Path, floor: float | None = None) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+
+def cluster_ratio(diff: pd.Series, cluster: pd.Series, n_boot: int = 5000,
+                  seed: int = 0) -> tuple[float, float, float]:
+    """Ratio of geometric means from paired log-differences ``diff``, with a 95%
+    interval from a two-stage bootstrap: resample the clusters (attacks), then the
+    units (victims) inside each. Units that share an attack are not independent."""
+    d = pd.Series(np.asarray(diff, float))
+    groups = [g.to_numpy() for _, g in d.groupby(np.asarray(cluster))]
+    rng = np.random.default_rng(seed)
+    means = np.empty(n_boot)
+    for b in range(n_boot):
+        pick = rng.integers(0, len(groups), len(groups))
+        means[b] = np.concatenate([rng.choice(groups[i], len(groups[i])) for i in pick]).mean()
+    lo, hi = np.exp(np.percentile(means, [2.5, 97.5]))
+    return float(np.exp(d.mean())), float(lo), float(hi)
+
+
+def injection_paired(csv: Path, base: str = "System", floor: float | None = None,
+                     n_boot: int = 5000) -> pd.DataFrame:
+    """Paired comparison of the injection study: for every other detector, the pairs on
+    which it leaves the attacker more or less than ``base`` (log of the share kept,
+    floored and capped as in ``injection_summary``), the Wilcoxon signed-rank p-value
+    over the pairs, and the ratio of geometric means with an attack-clustered interval."""
+    from scipy.stats import wilcoxon
+    a = pd.read_csv(csv)
+    ladder = pd.read_csv(csv.with_name(csv.name.replace("injection_", "injection_ladder_", 1)))
+    keys = ("day", "attack", "victim")
+    info = a.drop_duplicates(list(keys)).set_index(list(keys))
+    lo = floor if floor is not None else float(ladder["flows_per_h"].min())
+    logs = {}
+    for name, members, shrink in INJECTION:
+        if not set(members) <= set(ladder["detector"]):
+            continue
+        d = ladder_damage(ladder, list(members), shrink=shrink, keys=keys).reindex(info.index).fillna(0.0)
+        logs[name] = np.log(np.clip(np.maximum(d, lo) / info["real_flows_per_h"], None, 1.0))
+    rows = []
+    for name, v in logs.items():
+        if name == base or name.startswith(base):
+            continue
+        diff = v - logs[base]
+        nz = diff[diff != 0]
+        p = float(wilcoxon(nz).pvalue) if len(nz) else float("nan")
+        r, l, h = cluster_ratio(diff, diff.index.get_level_values("attack"), n_boot)
+        rows.append({"detector": name, "pairs": len(diff), "more": int((diff > 0).sum()),
+                     "less": int((diff < 0).sum()), "wilcoxon_p": p, "ratio": r, "lo": l, "hi": h})
+    return pd.DataFrame(rows)
+
 # Plans of ``evaluation.adaptive`` grouped by what they change: nothing, only additions
 # (the operations the certificate covers), bursts, connection reuse.
 PLAN_FAMILIES = [("Plain", ("plain",)),
@@ -864,7 +911,7 @@ def real_table(runs: list[Path], labels: list[str], budget: float = 0.5,
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("table", choices=["h1", "summary", "ablation", "ablation_pair", "frontier", "frontier_system",
-                                       "frontier_budget", "adaptive", "plan_families", "curves", "query", "budgets", "injection",
+                                       "frontier_budget", "adaptive", "plan_families", "curves", "query", "budgets", "injection", "injection_paired",
                                        "intervals", "real", "damage_budget"])
     ap.add_argument("--labels", nargs="*", default=[], help="real: one row label per run")
     ap.add_argument("--csv", type=Path, nargs="*", default=[], help="frontier or adaptive CSVs")
@@ -919,6 +966,11 @@ def main() -> None:
     if args.table == "plan_families":
         args.out.write_text(plan_family_table(args.csv))
         print(args.out.read_text())
+        return
+    if args.table == "injection_paired":
+        t = pd.concat([injection_paired(c).assign(run=c.parent.name) for c in args.csv])
+        t.to_csv(args.out, index=False)
+        print(t.round(3).to_string())
         return
     if args.table == "injection":
         t = injection_summary(args.csv[0])

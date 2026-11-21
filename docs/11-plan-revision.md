@@ -237,7 +237,7 @@ remedio a la saturación) → 8–8,5.
 - [ ] **R9-4. Trabajo relacionado (verificar antes de citar).** Calzavara et al. (TREANT y
   sucesores), Apruzzese et al. (modelos de amenaza realistas en NIDS); explicar Kitsune entrenado
   en un día con ataques; resultados en tráfico real presentados como limitados.
-- [ ] **R9-5. Sin máquina con los CSV ya en local.** Pruebas pareadas (Wilcoxon sobre log-razones)
+- [x] **R9-5. Sin máquina con los CSV ya en local.** (21-nov 18:40 UTC: §6.157; umbrales 1,3× (0,87–1,9) en 2017 y 3,2× (1,4–8,9) en UGR'16 agrupando por ataque; `tables injection_paired` con test; al paper §6.3 y S9.5) Pruebas pareadas (Wilcoxon sobre log-razones)
   en los 92/176 pares víctima–ataque; varianza de la cobertura certificada que ya tengamos.
 - Con máquina, sin decisión de Antonio no se hace: semillas × muestras de calibración en las dos
   direcciones; paquetes por CICFlowMeter para todos los tipos; MILP; red retenida; aumento aditivo;

@@ -3667,3 +3667,21 @@ que se calibra P-cert ese día: una muestra de cinco deja Hulk sin alertar hasta
 paper: §6 (atacante por consultas), S7 (reescrito, fuera la explicación por ráfagas) y
 discusión (la calibración depende de la muestra; el certificado vale para el detector
 calibrado). Web: certificate.md y harm-frontier.md.
+
+## 6.157 Víctimas con carga: comparación pareada (2026-11-21, 18:40)
+
+`tables injection_paired` (log de la razón de cuotas por par; Wilcoxon sobre pares;
+bootstrap en dos etapas, ataques y luego víctimas, 5.000 réplicas) frente al sistema:
+
+| Red | Detector | más / menos | Wilcoxon p | Razón | IC 95 % por ataques |
+|---|---|---|---|---|---|
+| 2017 (92 pares, 6 ataques) | Umbrales | 35 / 10 | 4·10⁻⁴ | 1,34 | 0,87–1,87 |
+| | KitNET | 81 / 9 | <10⁻⁷ | 3,05 | 1,31–9,83 |
+| | Sel. | 78 / 8 | <10⁻¹² | 9,08 | 1,51–46,5 |
+| | Unc. | 21 / 29 | 0,37 | 0,79 | 0,05–4,87 |
+| UGR'16 (176 pares, 7 ataques) | Umbrales | 102 / 0 | <10⁻¹⁷ | 3,20 | 1,37–8,93 |
+| | Unc. | 0 / 102 | <10⁻¹⁷ | 0,41 | 0,19–0,77 |
+
+Primera ventaja frente a umbrales que aguanta la agrupación por ataque (víctimas del ISP);
+en 2017 no. Sin planes aditivos el núcleo sin restricción gana en UGR'16. Al paper: §6.3
+(víctimas con carga) y S9.5.

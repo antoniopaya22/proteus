@@ -1,4 +1,6 @@
 import numpy as np
+import pandas as pd
+import pytest
 
 from proteus.evaluation.tables import bootstrap_mean, wilson
 
@@ -440,3 +442,17 @@ def test_damage_budget_table_pairs_damage_with_realised_alarms(tmp_path):
     row = next(x for x in table.splitlines() if x.startswith("Rules"))
     assert row.removesuffix(" \\\\").split(" & ")[1:] == ["10.0\\%/0 (5.00; 20.0)", "1.0\\%/0 (6.00; 20.0)"]
 
+
+
+def test_cluster_ratio_interval_widens_with_few_clusters():
+    from proteus.evaluation.tables import cluster_ratio
+    # Two attacks, one strongly against the base and one for it: the pooled ratio is
+    # above 1 but the clustered interval must include 1.
+    diff = pd.Series([1.0] * 20 + [-0.5] * 5)
+    cluster = pd.Series(["a"] * 20 + ["b"] * 5)
+    r, lo, hi = cluster_ratio(diff, cluster, n_boot=2000)
+    assert r == pytest.approx(np.exp(0.7))
+    assert lo < 1 < hi
+    # One consistent sign everywhere: interval excludes 1.
+    r, lo, hi = cluster_ratio(pd.Series([0.3, 0.5, 0.4, 0.6]), pd.Series(list("aabb")), n_boot=2000)
+    assert lo > 1
