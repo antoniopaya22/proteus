@@ -32,6 +32,7 @@ Antonio pide iterar hasta la máxima nota posible. Protocolo:
 | 8 | 2026-11-21 10:30 | 5/10 | revisión mayor | ventaja del modelo sobre umbrales no establecida y es lo que se vende; todo lo demás con la mejor semilla; sin captura retenida y calibración con etiquetas; certificado con poca cobertura; (A1) sin probar en CICFlowMeter y caché del exportador como presupuesto oculto; operaciones gratuitas a medida del teorema; novedad moderada; atacante débil en lo no cubierto; líneas base incompletas; unidades con reutilización; extensión |
 | 9 | 2026-11-21 17:10 | 5,5/10 | revisión mayor | el encuadre vende más certificado del que hay (10/24, 4/11 en la mayoría de semillas, sin escaneos, depende de la muestra de calibración); ventaja frente a umbrales no significativa ni estable entre semillas, y el resumen aún la sugiere; manipulaciones simuladas sobre registros (solo LOIC-HTTP en paquetes); sin atacante de caja blanca (MILP); calibración con etiquetas y frágil; sin red retenida; 17 discrepancias menores; densidad |
 | 10 | 2026-11-21 21:00 | 5,5/10 | revisión mayor | ventaja del núcleo aprendido sobre umbrales no establecida (la única significativa, 3,2× en UGR'16, con un detector que no detecta los DoS propios de UGR'16 y sin planes aditivos); certificado sin mostrar donde importa ((A1) sin verificar en CICFlowMeter, silencioso en tráfico real, cae con el reparto en 2017); semilla 0 y muestras de calibración sin controlar; frontera sin duración ni colocación; sin caja blanca ni núcleo aumentado; densidad; 17 discrepancias |
+| 11 | 2026-11-22 00:10 | 6/10 | revisión mayor | ventaja sobre umbrales en campañas sin establecer (2,1×, 0,97–4,3, p = 0,08; mediana de semillas 11,6 % frente a 13,6 %); cifras de la semilla 0 (mejor de diez, de tres en daño) con varianza entre semillas mayor que las diferencias; alarmas: unión a 2,7× el presupuesto, peor por destino-minuto, tabla 13 solo en 18 → 17; calibración con etiquetas; certificado sin mostrar en registros CICFlowMeter ni en tráfico real; falta núcleo no monótono endurecido (GROOT/Treant/aumento); atacante más débil que el de la motivación; reparto en 2017; densidad, METIS, formato de revisión; 16 discrepancias |
 
 **Criterio de parada (Antonio, 2026-11-17):** cuando los resultados y la funcionalidad estén a nivel de
 un 8, se para de añadir experimentos y se hace una revisión a fondo del paper: coherencia de principio a
@@ -202,6 +203,49 @@ gane a umbrales igual calibrados con diferencia significativa y P-cert certifiqu
   exportador configurado (O3, ya declarado); modelos monótonos que extrapolan (O4, saturación ya
   declarada); peor caso exacto/MILP sobre las dimensiones no cubiertas y 10⁴ orígenes (O6);
   precisión por alerta y latencia extremo a extremo (O8).
+
+### Revisión 11 (2026-11-22 00:10, al cerrar la ronda 10)
+
+Nota **6/10** (revisión mayor), sube de 5,5. «Internal consistency is unusually good»: recalculó
+medias geométricas, pasadas, razones, prueba de signos, bootstrap, METIS, Wilson, factores,
+holguras, conexiones de los ataques lentos, contador de realimentación y tabla S13; 16
+discrepancias. Hoja de ruta a 7: discrepancias, reencuadre (razón con IC y p en vez de
+«comparable», sin alertas certificadas en tráfico real, (A1) sin probar en CICFlowMeter, el
+reparto en 2018 → 17, tabla 1), semillas como mediana y rango en las tablas 8, 10, 11 y 12, tabla
+13 para 17 → 18 y las dos métricas de alarmas en la tabla 5, calibración sin etiquetas, artefactos
+de CICFlowMeter en los registros, sensibilidad de «kept» al tope, al suelo y a la regla de
+atribución, aclaraciones (n_dhost_nr y (A4) en P-cert, tiempo de evento), reestructurar (S9.2,
+S9.3 y reparto al texto, METIS, formato de revisión). A 8: núcleo no monótono endurecido (GROOT,
+Treant o aumento), atacante más fuerte (CMA-ES o política aprendida) y rejilla fina en 17 → 18,
+certificado sobre pcaps reexportados con NFStream, más reproducciones por ataque, captura real con
+Δ conocido; daño de aplicación en banco de pruebas (descartado: Antonio no quiere volver al banco).
+
+- [ ] **R11-1. Discrepancias 1–16.** (1) «92 victims / 176 destinations» son parejas; (2) siete
+  ataques × 21–24 víctimas frente a 176; (3) seis ataques remuestreados frente a nueve de 2017;
+  (4) «2 to 681» omite el UDP del martes; (5) conn_s en las escalas largas (tabla S13 frente a
+  §5.1.1); (6) 0,07 → 6,8 % (o 0,0667); (7) «about four times» frente a 3,9 y 5,0; (8) resumen y
+  conclusión «comparable» frente a 2,1×; (9) nota c de la tabla S7; (10) lunes «a fifth of the
+  hours» frente a 60,4; (11) 270 s son las ráfagas del atacante por consultas, no de los planes;
+  (12) S9.5 «5,7 % y 5,5 %, with and without them»; (13) Unc. bajo Proteus también en víctimas de
+  2017 (figura 4) y 1,7 % en el llano; (14) resets en la introducción como evidencia libre; (15)
+  «floods» frente a «denial-of-service»; (16) 13,6 % para tres cosas.
+- [ ] **R11-2. Reencuadre.** Resumen, highlights, contribución 1 y conclusión con la razón frente
+  a umbrales, su IC y p; sin alertas certificadas en capturas reales; (A1) sin probar en
+  CICFlowMeter; reparto en 18 → 17 (alertas certificadas de DoS por evidencia de origen); tabla 1
+  «Across networks» como «partly».
+- [ ] **R11-3. Sin máquina con datos locales.** Sensibilidad de «kept» al tope y al suelo en una
+  tabla (la regla de atribución necesita máquina); las dos métricas de alarmas en la tabla 5;
+  explicar y descontar la inflación del lunes por destino-minuto.
+- [ ] **R11-4. Aclaraciones.** ¿P-cert usa destinos sin respuesta de un origen? Dependencia de
+  (A4); lectura en tiempo de evento del teorema 1 (más el retraso por inactividad); política de
+  expulsión en la tabla 3.
+- [ ] **R11-5. Reestructurar.** Reparto y evidencia de P-cert (S9.2, S9.3) al texto; METIS
+  justificado o fuera del texto principal; Apollon breve; formato de revisión de elsarticle para
+  el envío (en la revisión final).
+- Con máquina, sin decisión de Antonio no se hace: diez semillas en las tablas 10–12 (grupo B);
+  calibración sin etiquetas y muestras de calibración; tabla 13 en 17 → 18; atribución; artefactos
+  y reexportación CICFlowMeter/NFStream; núcleo endurecido (GROOT sobre la misma evidencia);
+  atacante CMA-ES; rejilla fina en 17 → 18; más reproducciones por ataque.
 
 ### Revisión 10 (2026-11-21 21:00, al cerrar la ronda 9)
 
