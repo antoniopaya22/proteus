@@ -30,6 +30,7 @@ Antonio pide iterar hasta la máxima nota posible. Protocolo:
 | 6 | 2026-11-21 00:10 | 5/10 | revisión mayor | Hulk 91k frente a la cota 12k en el atacante por consultas; cifras viejas en S9.3, víctimas con carga y peticiones mínimas, CertTA, referencias S7/S8; el certificado cubre lo que ya tienen las reglas monótonas; ventaja sobre umbrales no significativa y alarmas por destino-minuto; semilla 0 es la mejor; saturación en tráfico real; (A5) con HTTP/2/TLS; atacante sin caja blanca; métrica con tope y suelo; extensión y vocabulario |
 | 7 | 2026-11-21 06:00 | 5/10 | revisión mayor | lo certificado es estrecho y no se ve en tráfico real; (A5) en manos del atacante y sin re-temporización en el modelo de amenaza; valor del modelo frente a umbrales no significativo y sin línea base de aumento con variantes aditivas; dos bancos del mismo laboratorio, semilla 0 la mejor; (A1) sin comprobar en CICFlowMeter; atacantes más débiles que la motivación; capa por flujo/Apollon/METIS; 13 incoherencias |
 | 8 | 2026-11-21 10:30 | 5/10 | revisión mayor | ventaja del modelo sobre umbrales no establecida y es lo que se vende; todo lo demás con la mejor semilla; sin captura retenida y calibración con etiquetas; certificado con poca cobertura; (A1) sin probar en CICFlowMeter y caché del exportador como presupuesto oculto; operaciones gratuitas a medida del teorema; novedad moderada; atacante débil en lo no cubierto; líneas base incompletas; unidades con reutilización; extensión |
+| 9 | 2026-11-21 17:10 | 5,5/10 | revisión mayor | el encuadre vende más certificado del que hay (10/24, 4/11 en la mayoría de semillas, sin escaneos, depende de la muestra de calibración); ventaja frente a umbrales no significativa ni estable entre semillas, y el resumen aún la sugiere; manipulaciones simuladas sobre registros (solo LOIC-HTTP en paquetes); sin atacante de caja blanca (MILP); calibración con etiquetas y frágil; sin red retenida; 17 discrepancias menores; densidad |
 
 **Criterio de parada (Antonio, 2026-11-17):** cuando los resultados y la funcionalidad estén a nivel de
 un 8, se para de añadir experimentos y se hace una revisión a fondo del paper: coherencia de principio a
@@ -200,6 +201,47 @@ gane a umbrales igual calibrados con diferencia significativa y P-cert certifiqu
   exportador configurado (O3, ya declarado); modelos monótonos que extrapolan (O4, saturación ya
   declarada); peor caso exacto/MILP sobre las dimensiones no cubiertas y 10⁴ orígenes (O6);
   precisión por alerta y latencia extremo a extremo (O8).
+
+### Revisión 9 (2026-11-21 17:10, al cerrar la ronda 8)
+
+Nota **5,5/10** (revisión mayor), la primera que sube de 5 en seis rondas. Recalculó factores,
+medias geométricas, medianas, prueba de signos, razones, METIS, Wilson, holguras: todo cuadra salvo
+17 discrepancias (D1–D17). Fuertes: idea con principio, informa contra sí mismo, prueba correcta,
+amenazas a la validez francas, reproducibilidad. Hoja de ruta: A texto (D1–D17, encuadre, tabla de
+términos y de afirmaciones con IC, §5.3.1 como observación, TREANT/Calzavara y Apruzzese) → 6,5;
+B estadística (semillas × muestras de calibración en las dos direcciones con la mediana como cifra
+principal, pruebas pareadas en los 92/176 pares, unión calibrada al presupuesto, TTD con Δ) → 7;
+C validez (CICFlowMeter en paquetes para todos los tipos, MILP, red retenida) → 7,5–8; D método
+(línea base con aumento aditivo, calibración sin etiquetas, envenenamiento de la calibración,
+remedio a la saturación) → 8–8,5.
+
+- [ ] **R9-1. Cifras D1–D17.** D1 «1,8 a 4» → incluir 8× de víctimas con carga; D2 P-fast y Unc.
+  difieren ya en el llano; D3 frase de semillas y aditivos (por semilla y columna); D4 tres
+  ejecuciones de víctimas con carga con conjuntos de planes distintos (decirlo); D5 cuatro filas,
+  la quinta el UDP; D6 qué corrección de CIC (Liu/Engelen) y para qué conjunto; D7 KitNET en la
+  figura 3 frente a «sin ejecución al presupuesto» y leyenda «every threshold of Table 7»; D8 «other
+  than its own components»; D9 solo el UDP del martes; D10 Sel. en la red grande; D11 resumen y
+  conclusión coherentes con «within two points», mediana solo en 2018→2017; D12 rotular Slowloris
+  2018; D13 «with free shapes» en S7; D14 qué certificado (con o sin reutilización) en el algoritmo
+  1 y en «Proteus-fast certifies Hulk alone»; D15 0,30 incluye SSH; D16 CTU-13 sin Δ conocido; D17
+  TTD sin el retraso del exportador.
+- [ ] **R9-2. Encuadre.** Título, resumen, highlights y contribuciones a lo demostrado: detección
+  monótona sobre evidencia conservada con certificado por alerta donde aplica; cobertura certificada
+  (con su variación por semillas y muestra de calibración) como cifra principal; frente a umbrales
+  «comparable bajo ataque», su valor en alarmas y cobertura; alcance volumétricos, escaneos y fuerza
+  bruta. §5.3.1 como observación. Amenazas a la validez: calibración con etiquetas y varianza de la
+  muestra; los dos CIC del mismo laboratorio.
+- [ ] **R9-3. Legibilidad.** Tabla de términos (P-fast, P-cert, Rules, Sel., Unc.), tabla de
+  afirmaciones principales con IC, quitar cifras repetidas, resumen con 4–5 cifras; valorar subir
+  S9.5 y S7 al texto y bajar METIS compuesto, CIC-DDoS-2019 y Kitsune publicado al suplemento.
+- [ ] **R9-4. Trabajo relacionado (verificar antes de citar).** Calzavara et al. (TREANT y
+  sucesores), Apruzzese et al. (modelos de amenaza realistas en NIDS); explicar Kitsune entrenado
+  en un día con ataques; resultados en tráfico real presentados como limitados.
+- [ ] **R9-5. Sin máquina con los CSV ya en local.** Pruebas pareadas (Wilcoxon sobre log-razones)
+  en los 92/176 pares víctima–ataque; varianza de la cobertura certificada que ya tengamos.
+- Con máquina, sin decisión de Antonio no se hace: semillas × muestras de calibración en las dos
+  direcciones; paquetes por CICFlowMeter para todos los tipos; MILP; red retenida; aumento aditivo;
+  calibración sin etiquetas y su envenenamiento; saturación.
 
 ### Revisión 8 (2026-11-21 10:30, al cerrar la ronda 7) y calibración del revisor
 
