@@ -681,6 +681,33 @@ def kept_points(adaptive: list[Path], injection: list[Path], n_boot: int = 5000,
     return pd.DataFrame(rows)
 
 
+def kept_sensitivity_table(csvs: list[Path]) -> str:
+    """How the summary of damage depends on its conventions: the geometric mean of the
+    share kept with the cap at the real rate and the floor at the lowest rate tried (the
+    paper's), with a floor of one flow per hour, without the cap, and the median attack.
+    One block per direction, one row per detector of ``KEPT_DETECTORS``."""
+    lines = [r"\begin{tabular}{lrrrr}", r"\toprule",
+             r"Detector & Paper & Floor 1/h & No cap & Median \\"]
+    for path in csvs:
+        a = pd.read_csv(path)
+        ladder = pd.read_csv(path.with_name(path.name.replace("adaptive_", "adaptive_ladder_", 1)))
+        real = a.drop_duplicates(["day", "attack"]).set_index(["day", "attack"])["real_flows_per_h"]
+        key = "__".join(path.parent.name.split("__")[:2])
+        lines += [r"\midrule", rf"\multicolumn{{5}}{{l}}{{\emph{{{DIRECTION.get(key, key)}}}}} \\"]
+        for name, members in KEPT_DETECTORS:
+            if not set(members) <= set(ladder["detector"]):
+                continue
+            d = ladder_damage(ladder, list(members)).reindex(real.index).fillna(0.0)
+            gm = lambda k: 100 * float(np.exp(np.log(k).mean()))
+            cells = [gm(np.clip(np.maximum(d, GRID_MIN_FLOWS_PER_H) / real, None, 1.0)),
+                     gm(np.clip(np.maximum(d, 1.0) / real, None, 1.0)),
+                     gm(np.maximum(d, GRID_MIN_FLOWS_PER_H) / real),
+                     100 * float(np.median(np.clip(np.maximum(d, GRID_MIN_FLOWS_PER_H) / real, None, 1.0)))]
+            lines.append(f"{name} & " + " & ".join(f"{c:.1f}\\%" for c in cells) + r" \\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    return "\n".join(lines) + "\n"
+
+
 KEPT_STYLE = ["color=pnavy, mark=square*", "color=pblue, mark=*",
               "color=porange, mark=triangle*", "color=pgreen, mark=diamond*"]
 
@@ -987,7 +1014,7 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("table", choices=["h1", "summary", "ablation", "ablation_pair", "frontier", "frontier_system",
                                        "frontier_budget", "adaptive", "plan_families", "curves", "query", "budgets", "injection", "injection_paired",
-                                       "intervals", "real", "damage_budget", "kept"])
+                                       "intervals", "real", "damage_budget", "kept", "kept_sensitivity"])
     ap.add_argument("--labels", nargs="*", default=[], help="real: one row label per run")
     ap.add_argument("--csv", type=Path, nargs="*", default=[], help="frontier or adaptive CSVs")
     ap.add_argument("--data-out", type=Path, default=None)
@@ -1016,6 +1043,10 @@ def main() -> None:
         else:
             t.to_csv(args.out, index=False)
         print(t.round(3).to_string())
+        return
+    if args.table == "kept_sensitivity":
+        args.out.write_text(kept_sensitivity_table(args.csv))
+        print(args.out.read_text())
         return
     if args.table == "kept":
         pts = kept_points(args.csv, args.injection)

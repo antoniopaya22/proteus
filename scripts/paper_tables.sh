@@ -78,6 +78,7 @@ csvs=$(files $A/adaptive_b0.5_g30.csv $B/adaptive_b0.5_g16.csv)
 inj=$(files $A/injection_b0.5_v16.csv $B/injection_b0.5_ugr.csv)
 [ -n "$csvs" ] && $PY proteus.evaluation.tables kept --csv $csvs --injection $inj \
   --data-out $T/kept.csv --out $T/kept.tex > /dev/null
+[ -n "$csvs" ] && $PY proteus.evaluation.tables kept_sensitivity --csv $csvs --out $T/kept_sensitivity.tex > /dev/null
 csvs=$(files $A/injection_b0.5_v16.csv $B/injection_b0.5_ugr.csv)
 [ -n "$csvs" ] && $PY proteus.evaluation.tables injection_paired --csv $csvs --out $T/injection_paired.csv > /dev/null
 

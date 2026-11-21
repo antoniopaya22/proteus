@@ -481,3 +481,17 @@ def test_kept_points_share_and_figure(tmp_path):
     assert (pts["lo"] <= pts["share"]).all() and (pts["share"] <= pts["hi"]).all()
     tex = kept_figure(pts)
     assert tex.count(r"\addplot") == 1 and r"2018$\to$2017" in tex
+
+
+def test_kept_sensitivity_table_columns(tmp_path):
+    from proteus.evaluation.tables import kept_sensitivity_table
+    run = tmp_path / "csecicids2018__cicids2017__loo_labels__r2"
+    run.mkdir()
+    pd.DataFrame({"day": ["d1"], "attack": ["a"], "real_flows_per_h": [100.0]}).to_csv(
+        run / "adaptive_x.csv", index=False)
+    pd.DataFrame({"day": ["d1"] * 2, "attack": ["a"] * 2, "plan": ["plain"] * 2,
+                  "flows_per_h": [400.0] * 2, "detector": ["proteus", "proteus_cert_r"],
+                  "detected": [False, False]}).to_csv(run / "adaptive_ladder_x.csv", index=False)
+    tex = kept_sensitivity_table([run / "adaptive_x.csv"])
+    # Quiet above the real rate: 100% with the cap, 400% without it.
+    assert r"\sysname & 100.0\% & 100.0\% & 400.0\% & 100.0\%" in tex

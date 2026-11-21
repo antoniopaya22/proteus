@@ -220,7 +220,7 @@ Treant o aumento), atacante más fuerte (CMA-ES o política aprendida) y rejilla
 certificado sobre pcaps reexportados con NFStream, más reproducciones por ataque, captura real con
 Δ conocido; daño de aplicación en banco de pruebas (descartado: Antonio no quiere volver al banco).
 
-- [ ] **R11-1. Discrepancias 1–16.** (1) «92 victims / 176 destinations» son parejas; (2) siete
+- [x] **R11-1. Discrepancias 1–16.** (22-nov 01:30 UTC: todas. (1)–(3) recontado en los CSV: 2017 son siete campañas de seis tipos (sin las fuerzas brutas del martes) en 12–16 destinos, 92 parejas sobre 45 destinos; UGR'16 siete tipos en dos días, 10–14 víctimas por día, 176 parejas sobre 65 destinos; (10) la cifra 303 era de una ejecución a FPR: el lunes se explica sin ella (hasta 134 alarmas por minuto alertado); (9) nota c: tope de flujos por consulta, depende del camino de la búsqueda; (16) los umbrales dejan 13,6 % en las dos semillas y el llano de la semilla 2 coincide) (1) «92 victims / 176 destinations» son parejas; (2) siete
   ataques × 21–24 víctimas frente a 176; (3) seis ataques remuestreados frente a nueve de 2017;
   (4) «2 to 681» omite el UDP del martes; (5) conn_s en las escalas largas (tabla S13 frente a
   §5.1.1); (6) 0,07 → 6,8 % (o 0,0667); (7) «about four times» frente a 3,9 y 5,0; (8) resumen y
@@ -229,14 +229,14 @@ certificado sobre pcaps reexportados con NFStream, más reproducciones por ataqu
   (12) S9.5 «5,7 % y 5,5 %, with and without them»; (13) Unc. bajo Proteus también en víctimas de
   2017 (figura 4) y 1,7 % en el llano; (14) resets en la introducción como evidencia libre; (15)
   «floods» frente a «denial-of-service»; (16) 13,6 % para tres cosas.
-- [ ] **R11-2. Reencuadre.** Resumen, highlights, contribución 1 y conclusión con la razón frente
+- [x] **R11-2. Reencuadre.** (22-nov 01:30 UTC: resumen (250 palabras), contribuciones 1 y 2, conclusión y highlights con 2,1× (0,97–4,3), p = 0,08, 12 % frente a 14 % en la mediana, sin alertas certificadas en capturas reales, (A1) sin probar en CICFlowMeter, reparto; tabla 1 «partly»; web monotone-core) Resumen, highlights, contribución 1 y conclusión con la razón frente
   a umbrales, su IC y p; sin alertas certificadas en capturas reales; (A1) sin probar en
   CICFlowMeter; reparto en 18 → 17 (alertas certificadas de DoS por evidencia de origen); tabla 1
   «Across networks» como «partly».
-- [ ] **R11-3. Sin máquina con datos locales.** Sensibilidad de «kept» al tope y al suelo en una
+- [x] **R11-3. Sin máquina con datos locales.** (22-nov 01:30 UTC: tabla S13 `tables kept_sensitivity` con test: con cualquier convención los umbrales dejan 2,0–4,3 veces lo de Proteus; la regla de atribución queda fija y declarada; las dos métricas de alarmas en la fila RQ1 de la tabla 5; el lunes explicado sin descontar, no hay alarmas por día en local) Sensibilidad de «kept» al tope y al suelo en una
   tabla (la regla de atribución necesita máquina); las dos métricas de alarmas en la tabla 5;
   explicar y descontar la inflación del lunes por destino-minuto.
-- [ ] **R11-4. Aclaraciones.** ¿P-cert usa destinos sin respuesta de un origen? Dependencia de
+- [x] **R11-4. Aclaraciones.** (22-nov 01:30 UTC: P-cert sí usa `n_dhost_nr` (REUSE_SAFE): dicho en §5.1.1, tabla 3, tabla de operaciones, apéndice (A4) y web; teorema en tiempo de evento con el retraso del exportador; expulsión en (A1) de la tabla 3) ¿P-cert usa destinos sin respuesta de un origen? Dependencia de
   (A4); lectura en tiempo de evento del teorema 1 (más el retraso por inactividad); política de
   expulsión en la tabla 3.
 - [ ] **R11-5. Reestructurar.** Reparto y evidencia de P-cert (S9.2, S9.3) al texto; METIS
