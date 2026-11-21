@@ -217,7 +217,7 @@ de P-cert atacados; alarmas deduplicadas y calibración causal; (A1) en CICFlowM
 envenenamiento en 17 → 18. A 8: captura retenida con Δ conocido y alertas certificadas, P-cert que
 extrapole (saturación), atacante conjunto con puntuaciones y núcleo aumentado, más instancias.
 
-- [ ] **R13-1. Discrepancias y alcance (texto).** D1 una prueba principal (los planes, 2,1×
+- [x] **R13-1. Discrepancias y alcance (texto).** (22-nov 05:10 UTC: prueba principal declarada (planes, 2,1×, p = 0,08) y el máximo sobre atacantes como secundaria en §6.4.2, tabla 5, introducción, conclusión, highlight y web; tabla S14 `best_damage` por ataque; la brecha sale sobre todo de la reutilización (tabla 12); D2 «in one network»; D3; D4; D8; D9 cifras de TRW, CUSUM y KitNET; D10; D11 en la leyenda de la tabla 11; D13; D14 capacidad en la nota a de la tabla 1; líneas base y calibración fijas y envenenamiento fuera de la garantía; no solapamiento en la reutilización. D5–D6 redondeos de S1, D12 dos configuraciones del caparazón: sin cambio. Ronda 13 completa) D1 una prueba principal (los planes, 2,1×
   0,97–4,3, p = 0,08) y el máximo sobre atacantes como análisis secundario, coherente en resumen,
   highlights, tabla 5 y conclusión; D2 «in one network» para la mediana de semillas; D3 «at every
   rate tried»; D4 P-cert en CTU-13 con una sola frase; D7 tabla por ataque del máximo sobre

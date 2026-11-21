@@ -122,8 +122,10 @@ do not reach every point above $x$; against the attackers we ran, the same model
 without the constraint loses 1.8 to 8 times more to additive plans (8 times on busy
 victims). Rate thresholds on the same counters are the simplest monotone detector and
 share the certificate. Under attack they leave 2.1 times the damage of Proteus on the
-benchmark campaigns, a difference that is not significant (95% interval 0.97 to 4.3,
-p = 0.08) and shrinks at other training seeds, 1.3 times on busy victims of the same
+benchmark campaigns, a difference that is not significant in the paper's primary test
+(95% interval 0.97 to 4.3, p = 0.08; 2.0 times, 1.1 to 3.7, counting the strongest of
+its attackers per attack) and shrinks at other training seeds, and that comes mostly
+from connection reuse; 1.3 times on busy victims of the same
 network and 3.2 times (1.4 to 8.9) on busy victims of an ISP network; Proteus raises
 fewer entity alarms.
 
