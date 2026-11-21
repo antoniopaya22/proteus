@@ -210,7 +210,7 @@ evaluación autocrítica, frontera útil, comprobación con NFStream. Estima 5,5
 (A1) en CICFlowMeter, ataques a nivel de paquete), 7–7,5 con C (atacante de caja blanca, sin topes,
 efectos pareados por semilla), 7,5–8 con D (presentación).
 
-- [ ] **R7-1. Incoherencias (obligatorio).** (1) «certified alerts on the other captures assume the
+- [x] **R7-1. Incoherencias (obligatorio).** (21-nov 06:50 UTC: (1) UGR'16 sin certificado, CTU-13 y CIC-DDoS-2019 con 120 s; (2) «about as often», 3 y 4 de 79; (3) «2,6 % → 2,7 %» y «multiplica por 1,8 a 4» frente al mismo detector sin restricción, conclusión «1.8- to fourfold»; (4) «at FPR 1e-3, not repeated at the budget»; (5) ^s aclarado en la leyenda de S7 (SSH y FTP pasan también con formas libres); (6) BARS certifica predicciones del clasificador suavizado; (7) 18–37 %; (8) «nearly as stable», ×15; (9) «both botnets»; (10) infiltraciones 0,30 → 0 y SSH 0,17 → 0,08; (11) Slowhttptest con 2 % de flujos; (12) «Bound» → «Cert. fr.» con nota de las ráfagas (tables.py, tabla, web); (13) 120 s es el flow timeout de CICFlowMeter, latencia reescrita. Redondeos: las medias salen de valores sin redondear, sin cambios. Cerrada) (1) «certified alerts on the other captures assume the
       same value» frente a UGR'16 sin certificado; (2) Apollon «no more often» que su RF (0,05 frente
       a 0,04, S6 dice «as often as»); (3) «1,8 a 4 veces» es no restringido aditivo frente a no
       restringido llano; conclusión dice «two- to fourfold»; «loses nothing» frente a 2,6 → 2,7 %;
