@@ -234,17 +234,29 @@ y envío. **Pendiente de su decisión.**
       sin tope 6,0 % (no 6,1); «about 7 %» → 6,5 %; celdas ^c del atacante por consultas no
       permiten decir «pasa» cuando el ritmo real supera el máximo probado; justificar diez y nueve
       semillas; `tables/h1_1e-4.tex` sin usar (borrar o comprobar).
-- [ ] **R8-2. Afirmaciones (grupo C).** «comparable a umbrales, con una garantía que comparten»
+- [x] **R8-2. Afirmaciones (grupo C).** (21-nov 13:30 UTC, decidido por Antonio «todo lo que puedas sin máquina»: umbrales de tasa como el detector más simple de la familia y con el mismo certificado, «comparable», sin «about half»; destacado nuevo; destino-minuto en «In short» y conclusión; «no budget on the operations» con la capacidad del exportador; «a bound on the worst case»; contribución 4 «An adversarial evaluation». Nuevo §5.3 «Why monotone»: la envolvente monótona g↓(x) = min_{y≥x} g(y) — contra un atacante que sube cada contador ningún detector, entrenamiento adversario o aumento incluidos, detecta más que uno monótono con no más falsas alarmas; relación con Gimenez et al. 2025 (arXiv 2508.10038, Prop. 2, descomposición con mapeo aprendido; Incer 2018 no la tiene, comprobado); límite: las operaciones gratuitas suben contadores acoplados. Resumen reescrito (247 palabras), web. Cerrada) «comparable a umbrales, con una garantía que comparten»
       en lugar de «about half the damage» y del destacado con p = 0,08; alarmas por destino-minuto
       con igual peso; «no budget» con la capacidad del exportador y de la tabla de estado; «worst
       case» → cota superior; peticiones mínimas en la salvedad del resumen; cuarta contribución
       («every layer») rebajada.
-- [~] **R8-3. Detalle.** (21-nov 11:40 UTC: hecho: el ritmo es siempre el del ataque antes de reutilizar; Algoritmo 1 con tiempo de evento; parámetros de TRW (0,8/0,2) y CUSUM (20 s, 0,35, 0,9). Falta: uso de IA en métodos y Apollon a un párrafo, que van con el reencuadre pendiente de Antonio) Unidades del daño con reutilización (ritmo de peticiones antes de
+- [x] **R8-3. Detalle.** (21-nov 13:30 UTC: motivación sin subsecciones; uso de IA en S10.3. Cerrada) (21-nov 11:40 UTC: hecho: el ritmo es siempre el del ataque antes de reutilizar; Algoritmo 1 con tiempo de evento; parámetros de TRW (0,8/0,2) y CUSUM (20 s, 0,35, 0,9). Falta: uso de IA en métodos y Apollon a un párrafo, que van con el reencuadre pendiente de Antonio) Unidades del daño con reutilización (ritmo de peticiones antes de
       reutilizar); Algoritmo 1 «export time t_r» frente a tiempo del evento; parámetros de TRW y
       CUSUM; uso de IA en métodos; Apollon a un párrafo.
 
-Con máquina, si Antonio decide: daño con ≥5 semillas de entrenamiento o la mediana; cobertura
-certificada con d = 60 y 300 s; planes aditivos en víctimas con carga; KitNET en 2018.
+- [ ] **R8-4. Pruebas con máquina (Antonio la enciende tras el texto).** Código listo y probado:
+      `adaptive --retime-s d` (frontera certificada con holgura (2Δ + d)/τ) y `injection --plans`
+      con planes aditivos (`mimic random0 random1`). Cola, por valor/coste:
+      (E1, minutos) semilla 9 de 17 → 18 y forma de Hulk en `qab_1718`;
+      (E2, 2017, en paralelo con tope) adaptativo 18 → 17 con 3–4 semillas de entrenamiento
+      (Proteus, P-cert, umbrales locales; rejilla 30), para dar el daño en la semilla mediana y el
+      intervalo entre semillas (O2);
+      (E3) cobertura certificada con re-temporización: h1 `PROTEUS_TIMER_S` = 60 y 300 al
+      presupuesto en ambos sentidos (`--reuse`, solo P-cert) y adaptativo `--retime-s 54` y `270`
+      (solo P-cert, sin planes) (O6);
+      (E4, 2017) víctimas con carga con planes aditivos: Proteus, núcleo sin restricción, umbrales
+      locales (O1).
+      No se lanza: aumento con variantes aditivas (lo cubre §5.3), KitNET en 2018, Whisper/HyperVision,
+      caja blanca.
 
 ### Revisión 7 (2026-11-21 06:00, al cerrar la ronda 6)
 
