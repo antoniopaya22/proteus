@@ -178,7 +178,7 @@ gane a umbrales igual calibrados con diferencia significativa y P-cert certifiqu
       entra. (i) Familias de planes: «Proteus and rate thresholds … 2.6 % and 2.7 %» mal atribuido.
       (j) Curva de KitNET sin el punto del presupuesto. (k) Resumen: «false alarms per hour» →
       alarmas de entidad.
-- [ ] **R6-2. Posicionamiento (O1).** Reformular la contribución: monotonía sobre evidencia
+- [x] **R6-2. Posicionamiento (O1).** (21-nov 03:00 UTC: contribuciones reordenadas, la primera es la monotonía sobre evidencia conservada como regla de diseño, con la ablación 1,8–4×; certificado presentado como el de los clasificadores monótonos más la holgura del exportador; trabajos relacionados dicen qué es nuevo frente a Incer, Fleshman, Chen y Tong (evidencia, holgura, reutilización) y qué no (la garantía); «Our main result» fuera; frontera certificada definida para una traza adelgazada y «Bound» como esa frontera; web igual. Cerrada) Reformular la contribución: monotonía sobre evidencia
       conservada como principio para detectores aprendidos (que ceden 3–4× más a lo aditivo),
       certificado consciente del exportador con reutilización, frontera como métrica; comparación
       precisa con Incer, Tong, Fleshman, Chen; renombrar «certified frontier»/«Bound» o definir la

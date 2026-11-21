@@ -26,6 +26,10 @@ There are two frontiers:
 The certified frontier is the one that bounds an informed attacker. It is also what
 covers an attacker limited by its own bandwidth, who pays for padding with rate: the
 combination of a lower rate and free operations is exactly what it measures.
+Both frontiers hold for the attack as replayed: one trace of the campaign, thinned to
+the rate, over ten minutes at that point of the day. Another attack at the same rate is
+another trace, with a frontier of its own. The paper reports the certified frontier of
+Proteus-cert, whose evidence connection reuse cannot lower, as the *bound* on its damage.
 
 Comparing defences by their frontier compares them by the damage they let through,
 rather than by an evasion rate on a fixed set of adversarial examples.
