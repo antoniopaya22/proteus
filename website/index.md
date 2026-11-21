@@ -8,4 +8,4 @@ hide:
 
 # Proteus
 
-Certified network intrusion detection from conserved traffic evidence.
+Monotone network intrusion detection on conserved traffic evidence, with certified alerts.

@@ -225,7 +225,7 @@ remedio a la saturación) → 8–8,5.
   2018; D13 «with free shapes» en S7; D14 qué certificado (con o sin reutilización) en el algoritmo
   1 y en «Proteus-fast certifies Hulk alone»; D15 0,30 incluye SSH; D16 CTU-13 sin Δ conocido; D17
   TTD sin el retraso del exportador.
-- [ ] **R9-2. Encuadre.** Título, resumen, highlights y contribuciones a lo demostrado: detección
+- [x] **R9-2. Encuadre.** (21-nov 19:20 UTC: título «Proteus: Monotone Network Intrusion Detection with Alerts Certified against Additive Traffic Manipulation» en paper, suplemento, cita, web y README; cobertura certificada en la contribución 2; frente a umbrales «comparables» salvo víctimas del ISP (3,2×); §5.3.1 como observación; amenazas: calibración con etiquetas y varianza de la muestra; README ya no dice «every alert is certified») Título, resumen, highlights y contribuciones a lo demostrado: detección
   monótona sobre evidencia conservada con certificado por alerta donde aplica; cobertura certificada
   (con su variación por semillas y muestra de calibración) como cifra principal; frente a umbrales
   «comparable bajo ataque», su valor en alarmas y cobertura; alcance volumétricos, escaneos y fuerza
@@ -234,7 +234,7 @@ remedio a la saturación) → 8–8,5.
 - [ ] **R9-3. Legibilidad.** Tabla de términos (P-fast, P-cert, Rules, Sel., Unc.), tabla de
   afirmaciones principales con IC, quitar cifras repetidas, resumen con 4–5 cifras; valorar subir
   S9.5 y S7 al texto y bajar METIS compuesto, CIC-DDoS-2019 y Kitsune publicado al suplemento.
-- [ ] **R9-4. Trabajo relacionado (verificar antes de citar).** Calzavara et al. (TREANT y
+- [x] **R9-4. Trabajo relacionado (verificar antes de citar).** (21-nov 19:20 UTC: Treant (DMKD 34(5) 2020, doi 10.1007/s10618-020-00694-9) y Apruzzese et al. (DTRAP 3(3) 2022, doi 10.1145/3469659) verificados y citados en §2; Kitsune entrenado en los primeros 100.000 paquetes benignos del viernes; tráfico real presentado como limitado) Calzavara et al. (TREANT y
   sucesores), Apruzzese et al. (modelos de amenaza realistas en NIDS); explicar Kitsune entrenado
   en un día con ataques; resultados en tráfico real presentados como limitados.
 - [x] **R9-5. Sin máquina con los CSV ya en local.** (21-nov 18:40 UTC: §6.157; umbrales 1,3× (0,87–1,9) en 2017 y 3,2× (1,4–8,9) en UGR'16 agrupando por ataque; `tables injection_paired` con test; al paper §6.3 y S9.5) Pruebas pareadas (Wilcoxon sobre log-razones)

@@ -8,4 +8,4 @@ hide:
 
 # Proteus
 
-Detección de intrusiones en red certificada a partir de evidencia conservada del tráfico.
+Detección monótona de intrusiones en red sobre evidencia conservada del tráfico, con alertas certificadas.

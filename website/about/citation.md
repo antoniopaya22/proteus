@@ -4,12 +4,12 @@ Proteus is described in a manuscript that is in preparation. The title is provis
 and the reference will be updated when the manuscript is published. Until then, please
 cite it as:
 
-> A. Payá González, S. Arroni del Riego. *Proteus: Certifying Network Intrusion Alerts
-> against Additive Traffic Manipulation*. Manuscript in preparation, 2026.
+> A. Payá González, S. Arroni del Riego. *Proteus: Monotone Network Intrusion Detection with
+> Alerts Certified against Additive Traffic Manipulation*. Manuscript in preparation, 2026.
 
 ```bibtex
 @unpublished{paya2026proteus,
-  title  = {Proteus: Certifying Network Intrusion Alerts against Additive Traffic Manipulation},
+  title  = {Proteus: Monotone Network Intrusion Detection with Alerts Certified against Additive Traffic Manipulation},
   author = {Pay{\'a} Gonz{\'a}lez, Antonio and Arroni del Riego, Sergio},
   year   = {2026},
   note   = {Manuscript in preparation}
