@@ -647,6 +647,81 @@ def injection_paired(csv: Path, base: str = "System", floor: float | None = None
                      "less": int((diff < 0).sum()), "wilcoxon_p": p, "ratio": r, "lo": l, "hi": h})
     return pd.DataFrame(rows)
 
+# Detectors of the summary figure of damage (fig:kept), in the order drawn.
+KEPT_DETECTORS = [(r"\sysname", ("proteus", "proteus_cert_r")), ("Rules", ("rate_rules_local",)),
+                  ("Sel.", ("rate_rules_sel",)), ("Unc.", ("proteus_free",)),
+                  ("KitNET", ("kitnet_local",))]
+
+
+def kept_points(adaptive: list[Path], injection: list[Path], n_boot: int = 5000,
+                seed: int = 0) -> pd.DataFrame:
+    """Share of the real rate the adaptive attacker keeps, per detector and setting, with
+    a 95% interval: geometric mean over attacks (campaigns, ``adaptive``) or over
+    attack-victim pairs (busy victims, ``injection``), capped at 1 and floored at the
+    lowest rate tried; the interval resamples attacks and, for victims, the victims of
+    each resampled attack."""
+    rows = []
+    for path, kind in [(p, "adaptive") for p in adaptive] + [(p, "injection") for p in injection]:
+        a = pd.read_csv(path)
+        ladder = pd.read_csv(path.with_name(path.name.replace(f"{kind}_", f"{kind}_ladder_", 1)))
+        keys = ("day", "attack") if kind == "adaptive" else ("day", "attack", "victim")
+        real = a.drop_duplicates(list(keys)).set_index(list(keys))["real_flows_per_h"]
+        floor = GRID_MIN_FLOWS_PER_H if kind == "adaptive" else float(ladder["flows_per_h"].min())
+        key = "__".join(path.parent.name.split("__")[:2])
+        setting = DIRECTION.get(key, key) if kind == "adaptive" else (
+            "busy victims, UGR'16" if "ugr" in path.name else "busy victims, 2017")
+        for name, members in KEPT_DETECTORS:
+            if not set(members) <= set(ladder["detector"]):
+                continue
+            d = ladder_damage(ladder, list(members), keys=keys).reindex(real.index).fillna(0.0)
+            logs = np.log(np.clip(np.maximum(d, floor) / real, None, 1.0))
+            m, lo, hi = cluster_ratio(logs, logs.index.get_level_values("attack"), n_boot, seed)
+            rows.append({"setting": setting, "detector": name, "n": len(logs),
+                         "share": m, "lo": lo, "hi": hi})
+    return pd.DataFrame(rows)
+
+
+KEPT_STYLE = ["color=pnavy, mark=square*", "color=pblue, mark=*",
+              "color=porange, mark=triangle*", "color=pgreen, mark=diamond*"]
+
+
+def kept_figure(points: pd.DataFrame) -> str:
+    """pgfplots dot plot of ``kept_points``: one row per detector, one marker per
+    setting, with horizontal 95% intervals, on a logarithmic axis of percent kept."""
+    dets = [n for n, _ in KEPT_DETECTORS if (points["detector"] == n).any()]
+    settings = list(dict.fromkeys(points["setting"]))
+    step = 0.6 / max(len(settings) - 1, 1)
+    lines = ["% Share of the real rate the adaptive attacker keeps (tables.py kept).",
+             r"\begin{tikzpicture}",
+             r"\begin{axis}[width=0.95\columnwidth, height=5.4cm, xmode=log,",
+             r"  xmin=0.5, xmax=100, y dir=reverse, ymin=-0.6, ymax=" + f"{len(dets) - 0.4:.1f},",
+             r"  ytick={" + ",".join(str(i) for i in range(len(dets))) + "}, yticklabels={"
+             + ",".join("{" + d + "}" for d in dets) + "},",
+             r"  xlabel={share of the real rate kept (\%, log scale)}, xtick={1,3,10,30,100},",
+             r"  xticklabels={1,3,10,30,100}, grid=major, ymajorgrids=false,",
+             r"  every axis/.append style={font=\sffamily\scriptsize},",
+             r"  grid style={draw=pgreyL}, axis line style={draw=pgrey}, tick style={draw=pgrey},",
+             r"  legend style={draw=none, fill=none, font=\sffamily\tiny, cells={anchor=west},",
+             r"    at={(0.5,1.02)}, anchor=south}, legend columns=2]"]
+    for j, setting in enumerate(settings):
+        d = points[points["setting"] == setting]
+        coords = []
+        for i, det in enumerate(dets):
+            r = d[d["detector"] == det]
+            if r.empty:
+                continue
+            r = r.iloc[0]
+            y = i - 0.3 + j * step
+            coords.append(f"({100 * r['share']:.3g},{y:.2f}) += ({100 * (r['hi'] - r['share']):.3g},0)"
+                          f" -= ({100 * (r['share'] - r['lo']):.3g},0)")
+        style = KEPT_STYLE[j % len(KEPT_STYLE)]
+        lines.append(rf"\addplot[{style}, only marks, mark size=1.6pt, error bars/.cd, x dir=both,"
+                     r" x explicit] coordinates {" + " ".join(coords) + "};")
+        lines.append(rf"\addlegendentry{{{{{setting}}}}}")  # braces: math in a legend entry
+    lines += [r"\end{axis}", r"\end{tikzpicture}"]
+    return "\n".join(lines) + "\n"
+
+
 # Plans of ``evaluation.adaptive`` grouped by what they change: nothing, only additions
 # (the operations the certificate covers), bursts, connection reuse.
 PLAN_FAMILIES = [("Plain", ("plain",)),
@@ -912,10 +987,12 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("table", choices=["h1", "summary", "ablation", "ablation_pair", "frontier", "frontier_system",
                                        "frontier_budget", "adaptive", "plan_families", "curves", "query", "budgets", "injection", "injection_paired",
-                                       "intervals", "real", "damage_budget"])
+                                       "intervals", "real", "damage_budget", "kept"])
     ap.add_argument("--labels", nargs="*", default=[], help="real: one row label per run")
     ap.add_argument("--csv", type=Path, nargs="*", default=[], help="frontier or adaptive CSVs")
     ap.add_argument("--data-out", type=Path, default=None)
+    ap.add_argument("--injection", type=Path, nargs="*", default=[],
+                    help="kept: injection CSVs (busy victims) next to the adaptive --csv")
     ap.add_argument("--detectors", nargs="*", default=None)
     ap.add_argument("--base", default="proteus", help="ablation: the full model")
     ap.add_argument("--set", choices=sorted(DETECTOR_SETS), default="v1",
@@ -939,6 +1016,13 @@ def main() -> None:
         else:
             t.to_csv(args.out, index=False)
         print(t.round(3).to_string())
+        return
+    if args.table == "kept":
+        pts = kept_points(args.csv, args.injection)
+        if args.data_out:
+            pts.to_csv(args.data_out, index=False)
+        args.out.write_text(kept_figure(pts))
+        print(pts.round(4).to_string())
         return
     if args.table == "real":
         args.out.write_text(real_table(args.runs, args.labels, args.alarm_budget or 0.5))

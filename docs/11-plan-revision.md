@@ -235,7 +235,7 @@ preespecificada o reencuadre) → 8–8,5.
   al., NDSS 2005), detección de cambios con sketches (Krishnamurthy et al., IMC 2003), heavy
   hitters; verificación y entrenamiento robusto de árboles (Vos y Verwer; Ranzato y Zanella).
   Proteus como generalización aprendida y certificada de los detectores monótonos de contadores.
-- [ ] **R10-4. Presentación.** Caja de términos y métricas; una figura resumen (cuota conservada
+- [x] **R10-4. Presentación.** (21-nov 23:50 UTC: tabla 6 de términos y métricas; figura 4 con la cuota conservada e intervalos bootstrap por ataque (y por víctima) en las dos redes y en las víctimas con carga (`tables kept`, con test); §6.2 (semillas, «In short»), §6.4.1 (frontera, víctimas con carga) y §6.4.2 (factores por ataque) sin las cifras que ya dan las tablas; METIS compuesto, CIC-DDoS-2019 y Kitsune publicado ya estaban en S1/S4 con un párrafo en el texto, BARS solo en S2; el caparazón queda en una sección corta. Ronda 10 completa) Caja de términos y métricas; una figura resumen (cuota conservada
   con intervalos); menos prosa numérica en §6.2, §6.4.1 y §6.4.2; valorar mover al suplemento el
   compuesto METIS (o citar el equivalente cierto estándar), el detalle del caparazón y del
   contador de realimentación, BARS y Kitsune en paquetes.

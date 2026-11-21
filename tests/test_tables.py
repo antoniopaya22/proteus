@@ -456,3 +456,28 @@ def test_cluster_ratio_interval_widens_with_few_clusters():
     # One consistent sign everywhere: interval excludes 1.
     r, lo, hi = cluster_ratio(pd.Series([0.3, 0.5, 0.4, 0.6]), pd.Series(list("aabb")), n_boot=2000)
     assert lo > 1
+
+
+def test_kept_points_share_and_figure(tmp_path):
+    from proteus.evaluation.tables import GRID_MIN_FLOWS_PER_H, kept_figure, kept_points
+    run = tmp_path / "csecicids2018__cicids2017__loo_labels__r2"
+    run.mkdir()
+    pd.DataFrame({"day": ["d1", "d1"], "attack": ["a", "b"],
+                  "real_flows_per_h": [100.0, 100.0]}).to_csv(run / "adaptive_x.csv", index=False)
+    rows = []
+    for det in ("proteus", "proteus_cert_r", "rate_rules_local"):
+        for attack in ("a", "b"):
+            for rate in (GRID_MIN_FLOWS_PER_H, 10.0, 100.0):
+                # Rules quiet up to the real rate on both attacks; the system alerted
+                # at every rate on "a" and quiet up to 10 on "b".
+                quiet = det == "rate_rules_local" or (attack == "b" and rate <= 10.0)
+                rows.append({"day": "d1", "attack": attack, "plan": "plain",
+                             "flows_per_h": rate, "detector": det, "detected": not quiet})
+    pd.DataFrame(rows).to_csv(run / "adaptive_ladder_x.csv", index=False)
+    pts = kept_points([run / "adaptive_x.csv"], [], n_boot=200)
+    got = pts.set_index("detector")["share"]
+    assert got["Rules"] == pytest.approx(1.0)
+    assert got[r"\sysname"] == pytest.approx(np.sqrt(GRID_MIN_FLOWS_PER_H / 100 * 0.1))
+    assert (pts["lo"] <= pts["share"]).all() and (pts["share"] <= pts["hi"]).all()
+    tex = kept_figure(pts)
+    assert tex.count(r"\addplot") == 1 and r"2018$\to$2017" in tex

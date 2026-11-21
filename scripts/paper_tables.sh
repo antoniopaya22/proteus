@@ -73,6 +73,11 @@ csvs=$(files $A/query_attack_b0.5_all.csv $B/query_attack_b0.5_all.csv)
 # Every attack injected into other victims of its day, at the operating point (text).
 csvs=$(files $A/injection_b0.5_v16.csv)
 [ -n "$csvs" ] && $PY proteus.evaluation.tables injection --csv $csvs --out $T/injection.csv > /dev/null
+# Share of the real rate kept, with intervals, on campaigns and busy victims (fig:kept).
+csvs=$(files $A/adaptive_b0.5_g30.csv $B/adaptive_b0.5_g16.csv)
+inj=$(files $A/injection_b0.5_v16.csv $B/injection_b0.5_ugr.csv)
+[ -n "$csvs" ] && $PY proteus.evaluation.tables kept --csv $csvs --injection $inj \
+  --data-out $T/kept.csv --out $T/kept.tex > /dev/null
 csvs=$(files $A/injection_b0.5_v16.csv $B/injection_b0.5_ugr.csv)
 [ -n "$csvs" ] && $PY proteus.evaluation.tables injection_paired --csv $csvs --out $T/injection_paired.csv > /dev/null
 
