@@ -107,6 +107,22 @@ evidence can drop by a known amount per feature, and the worst case is the input
 down by that amount. In both cases it is one model evaluation, with no search over
 variants and no randomisation.
 
+## Why monotone
+
+Monotonicity is what makes the certificate one model evaluation, and against an
+attacker that can raise the evidence freely it costs nothing. For any detector $g$,
+let $g_\downarrow(x) = \min_{y \ge x} g(y)$: it alerts at $x$ only if $g$ alerts at
+every point above it. $g_\downarrow$ is monotone, the largest monotone detector below
+$g$ (so it alerts on no benign point that $g$ does not), and an attacker that can move
+$x$ to any $y \ge x$ evades $g$ exactly where $g_\downarrow$ is silent. So no detector,
+however it is trained (adversarial training and augmentation included), detects more
+than a monotone one with no more false alarms against such an attacker. Free
+operations raise some counters together (an inserted packet also adds bytes), so they
+do not reach every point above $x$; against the attackers we ran, the same model
+without the constraint loses 1.8 to 4 times more to additive plans. Rate thresholds on
+the same counters are the simplest monotone detector and share the certificate; under
+attack they are comparable to Proteus, which raises fewer entity alarms.
+
 !!! note "Comparison detectors"
     The experiments also train unconstrained models on the same evidence
     (`core_free_dst_b`, `proteus_free`) to measure the price of the constraint, fixed
