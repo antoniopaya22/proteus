@@ -737,6 +737,36 @@ def best_damage(adaptive: Path, queries: list[Path]) -> pd.DataFrame:
     return out
 
 
+def best_damage_table(adaptive: list[Path], queries: list[Path]) -> str:
+    """Per attack, the damage of ``best_damage`` (flows/h) for each detector of
+    ``BEST_DETECTORS``; q: a query attacker's search reached more than the plans.
+    One block per direction."""
+    n = len(BEST_DETECTORS)
+    lines = [r"\begin{tabular}{l" + "r" * (n + 1) + "}", r"\toprule",
+             "Attack & Real & " + " & ".join(h for h, _, _ in BEST_DETECTORS) + r" \\"]
+    for path in adaptive:
+        qs = [q for q in queries if q.parent == path.parent]
+        b, plans = best_damage(path, qs), best_damage(path, [])
+        key = "__".join(path.parent.name.split("__")[:2])
+        lines += [r"\midrule", rf"\multicolumn{{{n + 2}}}{{l}}{{\emph{{{DIRECTION.get(key, key)}}}}} \\"]
+        attacks = b.index.get_level_values("attack")
+        for (day, attack), r in b.iterrows():
+            name = ATTACK_NAMES.get(attack, attack)
+            if (attacks == attack).sum() > 1:
+                name += f" ({day[:3].title()}.)"
+            cells = []
+            for h, _, _ in BEST_DETECTORS:
+                c = _rate(float(r[h]), np.inf)
+                if r[h] >= r["real"]:
+                    c = rf"\textbf{{{c}}}"
+                if r[h] > plans.loc[(day, attack), h]:
+                    c += r"$^q$"
+                cells.append(c)
+            lines.append(f"{name} & {_rate(float(r['real']), np.inf)} & " + " & ".join(cells) + r" \\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    return "\n".join(lines) + "\n"
+
+
 def best_damage_paired(adaptive: list[Path], queries: list[Path], floor: float = GRID_MIN_FLOWS_PER_H,
                        n_boot: int = 5000) -> pd.DataFrame:
     """Share kept per detector under every attacker (``best_damage``), capped and
@@ -1106,6 +1136,7 @@ def main() -> None:
     if args.table == "best_damage":
         t = best_damage_paired(args.csv, args.query)
         t.to_csv(args.out, index=False)
+        args.out.with_suffix(".tex").write_text(best_damage_table(args.csv, args.query))
         print(t.round(4).to_string())
         return
     if args.table == "kept_sensitivity":
