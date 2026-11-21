@@ -228,13 +228,13 @@ efectos pareados por semilla), 7,5–8 con D (presentación).
 - [x] **R7-3. Re-temporización en el modelo de amenaza.** (21-nov 07:30 UTC: fila «Re-time flows (bursts, pulses) by up to d», holgura (2Δ+d)/τ no comprobada, medido; (A2) falla también al re-temporizar, desplazamiento d en cualquier sentido suma d/τ; corregido el texto de S7 y de la web, que daba por cubiertas las ráfagas de los planes (≤ 54 s) — no lo están; introducción menciona ráfagas y tiempo; «Cert. fr.» con nota. Cerrada) Fila «re-time/burst» en la tabla 2 con su
       holgura (desplazamientos d ≤ Δ en ambos sentidos cubiertos, más allá no); fila (A2) en la
       tabla 5; renombrar «Bound» y nota de los casos del atacante por consultas.
-- [ ] **R7-4. Exportador.** Temporizadores reales de CICFlowMeter (flujo 120 s, actividad 5 s) y
+- [x] **R7-4. Exportador.** (21-nov 08:20 UTC: §6.3.1 y S9.4 dicen que CICFlowMeter no entró en la comprobación sobre paquetes; cierra en FIN/RST y a su flow timeout de 120 s (el Δ); terminación por banderas y trozos que tras cerrar un registro pueden cambiar de iniciador (pausa hasta que el servidor hable) como fallos de (A1) ya listados y sin probar. No afirmo nada del activity timeout, que no termina flujos. Cerrada) Temporizadores reales de CICFlowMeter (flujo 120 s, actividad 5 s) y
       del exportador de S9.4; inversión de dirección tras un timeout de inactividad provocada por el
       atacante, como límite de (A1) declarado.
-- [ ] **R7-5. Trabajo relacionado.** Verificar y citar Wagner y Soto 2002 (mimetismo), Rubinstein
+- [x] **R7-5. Trabajo relacionado.** (21-nov 08:20 UTC: las seis verificadas (CCS 2002, WOOT 2008, IMC 2009, AISTATS 2010, ICML 2016, NeurIPS 2019) y citadas en §2; S2 presentada como ilustración, no como clasificación. Cerrada) Verificar y citar Wagner y Soto 2002 (mimetismo), Rubinstein
       et al. 2009 (ANTIDOTE), Kloft y Laskov (envenenamiento en línea), Kantchelian et al. 2016 y
       Andriushchenko y Hein 2019 (árboles), Stinson y Mitchell 2008; BARS/CertTA como ilustración.
-- [ ] **R7-6. Presentación.** Capa por flujo, contador y Apollon condensados; METIS justificado o
+- [x] **R7-6. Presentación.** (21-nov 08:20 UTC: Apollon ya condensado en R6-3, la capa por flujo son 228 palabras en el diseño y 70 en la evaluación, se queda; METIS con justificación propia (equivalente cierto de utilidad exponencial); las etiquetas duplicadas del suplemento vienen de xr-hyper y las citas del suplemento se numeran bien con su propia bibliografía; formato: Elsevier acepta cualquier formato en el primer envío, se deja el 5p. Cerrada) Capa por flujo, contador y Apollon condensados; METIS justificado o
       fuera; etiquetas bibliográficas duplicadas en el suplemento; formato de revisión de Elsevier.
 
 Con máquina (decisión de Antonio): línea base del núcleo no restringido y KitNET entrenados con
