@@ -28,6 +28,7 @@ Antonio pide iterar hasta la máxima nota posible. Protocolo:
 | 4 | 2026-11-19 04:00 | 5/10 | revisión mayor | el certificado cubre el movimiento más débil y la detección viene de Proteus-fast sin certificar; novedad estrecha (Incer, Fleshman, Tong); (A1) en manos del atacante (FIN/RST insertados, caché) y sin probar con exportadores reales; ventaja sobre reglas débil (p = 0,08, una semilla, rejilla gruesa, inyección 6,5 frente a 8,8 %); diseño ajustado en las redes de prueba y etiquetas en la calibración; tráfico real flojo y fuera del punto de operación; «daño» en flujos/h; atacante limitado en lo no cubierto (pulsos frente a τ, botnets, caja blanca); capa por flujo/Apollon débiles; extensión |
 | 5 | 2026-11-19 21:45 | 5/10 | revisión mayor | (ver «Revisión 5») |
 | 6 | 2026-11-21 00:10 | 5/10 | revisión mayor | Hulk 91k frente a la cota 12k en el atacante por consultas; cifras viejas en S9.3, víctimas con carga y peticiones mínimas, CertTA, referencias S7/S8; el certificado cubre lo que ya tienen las reglas monótonas; ventaja sobre umbrales no significativa y alarmas por destino-minuto; semilla 0 es la mejor; saturación en tráfico real; (A5) con HTTP/2/TLS; atacante sin caja blanca; métrica con tope y suelo; extensión y vocabulario |
+| 7 | 2026-11-21 06:00 | 5/10 | revisión mayor | lo certificado es estrecho y no se ve en tráfico real; (A5) en manos del atacante y sin re-temporización en el modelo de amenaza; valor del modelo frente a umbrales no significativo y sin línea base de aumento con variantes aditivas; dos bancos del mismo laboratorio, semilla 0 la mejor; (A1) sin comprobar en CICFlowMeter; atacantes más débiles que la motivación; capa por flujo/Apollon/METIS; 13 incoherencias |
 
 **Criterio de parada (Antonio, 2026-11-17):** cuando los resultados y la funcionalidad estén a nivel de
 un 8, se para de añadir experimentos y se hace una revisión a fondo del paper: coherencia de principio a
@@ -198,6 +199,50 @@ gane a umbrales igual calibrados con diferencia significativa y P-cert certifiqu
   exportador configurado (O3, ya declarado); modelos monótonos que extrapolan (O4, saturación ya
   declarada); peor caso exacto/MILP sobre las dimensiones no cubiertas y 10⁴ orígenes (O6);
   precisión por alerta y latencia extremo a extremo (O8).
+
+### Revisión 7 (2026-11-21 06:00, al cerrar la ronda 6)
+
+Nota **5/10** (revisión mayor). Cuarta ronda seguida en 5. Recalculó casi todo (razón 2,1
+[0,97; 4,3], signos p = 0,077, Wilson, medias, rejillas, factores, Bound ≥ P-cert) y cuadra salvo
+13 puntos. Fuertes: principio claro, holgura del exportador «neat and correct», prueba correcta,
+evaluación autocrítica, frontera útil, comprobación con NFStream. Estima 5,5 con A (texto),
+6,5–7 con B (aumento con variantes aditivas, datos independientes con certificados en fondo real,
+(A1) en CICFlowMeter, ataques a nivel de paquete), 7–7,5 con C (atacante de caja blanca, sin topes,
+efectos pareados por semilla), 7,5–8 con D (presentación).
+
+- [ ] **R7-1. Incoherencias (obligatorio).** (1) «certified alerts on the other captures assume the
+      same value» frente a UGR'16 sin certificado; (2) Apollon «no more often» que su RF (0,05 frente
+      a 0,04, S6 dice «as often as»); (3) «1,8 a 4 veces» es no restringido aditivo frente a no
+      restringido llano; conclusión dice «two- to fourfold»; «loses nothing» frente a 2,6 → 2,7 %;
+      (4) cita a S9.1 (FPR 1e-3) en contexto de presupuesto; (5) ^s en la tabla S7 frente a S9.3 «con
+      formas libres»; (6) BARS certifica 62 % con ACID 60 % (explicar); (7) Wilson 27 %: 18–37 %;
+      (8) «Proteus-fast is as stable» con escaneo del jueves ×15; (9) botnet de 2018 que detectan las
+      reglas; (10) ablación sin pares: «misses every attack» frente a Other 0,08; (11) Slowhttptest
+      «certifies the four DoS» frente a 2 %; (12) leyenda de Bound frente a ráfagas del atacante;
+      (13) «idle timeout 120 s» de CICFlowMeter (es el de flujo; actividad 5 s); redondeos (5,9/6,0,
+      7,1/7,2, 6,7/6,8, 5,7/5,8, 681/699).
+- [ ] **R7-2. Afirmaciones.** Reutilización condicionada a (A5) (en manos del atacante) en
+      resumen, introducción, tabla 4 y algoritmo 1; «loses nothing», «half an alarm per hour»
+      (realizado 1,35 en 17), semilla 0 rotulada como la mejor en las tablas o la mediana como
+      principal.
+- [ ] **R7-3. Re-temporización en el modelo de amenaza.** Fila «re-time/burst» en la tabla 2 con su
+      holgura (desplazamientos d ≤ Δ en ambos sentidos cubiertos, más allá no); fila (A2) en la
+      tabla 5; renombrar «Bound» y nota de los casos del atacante por consultas.
+- [ ] **R7-4. Exportador.** Temporizadores reales de CICFlowMeter (flujo 120 s, actividad 5 s) y
+      del exportador de S9.4; inversión de dirección tras un timeout de inactividad provocada por el
+      atacante, como límite de (A1) declarado.
+- [ ] **R7-5. Trabajo relacionado.** Verificar y citar Wagner y Soto 2002 (mimetismo), Rubinstein
+      et al. 2009 (ANTIDOTE), Kloft y Laskov (envenenamiento en línea), Kantchelian et al. 2016 y
+      Andriushchenko y Hein 2019 (árboles), Stinson y Mitchell 2008; BARS/CertTA como ilustración.
+- [ ] **R7-6. Presentación.** Capa por flujo, contador y Apollon condensados; METIS justificado o
+      fuera; etiquetas bibliográficas duplicadas en el suplemento; formato de revisión de Elsevier.
+
+Con máquina (decisión de Antonio): línea base del núcleo no restringido y KitNET entrenados con
+variantes aditivas (lo que aísla la monotonía); umbrales sobre el exceso respecto a la línea base
+por entidad; tablas a la semilla mediana; (A1) con CICFlowMeter sobre pcap; atacante sin topes de
+flujos. Límites ya declarados o fuera de alcance: datos con otras herramientas de ataque y
+exportador conocido (banco de pruebas descartado), certificados en fondo real (P-cert silencioso
+por saturación), atacante aprendido de caja blanca.
 
 ### Revisión 5 (2026-11-19 21:45; la pidió Antonio a mitad de la ronda 4, con R4-2 a R4-7 abiertas)
 
