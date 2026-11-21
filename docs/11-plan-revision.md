@@ -31,6 +31,7 @@ Antonio pide iterar hasta la máxima nota posible. Protocolo:
 | 7 | 2026-11-21 06:00 | 5/10 | revisión mayor | lo certificado es estrecho y no se ve en tráfico real; (A5) en manos del atacante y sin re-temporización en el modelo de amenaza; valor del modelo frente a umbrales no significativo y sin línea base de aumento con variantes aditivas; dos bancos del mismo laboratorio, semilla 0 la mejor; (A1) sin comprobar en CICFlowMeter; atacantes más débiles que la motivación; capa por flujo/Apollon/METIS; 13 incoherencias |
 | 8 | 2026-11-21 10:30 | 5/10 | revisión mayor | ventaja del modelo sobre umbrales no establecida y es lo que se vende; todo lo demás con la mejor semilla; sin captura retenida y calibración con etiquetas; certificado con poca cobertura; (A1) sin probar en CICFlowMeter y caché del exportador como presupuesto oculto; operaciones gratuitas a medida del teorema; novedad moderada; atacante débil en lo no cubierto; líneas base incompletas; unidades con reutilización; extensión |
 | 9 | 2026-11-21 17:10 | 5,5/10 | revisión mayor | el encuadre vende más certificado del que hay (10/24, 4/11 en la mayoría de semillas, sin escaneos, depende de la muestra de calibración); ventaja frente a umbrales no significativa ni estable entre semillas, y el resumen aún la sugiere; manipulaciones simuladas sobre registros (solo LOIC-HTTP en paquetes); sin atacante de caja blanca (MILP); calibración con etiquetas y frágil; sin red retenida; 17 discrepancias menores; densidad |
+| 10 | 2026-11-21 21:00 | 5,5/10 | revisión mayor | ventaja del núcleo aprendido sobre umbrales no establecida (la única significativa, 3,2× en UGR'16, con un detector que no detecta los DoS propios de UGR'16 y sin planes aditivos); certificado sin mostrar donde importa ((A1) sin verificar en CICFlowMeter, silencioso en tráfico real, cae con el reparto en 2017); semilla 0 y muestras de calibración sin controlar; frontera sin duración ni colocación; sin caja blanca ni núcleo aumentado; densidad; 17 discrepancias |
 
 **Criterio de parada (Antonio, 2026-11-17):** cuando los resultados y la funcionalidad estén a nivel de
 un 8, se para de añadir experimentos y se hace una revisión a fondo del paper: coherencia de principio a
@@ -201,6 +202,49 @@ gane a umbrales igual calibrados con diferencia significativa y P-cert certifiqu
   exportador configurado (O3, ya declarado); modelos monótonos que extrapolan (O4, saturación ya
   declarada); peor caso exacto/MILP sobre las dimensiones no cubiertas y 10⁴ orígenes (O6);
   precisión por alerta y latencia extremo a extremo (O8).
+
+### Revisión 10 (2026-11-21 21:00, al cerrar la ronda 9)
+
+Nota **5,5/10** (revisión mayor), igual que la 9. Recalculó medias geométricas, prueba de signos,
+razones, factores, holguras, Wilson, METIS, figura 3: «consistencia interna muy alta» salvo 17
+discrepancias. Hoja de ruta: A coherencia y presentación (discrepancias, caja de términos y
+métricas, matizar resumen/tabla 1/contribución 4, figuras por RQ, menos prosa numérica, METIS
+fuera, trabajo relacionado de contadores y verificación de árboles, lista de rasgos) → 6–6,5;
+B varianza (semillas × muestras de calibración, números aleatorios comunes, frontera por duración
+y colocación, calibración sin etiquetas en el daño) → 7; C certificado ((A1) en CICFlowMeter,
+captura real con Δ conocido, cobertura con k orígenes, captura retenida) → 7,5–7,75; D
+adversarios (caja blanca, núcleo aumentado, KitNET/Kitsune completos, comparación primaria
+preespecificada o reencuadre) → 8–8,5.
+
+- [ ] **R10-1. Discrepancias 1–17.** (1) Slowhttptest 2 % certificado en S2 frente a 1,00 en S8
+  y 0,71 en la tabla 7; el pie de S2 debe remitir a S8; (2) S9.5: «on these victims» del núcleo
+  sin restricción es UGR'16; (3) lunes: 303 destino-minutos/h frente a la media 60,4 (regla de
+  promedio); (4) multiplicador de los aditivos con una sola fórmula (1,8 a 8); (5) tabla 5 RQ2:
+  las infiltraciones de 2017 sí se detectan; (6) tabla 5 RQ4: términos (GoldenEye y Slowloris no
+  son floods) y exclusión del UDP del martes; (7) SSH pasa a la unión solo con reutilización;
+  (8) 5,7 % → 5,8 %; (9) 6,7 % frente a 6,76–6,83 %; (10) mediana 19 % frente a 20 %; (11) S9.6
+  «nine and eight»; (12) figura 2: presupuesto de alarmas y ρ; (13) figura 3: puntos crudos además
+  de la envolvente; (14) unidades del escaneo de los bots; (15) CIC-DDoS-2019 sin alertas
+  certificadas; (16) contribución 4: en tráfico real solo umbrales; (17) 119 frente a 117
+  contadores conservados.
+- [ ] **R10-2. Matizar afirmaciones.** «No detector does better» solo frente al cono ascendente;
+  tabla 1 «across networks» con dos conjuntos del mismo laboratorio; contribución 4; el 3,2× de
+  UGR'16 con un detector entrenado en CIC que no detecta los DoS de UGR'16 y sin planes aditivos
+  (en el texto y en amenazas); (A1) sin probar en CICFlowMeter en amenazas a la validez.
+- [ ] **R10-3. Trabajo relacionado (verificar antes de citar).** Superspreaders (Venkataraman et
+  al., NDSS 2005), detección de cambios con sketches (Krishnamurthy et al., IMC 2003), heavy
+  hitters; verificación y entrenamiento robusto de árboles (Vos y Verwer; Ranzato y Zanella).
+  Proteus como generalización aprendida y certificada de los detectores monótonos de contadores.
+- [ ] **R10-4. Presentación.** Caja de términos y métricas; una figura resumen (cuota conservada
+  con intervalos); menos prosa numérica en §6.2, §6.4.1 y §6.4.2; valorar mover al suplemento el
+  compuesto METIS (o citar el equivalente cierto estándar), el detalle del caparazón y del
+  contador de realimentación, BARS y Kitsune en paquetes.
+- [ ] **R10-5. Reproducibilidad.** Tabla en el suplemento con los 152 contadores y los 119
+  conservados; los siete ataques de 2018 inyectados en UGR'16; regla de promedio de alarmas.
+- Con máquina, sin decisión de Antonio no se hace: semillas × muestras de calibración en las
+  tablas 7, 10 y 11; frontera por duración y colocación; (A1) con CICFlowMeter; captura real con Δ
+  conocido; cobertura con k orígenes; caja blanca; núcleo aumentado; KitNET en 2018 y Kitsune con
+  sus periodos de gracia; desempate de Apollon.
 
 ### Revisión 9 (2026-11-21 17:10, al cerrar la ronda 8)
 
