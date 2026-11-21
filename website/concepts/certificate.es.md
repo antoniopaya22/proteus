@@ -163,7 +163,8 @@ El certificado se cumple cuando:
    cumple cuando la respuesta ausente procede del objetivo (un host inexistente, un
    puerto cerrado o filtrado), como en los escaneos. Un atacante que pueda provocar
    respuestas eligiendo sus peticiones puede reducir los recuentos de resets y de
-   flujos sin respuesta, y una alerta que se apoye solo en ellos no está certificada
+   flujos sin respuesta, también los destinos sin respuesta de un origen que usa
+   Proteus-cert, y una alerta que se apoye solo en ellos no está certificada
    frente a esa elección.
 
 ## Qué no cubre el certificado

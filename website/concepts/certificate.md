@@ -153,7 +153,8 @@ The certificate holds when:
    flows in the variant whenever it did in the original. This holds when the missing
    answer comes from the target (an absent host, a closed or filtered port), as in
    scans. An attacker who can draw answers by choosing its requests can lower reset and
-   unanswered counts, and an alert that rests only on them is not certified against
+   unanswered counts, including the unanswered destinations of a source that
+   Proteus-cert uses, and an alert that rests only on them is not certified against
    that choice.
 
 ## What the certificate does not cover
