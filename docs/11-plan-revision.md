@@ -231,7 +231,7 @@ remedio a la saturación) → 8–8,5.
   «comparable bajo ataque», su valor en alarmas y cobertura; alcance volumétricos, escaneos y fuerza
   bruta. §5.3.1 como observación. Amenazas a la validez: calibración con etiquetas y varianza de la
   muestra; los dos CIC del mismo laboratorio.
-- [ ] **R9-3. Legibilidad.** Tabla de términos (P-fast, P-cert, Rules, Sel., Unc.), tabla de
+- [~] **R9-3. Legibilidad.** (21-nov 19:50 UTC: resumen con 5 cifras; highlights; tabla de detectores con nombres cortos (P-fast, P-cert, Unc., Rules, Sel.) como tabla de términos; tabla 5 de resultados principales con incertidumbre. Quedan: quitar cifras repetidas y mover METIS compuesto, CIC-DDoS-2019 y Kitsune publicado al suplemento) Tabla de términos (P-fast, P-cert, Rules, Sel., Unc.), tabla de
   afirmaciones principales con IC, quitar cifras repetidas, resumen con 4–5 cifras; valorar subir
   S9.5 y S7 al texto y bajar METIS compuesto, CIC-DDoS-2019 y Kitsune publicado al suplemento.
 - [x] **R9-4. Trabajo relacionado (verificar antes de citar).** (21-nov 19:20 UTC: Treant (DMKD 34(5) 2020, doi 10.1007/s10618-020-00694-9) y Apruzzese et al. (DTRAP 3(3) 2022, doi 10.1145/3469659) verificados y citados en §2; Kitsune entrenado en los primeros 100.000 paquetes benignos del viernes; tráfico real presentado como limitado) Calzavara et al. (TREANT y

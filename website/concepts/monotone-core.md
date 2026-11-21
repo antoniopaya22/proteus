@@ -121,7 +121,8 @@ operations raise some counters together (an inserted packet also adds bytes), so
 do not reach every point above $x$; against the attackers we ran, the same model
 without the constraint loses 1.8 to 4 times more to additive plans (8 times on busy victims). Rate thresholds on
 the same counters are the simplest monotone detector and share the certificate; under
-attack they are comparable to Proteus, which raises fewer entity alarms.
+attack they are comparable to Proteus, which raises fewer entity alarms, except on busy
+victims of an ISP network, where they leave the attacker three times as much.
 
 !!! note "Comparison detectors"
     The experiments also train unconstrained models on the same evidence
