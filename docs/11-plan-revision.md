@@ -239,7 +239,7 @@ certificado sobre pcaps reexportados con NFStream, más reproducciones por ataqu
 - [x] **R11-4. Aclaraciones.** (22-nov 01:30 UTC: P-cert sí usa `n_dhost_nr` (REUSE_SAFE): dicho en §5.1.1, tabla 3, tabla de operaciones, apéndice (A4) y web; teorema en tiempo de evento con el retraso del exportador; expulsión en (A1) de la tabla 3) ¿P-cert usa destinos sin respuesta de un origen? Dependencia de
   (A4); lectura en tiempo de evento del teorema 1 (más el retraso por inactividad); política de
   expulsión en la tabla 3.
-- [ ] **R11-5. Reestructurar.** Reparto y evidencia de P-cert (S9.2, S9.3) al texto; METIS
+- [x] **R11-5. Reestructurar.** (22-nov 02:10 UTC: §6.3 con en qué evidencia se apoyan las alertas certificadas (S9.2, S9.3, reparto contra P-cert de S7); METIS explicado (equivalente cierto, frente de Pareto primero, empate con λ = 1, P peor por destino-minuto); Apollon se queda como está; el formato de revisión de elsarticle se hará en la revisión final. Ronda 11 completa) Reparto y evidencia de P-cert (S9.2, S9.3) al texto; METIS
   justificado o fuera del texto principal; Apollon breve; formato de revisión de elsarticle para
   el envío (en la revisión final).
 - Con máquina, sin decisión de Antonio no se hace: diez semillas en las tablas 10–12 (grupo B);
