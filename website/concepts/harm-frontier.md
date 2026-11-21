@@ -30,8 +30,9 @@ Both frontiers hold for the attack as replayed: one trace of the campaign, thinn
 the rate, over ten minutes at that point of the day. Another attack at the same rate is
 another trace, with a frontier of its own. The paper reports the certified frontier of
 Proteus-cert, whose evidence connection reuse with unchanged requests cannot lower, next to
-the damage an adaptive attacker does to it. Bursts and pulses, which re-time flows, fall outside the certificate and can
-exceed it.
+the damage an adaptive attacker does to it. Bursts and pulses re-time flows, which the certificate as run does not cover;
+checked with the larger slack, moving flows by up to 270 s raises the certified frontier
+by at most one step of the rate grid.
 
 Comparing defences by their frontier compares them by the damage they let through,
 rather than by an evasion rate on a fixed set of adversarial examples.

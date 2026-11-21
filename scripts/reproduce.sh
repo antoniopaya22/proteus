@@ -104,6 +104,13 @@ stage_cert() {  # sec:evaluation:cert and the appendix checks of the certificate
     run $O/run_18_17_r2_timer$d.log env PROTEUS_TIMER_S=$d $PY proteus.evaluation.h1 --train csecicids2018 \
       --test cicids2017 --reuse $A --models proteus proteus_cert proteus_cert_r --tag r2_timer$d
   done
+  # Certified alerts with the slack of flows re-timed by up to d seconds (Section 6.4).
+  while read -r train test dir tag; do
+    for d in 60 300; do
+      run $O/run_${tag}_r2_timer${d}b.log env PROTEUS_TIMER_S=$d $PY proteus.evaluation.h1 --train $train \
+        --test $test --reuse $dir --models proteus proteus_cert_r $BUD --tag r2_timer${d}b
+    done
+  done < <(pairs)
 }
 
 stage_frontier() {  # Frontier per detector (FPR 1e-3) at the real victim and at the busiest service.
@@ -132,6 +139,18 @@ stage_adaptive() {  # tab:adaptive, tab:frontier: fixed plans on a grid of rates
   # The system's two detectors as rate thresholds (union rules_pcr), same attacker.
   run $O/adaptive_r2g_18_17_b0.5_rules.log $PY proteus.evaluation.adaptive --run $A --test cicids2017 \
     --models --local rate_rules_local rate_rules_cr --certify --alarm-budget 0.5 --grid 30 --tag rules
+  # Certified frontier with flows re-timed by up to 54 and 270 s (Section 6.4).
+  for d in 54 270; do
+    run $O/adaptive_r2g_18_17_rt$d.log $PY proteus.evaluation.adaptive --run $A --test cicids2017 \
+      --models proteus_cert_r --local --certify proteus_cert_r --alarm-budget 0.5 --grid 30 --variants 0 \
+      --no-structured --retime-s $d --tag g30rt$d
+  done
+  # The damage under attack with the sub-cores of training seeds 1 and 2 (Section 6.4).
+  for s in 1 2; do
+    run $O/adaptive_r2g_18_17_t$s.log $PY proteus.evaluation.adaptive --run ${A}_s$s --test cicids2017 \
+      --models proteus proteus_cert_r --local rate_rules_local --certify proteus_cert_r --alarm-budget 0.5 \
+      --grid 30 --tag g30t
+  done
 }
 
 stage_query() {  # tab:query: black-box search with hard labels, at the operating point.

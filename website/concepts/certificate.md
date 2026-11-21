@@ -146,7 +146,7 @@ The certificate holds when:
    connection only when it ends, such as Zeek's `conn.log`.
 2. **Free operations keep the attack.** They keep every packet of the trace with its
    send time (bursts and pulses re-time packets: a shift of up to $d$ would need the
-   slack $(2\Delta + d)/\tau$, which the check does not use, so they are not covered), addresses, destination port and protocol, and only add weight or packets.
+   slack $(2\Delta + d)/\tau$, which the check as run does not use; checked apart, a shift of up to 60 s leaves every certified alert in place and 300 s loses one of 24 campaigns), addresses, destination port and protocol, and only add weight or packets.
 3. **No merging.** They do not merge the records of different connections. Merging is
    connection reuse, treated as a separate worst case.
 4. **Target-side answers.** The victim resets, or leaves unanswered, the attacker's

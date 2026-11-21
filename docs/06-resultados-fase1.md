@@ -3633,3 +3633,21 @@ La semilla 0 es la mejor de las tres también bajo ataque; en la mediana (11,6 %
 los umbrales en todo (13,6 %) quedan a dos puntos. Los planes aditivos no ganan nada en
 ninguna semilla. Semillas 3 y 4 saltadas por coste. Llevado al resumen (6 %, 12 % en la
 semilla mediana; umbrales 12–14 %), §6 (protocolo y atacante adaptativo) y conclusión.
+
+## 6.155 Re-temporización: cobertura y frontera certificadas (2026-11-21, 14:10)
+
+h1 con `PROTEUS_TIMER_S` = d (holgura (2Δ + d)/τ), solo Proteus y P-cert, `--reuse` de r2,
+presupuesto 0,5; certificadas = `proteus_cert_r@certr` detectadas en estricto, entre las
+11 + 13 campañas volumétricas y escaneos:
+
+| d | 2018 → 2017 (de 11) | 2017 → 2018 (de 13) |
+|---|---|---|
+| 0 (r2c/r2b) | 4 (GoldenEye, Hulk, Slowhttptest, Slowloris) | 6 (GoldenEye, Slowloris, Hulk, HOIC, LOIC-UDP ×2) |
+| 60 | 4 | 6 |
+| 300 | 3 (cae Slowhttptest) | 6 |
+
+Frontera certificada de P-cert, 2018 → 2017 (`adaptive --retime-s`, sin planes): con 54 s
+idéntica en los 9 ataques; con 270 s sube un punto de rejilla solo en SSH (3,0k → 4,6k).
+Al paper: (A2) en la tabla de supuestos, fila de re-temporización del modelo de amenaza,
+§6.4 (familias de planes) y leyenda de la tabla de daño; web certificate.md y
+harm-frontier.md.
