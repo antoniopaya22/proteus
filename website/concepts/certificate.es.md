@@ -148,17 +148,20 @@ combinadas con cualquier reutilización de conexiones, bajo esa suposición.
 
 El certificado se cumple cuando:
 
-1. **Retardo de contabilización acotado.** Cada paquete se contabiliza en un registro
-   de flujo cuyo instante de evento es, como mucho, $\Delta$ posterior al envío del
+1. **(A1) Contabilización acotada.** Cada paquete se contabiliza en un registro
+   de flujo de su conexión, con el mismo iniciador, cuyo instante de evento es, como mucho, $\Delta$ posterior al envío del
    paquete. Esto se cumple en los exportadores NetFlow/IPFIX con tiempo de espera
    activo; no se cumple en los registradores que emiten una conexión larga solo cuando
    termina, como el `conn.log` de Zeek.
-2. **Las operaciones gratuitas mantienen el ataque.** Mantienen cada paquete de la
-   traza con su instante de envío, sus direcciones, su puerto de destino y su
+2. **(A2) Las operaciones gratuitas solo añaden.** Mantienen cada paquete de la
+   traza con su instante de envío (las ráfagas retemporizan paquetes: un
+   desplazamiento de hasta $d$ necesita la holgura $(2\Delta + d)/\tau$, que la
+   comprobación tal como se ejecuta no usa; comprobado aparte, hasta 60 s no se pierde
+   ninguna alerta certificada y con 300 s se pierde una de 24 campañas), sus direcciones, su puerto de destino y su
    protocolo, y solo añaden peso o paquetes.
-3. **Sin fusiones.** No fusionan los registros de conexiones distintas. Fusionar es
+3. **(A3) Sin fusiones.** No fusionan los registros de conexiones distintas. Fusionar es
    reutilizar conexiones, que se trata como un peor caso aparte.
-4. **Respuestas del lado del objetivo.** La víctima reinicia, o deja sin respuesta, los
+4. **(A4) Respuestas sin cambios.** La víctima reinicia, o deja sin respuesta, los
    flujos del atacante en la variante siempre que lo hacía en el original. Esto se
    cumple cuando la respuesta ausente procede del objetivo (un host inexistente, un
    puerto cerrado o filtrado), como en los escaneos. Un atacante que pueda provocar
@@ -166,6 +169,11 @@ El certificado se cumple cuando:
    flujos sin respuesta, también los destinos sin respuesta de un origen que usa
    Proteus-cert, y una alerta que se apoye solo en ellos no está certificada
    frente a esa elección.
+
+El certificado de reutilización sustituye (A2) y (A3) por **(A5) Mismas peticiones**:
+las peticiones que viajan en una conexión reutilizada conservan su carga útil. Un
+atacante que encoge sus peticiones se mide como ataque con peticiones mínimas, sin
+certificar.
 
 ## Qué no cubre el certificado
 

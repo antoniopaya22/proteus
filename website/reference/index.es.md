@@ -6,7 +6,7 @@ del paquete se describe en la tabla siguiente y en los docstrings de cada módul
 
 | Paquete | Contenido |
 |---|---|
-| `proteus.datasets` | Lectores y conversión a Parquet de CIC-IDS2017, CSE-CIC-IDS2018, CTU-13, UNSW-NB15, UGR'16, CIC-DDoS2019 y CTU-SME-11; etiquetas canónicas; procesamiento por etapas de capturas demasiado grandes para la memoria |
+| `proteus.datasets` | Lectores y conversión a Parquet de CIC-IDS-2017, CSE-CIC-IDS-2018, CTU-13, UNSW-NB15, UGR'16, CIC-DDoS-2019 y CTU-SME-11; etiquetas canónicas; procesamiento por etapas de capturas demasiado grandes para la memoria |
 | `proteus.evidence` | Contadores con decaimiento por entidad y recuentos de elementos distintos (`counters`), características de evidencia y su clase de conservación (`features`), líneas base por entidad (`baseline`), evidencia ventana a ventana para capturas muy grandes (`chunked`) |
 | `proteus.core` | Certificado (`certify`), combinación de subnúcleos (`combine`), frontera de daño (`frontier`), envenenamiento de la línea base (`poisoning`), explicaciones (`explain`), reglas declaradas (`rules`), comprobación empírica de la monotonía (`verify`) |
 | `proteus.packets` | Lectura de pcap, un exportador de flujos al estilo NetFlow/IPFIX y operaciones gratuitas sobre paquetes |

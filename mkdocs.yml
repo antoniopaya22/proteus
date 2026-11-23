@@ -1,5 +1,5 @@
 site_name: Proteus
-site_description: Certified network intrusion detection from conserved traffic evidence
+site_description: Monotone network intrusion detection on conserved traffic evidence, with certified alerts
 site_url: https://antoniopaya22.github.io/proteus/
 repo_url: https://github.com/antoniopaya22/proteus
 repo_name: antoniopaya22/proteus
@@ -86,7 +86,7 @@ plugins:
         - locale: es
           name: Español
           build: true
-          site_description: Detección de intrusiones en red certificada a partir de evidencia conservada del tráfico
+          site_description: Detección de intrusiones en red monótona sobre evidencia conservada del tráfico, con alertas certificadas
           nav_translations:
             Home: Inicio
             Getting started: Primeros pasos

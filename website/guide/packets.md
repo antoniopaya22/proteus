@@ -66,7 +66,7 @@ victim.
 ## Running it
 
 The check needs the `packets` extra (`dpkt`) and `Friday-WorkingHours.pcap` from the
-original CIC-IDS2017 capture (see [Datasets](datasets.md)). The window used in the
+original CIC-IDS-2017 capture (see [Datasets](datasets.md)). The window used in the
 manuscript covers the LOIC DDoS against the web server:
 
 ```bash

@@ -7,13 +7,13 @@ the experiments, under `data/`:
 data/
   raw/
     cns2022/            original zips (Liu et al., CNS 2022)
-    cicids2017/         per-day CSV (corrected CIC-IDS2017)
-    csecicids2018/      per-day CSV (corrected CSE-CIC-IDS2018)
-    cicids2017_pcap/    per-day pcap of CIC-IDS2017 (only Friday is needed)
+    cicids2017/         per-day CSV (corrected CIC-IDS-2017)
+    csecicids2018/      per-day CSV (corrected CSE-CIC-IDS-2018)
+    cicids2017_pcap/    per-day pcap of CIC-IDS-2017 (only Friday is needed)
     ctu13/              .binetflow files of the 13 scenarios
     unsw_nb15/          official UNSW-NB15 CSV files
     ugr16_hf/           UGR'16 weeks as Parquet (mirror)
-    cicddos2019/        CIC-DDoS2019 CSV files
+    cicddos2019/        CIC-DDoS-2019 CSV files
     ctusme11_zeek/      Zeek conn.log files of CTU-SME-11
   processed/
     <dataset>/<day>.parquet     common flow schema
@@ -25,13 +25,13 @@ data/
 
 | Dataset | Use | Source | Notes |
 |---|---|---|---|
-| CIC-IDS2017 and CSE-CIC-IDS2018, corrected (Liu et al., CNS 2022) | Cross-network detection, harm frontiers, adaptive attacks | [DistriNet](https://intrusion-detection.distrinet-research.be/CNS2022/Datasets/): `CICIDS2017_improved.zip` (328 MB), `CSECICIDS2018_improved.zip` (9.7 GB) | Use the corrected versions, which fix CICFlowMeter bugs and relabel flows; they mark ineffective attack flows as "Attempted". |
-| CIC-IDS2017 pcap | Packet-level check of the certificate | [CIC](https://www.unb.ca/cic/datasets/ids-2017.html) (download form) | Only `Friday-WorkingHours.pcap` is needed. Verify it against the official MD5 checksums. |
+| CIC-IDS-2017 and CSE-CIC-IDS-2018, corrected (Liu et al., CNS 2022) | Cross-network detection, harm frontiers, adaptive attacks | [DistriNet](https://intrusion-detection.distrinet-research.be/CNS2022/Datasets/): `CICIDS2017_improved.zip` (328 MB), `CSECICIDS2018_improved.zip` (9.7 GB) | Use the corrected versions, which fix CICFlowMeter bugs and relabel flows; they mark ineffective attack flows as "Attempted". |
+| CIC-IDS-2017 pcap | Packet-level check of the certificate | [CIC](https://www.unb.ca/cic/datasets/ids-2017.html) (download form) | Only `Friday-WorkingHours.pcap` is needed. Verify it against the official MD5 checksums. |
 | CTU-13 | Real traffic with unlabelled background | [Stratosphere Lab](https://www.stratosphereips.org/datasets-ctu13) | Extract only the `.binetflow` files and READMEs: the archive also contains the malware binaries. The unlabelled background is not treated as benign. |
-| UNSW-NB15 | Attackers from a traffic generator | [UNSW Canberra](https://research.unsw.edu.au/projects/unsw-nb15-dataset) | Use the official CSV files. The `rdpahalavan/UNSW-NB15` mirror is deduplicated and must not be used. |
-| UGR'16 | Real ISP NetFlow over long periods (in progress) | [NESG, UGR](https://nesg.ugr.es/nesg-ugr16/) | The official site returned HTTP 403; the unofficial Hugging Face mirror `Lystea/UGR16-PARQUET` was used (`july_week5`, `august_week1`). |
-| CIC-DDoS2019 | Reflection and exploitation DDoS (in progress) | [CIC](https://www.unb.ca/cic/datasets/ddos-2019.html) (download form) | CSV files of both days. Too large for memory; evidence is computed hour by hour. |
-| CTU-SME-11 | Small-enterprise network with IoT devices (in progress) | Zenodo, record 7958259 (CC BY 4.0, about 103 GB) | Zeek `conn.log`. Zeek exports long connections only when they end, so the export delay $\Delta$ of the certificate is not bounded for this dataset. |
+| UNSW-NB15 | Not used in the paper (attackers from a traffic generator) | [UNSW Canberra](https://research.unsw.edu.au/projects/unsw-nb15-dataset) | Use the official CSV files. The `rdpahalavan/UNSW-NB15` mirror is deduplicated and must not be used. |
+| UGR'16 | Real ISP NetFlow with injected attacks | [NESG, UGR](https://nesg.ugr.es/nesg-ugr16/) | The official site returned HTTP 403; the unofficial Hugging Face mirror `Lystea/UGR16-PARQUET` was used (`july_week5`, `august_week1`). |
+| CIC-DDoS-2019 | Reflection and exploitation DDoS | [CIC](https://www.unb.ca/cic/datasets/ddos-2019.html) (download form) | CSV files of both days. Too large for memory; evidence is computed hour by hour. |
+| CTU-SME-11 | Not used in the paper (small-enterprise network with IoT devices) | Zenodo, record 7958259 (CC BY 4.0, about 103 GB) | Zeek `conn.log`. Zeek exports long connections only when they end, so the export delay $\Delta$ of the certificate is not bounded for this dataset. |
 
 ## Conversion
 
@@ -65,11 +65,11 @@ python -m proteus.datasets.prepare --dataset ctusme11 --raw data/raw/ctusme11_ze
     --out data/processed/ctusme11
 ```
 
-`bash scripts/reproduce.sh data` converts the six datasets used by the experiments
-(the two CIC datasets, CTU-13, UGR'16, CIC-DDoS2019 and UNSW-NB15).
+`bash scripts/reproduce.sh data` converts the five datasets of the paper (the two CIC datasets, CTU-13, UGR'16 and
+CIC-DDoS-2019) and UNSW-NB15, which the paper does not use.
 
 !!! note "Very large captures"
-    UGR'16 and CIC-DDoS2019 do not fit in memory. Their converters stream the input,
+    UGR'16 and CIC-DDoS-2019 do not fit in memory. Their converters stream the input,
     compute evidence window by window with a warm-up from the preceding window
     (`proteus.evidence.chunked`, `proteus.datasets.staged`), and store all attack flows
     plus a deterministic sample of the rest. Counters always use every flow. Dropping
@@ -104,7 +104,7 @@ connection state in UNSW-NB15) are documented in the docstring of each converter
 
 | Column | Meaning |
 |---|---|
-| `attack` | Canonical attack subtype, shared across CIC-IDS2017 and CSE-CIC-IDS2018 (e.g. `dos_hulk`, `bf_ssh`, `web_sqli`) |
+| `attack` | Canonical attack subtype, shared across CIC-IDS-2017 and CSE-CIC-IDS-2018 (e.g. `dos_hulk`, `bf_ssh`, `web_sqli`) |
 | `family` | Attack family: `benign`, `dos`, `ddos`, `portscan`, `bruteforce`, `web`, `botnet`, `infiltration`, … (`background` for the unlabelled traffic of CTU-13) |
 | `attempted` | The flow belongs to an attack but had no malicious effect ("Attempted" in the corrected datasets) |
 | `is_attack` | `family != "benign"` and not `attempted` |

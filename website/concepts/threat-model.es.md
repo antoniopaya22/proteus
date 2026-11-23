@@ -73,8 +73,10 @@ que se contabiliza un paquete, y el certificado cubre cualquier combinación de 
 | Flujos señuelo, tráfico de apariencia benigna (dilución) | Solo se añaden eventos | Certificado (exacto) |
 | Cambiar los puertos de origen | Ninguno; los contadores ignoran los puertos de origen | Certificado (exacto) |
 | Partir un flujo, mantener un flujo abierto | El instante de contabilización se desplaza como mucho $\Delta$ | Certificado (holgura $2\Delta/\tau$) |
-| Cambiar flags, opciones, orden de paquetes, tiempos entre llegadas | No los usa el núcleo | — |
+| Cambiar tamaños de paquete dentro de un flujo, flags, opciones, orden de paquetes | No los usa el núcleo | — |
+| Retemporizar flujos (ráfagas) hasta $d$ | La evidencia se mueve en el tiempo | Holgura $(2\Delta + d)/\tau$, comprobada aparte |
 | Reutilizar una conexión para muchas peticiones | Bajan los recuentos por conexión | Certificado de reutilización |
+| Mantener viva una quíntupla (puerto fijo, sin dejar vencer la inactividad) | Los registros se fusionan: bajan los recuentos por conexión | Certificado de reutilización |
 | Enviar peticiones más pequeñas (cabeceras mínimas) | Bajan los bytes de carga | Se mide, no se certifica |
 | Pedir respuestas pequeñas | Baja el volumen de respuesta | Los contadores de respuesta no están en el núcleo |
 | Abandonar una conexión por otra nueva | Bajan las duraciones de los registros | Las duraciones no están en el núcleo |
@@ -94,13 +96,16 @@ del atacante paga el relleno con tasa; la frontera certificada cubre esa combina
 
 ## Suposiciones
 
-- **Retardo de exportación acotado.** El exportador tiene un tiempo de espera activo
+El certificado se apoya en los supuestos (A1) a (A5), enunciados en la página
+[Certificado](certificate.md#suposiciones). En términos de despliegue:
+
+- **Contabilización acotada (A1).** El exportador tiene un tiempo de espera activo
   $\Delta$ finito. El `conn.log` de Zeek solo emite las conexiones largas cuando
   terminan, así que la garantía no está acotada en los datasets construidos a partir de
   él (CTU-SME-11).
 - **Exportación de flujos honesta.** Los registros reflejan los paquetes en la red; el
   exportador no está comprometido y no descarta registros de forma selectiva.
-- **Respuestas del lado del objetivo.** Los resets y las respuestas ausentes los produce
+- **Respuestas sin cambios (A4).** Los resets y las respuestas ausentes los produce
   el objetivo. Un atacante capaz de hacer que un puerto cerrado responda queda fuera del
   modelo para esos contadores.
 - **Datos de calibración benignos.** Los umbrales y los máximos calibrados se ajustan

@@ -70,8 +70,10 @@ $\Delta$, and the certificate covers every combination of them.
 | Decoy flows, benign-looking traffic (dilution) | Events are only added | Certificate (exact) |
 | Change source ports | None; counters ignore source ports | Certificate (exact) |
 | Split a flow, keep a flow open | Accounting time moves by at most $\Delta$ | Certificate (slack $2\Delta/\tau$) |
-| Change flags, options, packet order, inter-arrival times | Not used by the core | — |
+| Change packet sizes within a flow, flags, options, packet order | Not used by the core | — |
+| Re-time flows (bursts) by up to $d$ | Evidence moves in time | Slack $(2\Delta + d)/\tau$, checked apart |
 | Reuse a connection for many requests | Per-connection counts drop | Reuse certificate |
+| Keep one five-tuple alive (fixed port, bridged idle timeout) | Records merge: per-connection counts drop | Reuse certificate |
 | Send smaller requests (minimal headers) | Payload bytes drop | Measured, not certified |
 | Request small responses | Response volume drops | Response counters are not in the core |
 | Abandon a connection for a new one | Record durations drop | Durations are not in the core |
@@ -91,12 +93,15 @@ rate; the certified frontier covers that combination.
 
 ## Assumptions
 
-- **Bounded export delay.** The exporter has a finite active timeout $\Delta$. Zeek's
+The certificate rests on assumptions (A1) to (A5), stated on the
+[Certificate](certificate.md#assumptions) page. In deployment terms:
+
+- **Bounded accounting (A1).** The exporter has a finite active timeout $\Delta$. Zeek's
   `conn.log` emits long connections only when they end, so the guarantee is not bounded
   for datasets built from it (CTU-SME-11).
 - **Honest flow export.** Records reflect the packets on the wire; the exporter is not
   compromised and does not drop records selectively.
-- **Target-side answers.** Resets and missing answers are produced by the target. An
+- **Unchanged responder (A4).** Resets and missing answers are produced by the target. An
   attacker who can make a closed port answer is outside the model for those counters.
 - **Benign calibration data.** Thresholds and calibrated maxima are fitted on benign
   traffic of the deployment network. Minutes that raised alerts are kept out of the

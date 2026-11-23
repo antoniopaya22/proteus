@@ -64,7 +64,7 @@ Dos experimentos necesitan dependencias adicionales:
 uv run pytest
 ```
 
-La batería de tests tarda menos de un minuto y no necesita ningún dataset. Además de los
+La batería de tests tarda unos cinco minutos y no necesita ningún dataset. Además de los
 tests unitarios habituales, comprueba las propiedades de las que depende la garantía:
 que los contadores con decaimiento nunca disminuyen al insertar eventos, que la holgura
 del certificado se calcula por escala de tiempo (con y sin temporizador de
@@ -95,12 +95,12 @@ Los experimentos se ejecutaron en una instancia `c6a.4xlarge` de AWS: 16 vCPU, 3
 RAM y sin GPU. Nada en Proteus usa GPU.
 
 !!! warning "Memoria"
-    Las ejecuciones que evalúan sobre CSE-CIC-IDS2018 alcanzan picos de unos 16–18 GB de
+    Las ejecuciones que evalúan sobre CSE-CIC-IDS-2018 alcanzan picos de unos 16–18 GB de
     RAM. En una máquina de 32 GB, no ejecutes dos a la vez. Por este motivo,
     `scripts/reproduce.sh` ejecuta sus etapas una tras otra.
 
 El espacio en disco lo ocupan sobre todo los datasets: solo el archivo corregido de
-CSE-CIC-IDS2018 ocupa unos 9.7 GB comprimido, y cada dataset convertido guarda una
+CSE-CIC-IDS-2018 ocupa unos 9.7 GB comprimido, y cada dataset convertido guarda una
 caché de características de evidencia junto a sus ficheros Parquet
 (`data/processed/<dataset>/evidence*/`).
 

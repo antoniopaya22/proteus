@@ -19,7 +19,7 @@ terminal shows the exact command.
 
 | Stage | Produces | Notes |
 |---|---|---|
-| `data` | Parquet files of CIC-IDS2017, CSE-CIC-IDS2018, CTU-13, UGR'16 and CIC-DDoS2019 | Raw files must be in `data/raw/<dataset>`; see [Datasets](datasets.md) |
+| `data` | Parquet files of CIC-IDS-2017, CSE-CIC-IDS-2018, CTU-13, UGR'16 and CIC-DDoS-2019 | Raw files must be in `data/raw/<dataset>`; see [Datasets](datasets.md) |
 | `h1` | Cross-network detection in both directions: every Proteus detector fitted, then evaluated together at the same thresholds and alarm budgets | The 2017 → 2018 run takes about 1.5 h and peaks at about 16 GB |
 | `baselines` | The detectors Proteus is compared with: KitNET, rate thresholds with selected features, Apollon and the per-flow classifier, TRW and CUSUM | Reuses the `h1` models where it can |
 | `systems` | Per-flow alerts of every detector, the window-fidelity complement and the candidate systems (unions) built from them | See [Experiments](experiments.md) |
@@ -31,11 +31,11 @@ terminal shows the exact command.
 | `ablation` | Sub-core ablation (`proteus-K` drops sub-core K) | Reuses the `h1` models |
 | `poisoning` | Baseline poisoning frontiers | |
 | `budget` | Budget certificates against free operations: randomised smoothing reimplemented, and the released code of BARS and CertTA | BARS and CertTA need PyTorch, a GPU and their own environments |
-| `real` | CTU-13 and UGR'16 (two folds each) and CIC-DDoS2019; source-side frontiers on CTU-13 | |
+| `real` | CTU-13 and UGR'16 (two folds each) and CIC-DDoS-2019; source-side frontiers on CTU-13 | |
 | `shell` | Decision- and score-based attacks on per-flow detectors; calibration of the feedback counter | Needs the `attacks` extra (ART); takes hours |
-| `robustness` | More training seeds (nine in one direction, two in the other), baselines and calibration from earlier days only and without labels, class balance of the training set | Refits the detectors |
-| `packets` | Packet-level check of the certificate on the CIC-IDS2017 Friday pcap, with our exporter and with NFStream | Needs the pcap and the `packets` extra (`dpkt`, `nfstream`) |
-| `kitsune` | Kitsune as published, on the packets of the Friday capture of CIC-IDS2017, against packet-level free operations | Needs the pcap and the `packets` extra |
+| `robustness` | Nine more training seeds in both directions (damage refitted for seeds 1 and 2 in 2018→2017), baselines and calibration from earlier days only and without labels, class balance of the training set | Refits the detectors |
+| `packets` | Packet-level check of the certificate on the CIC-IDS-2017 Friday pcap, with our exporter and with NFStream | Needs the pcap and the `packets` extra (`dpkt`, `nfstream`) |
+| `kitsune` | Kitsune as published, on the packets of the Friday capture of CIC-IDS-2017, against packet-level free operations | Needs the pcap and the `packets` extra |
 | `cost` | Evidence throughput, scoring throughput and state per entity | Measured on one CPU core |
 | `tables` | Runs `scripts/paper_tables.sh` | Uses only finished runs |
 
@@ -97,7 +97,7 @@ overwrite earlier caches.
 ## Memory
 
 !!! warning
-    Runs that test on CSE-CIC-IDS2018 peak at about 16–18 GB of RAM. On a 32 GB machine,
+    Runs that test on CSE-CIC-IDS-2018 peak at about 16–18 GB of RAM. On a 32 GB machine,
     never run two of them at once. The script runs stages sequentially; if you start
     stages by hand in parallel, check which test dataset each one uses.
 

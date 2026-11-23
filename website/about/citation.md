@@ -44,6 +44,6 @@ line of research, please cite it as well:
 ## Datasets
 
 The experiments use public datasets, each with its own citation requirements. Please
-cite the datasets you use, including the corrected versions of CIC-IDS2017 and
-CSE-CIC-IDS2018 by Liu et al. (CNS 2022). Sources are listed in
+cite the datasets you use, including the corrected versions of CIC-IDS-2017 and
+CSE-CIC-IDS-2018 by Liu et al. (CNS 2022). Sources are listed in
 [Datasets](../guide/datasets.md).

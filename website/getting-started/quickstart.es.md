@@ -21,7 +21,7 @@ funcionan en tu máquina.
 ## 2. Convertir un dataset
 
 Los experimentos de detección entrenan en una red y prueban en otra. El par principal
-son CIC-IDS2017 y CSE-CIC-IDS2018 corregidos (Liu et al., CNS 2022), que distribuye el
+son CIC-IDS-2017 y CSE-CIC-IDS-2018 corregidos (Liu et al., CNS 2022), que distribuye el
 grupo DistriNet en
 [intrusion-detection.distrinet-research.be/CNS2022/Datasets](https://intrusion-detection.distrinet-research.be/CNS2022/Datasets/).
 
@@ -74,7 +74,7 @@ los detectores `proteus` y `proteus_cert` solo están definidos sobre la versió
 
 !!! warning "Tiempo y memoria"
     La dirección 2017 → 2018 tarda alrededor de hora y media y alcanza un pico de unos
-    16 GB de RAM. No lances una segunda ejecución que pruebe sobre CSE-CIC-IDS2018
+    16 GB de RAM. No lances una segunda ejecución que pruebe sobre CSE-CIC-IDS-2018
     mientras esta esté en marcha.
 
 La primera ejecución de cada dirección calcula las características de evidencia y las
@@ -103,8 +103,8 @@ cualquier subconjunto de etapas.
 | `experiments/outputs/packet_check*/`, `experiments/outputs/aml_feature/` | Resultados de la comprobación a nivel de paquete y de los ataques contra detectores por flujo. |
 
 El nombre del directorio de una ejecución codifica la dirección:
-`csecicids2018__cicids2017__loo_labels__v3` se entrenó en CSE-CIC-IDS2018 y se probó en
-CIC-IDS2017, con líneas base que dejan fuera un día (`loo`) y con los minutos de ataque
+`csecicids2018__cicids2017__loo_labels__v3` se entrenó en CSE-CIC-IDS-2018 y se probó en
+CIC-IDS-2017, con líneas base que dejan fuera un día (`loo`) y con los minutos de ataque
 excluidos de las líneas base (`labels`).
 
 Para mostrar en el terminal los resultados de detección de una ejecución:

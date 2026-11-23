@@ -90,7 +90,7 @@ distintas:
 | Detector | Nombre del modelo | Escalas de tiempo | Evidencia | Comportamiento |
 |---|---|---|---|---|
 | Proteus-fast | `proteus` | 10 s, 60 s, 600 s, 1 h, 6 h | todos los contadores conservados | Reacciona rápido a las ráfagas. Las características de escala corta conllevan una holgura de certificación grande, así que pocas de sus alertas están certificadas. |
-| Proteus-cert | `proteus_cert_r` | 600 s, 1 h, 6 h | bytes de carga y recuentos distintos | Reacciona más despacio, pero su holgura es pequeña y la reutilización de conexiones no puede bajar su evidencia, así que sus alertas suelen estar certificadas. |
+| Proteus-cert | `proteus_cert_r` | 600 s, 1 h, 6 h | bytes de carga y recuentos distintos | Reacciona más despacio, pero su holgura es pequeña y la reutilización de conexiones no puede bajar su evidencia, así que sus alertas quedan certificadas en cerca de la mitad de las campañas que detecta. |
 
 Proteus ejecuta ambos y alerta cuando lo hace cualquiera: Proteus-fast por rapidez y
 cobertura, Proteus-cert como suelo certificado. La página [Certificado](certificate.md)
@@ -114,6 +114,23 @@ Cuando algunas operaciones retemporizan flujos, la evidencia puede bajar en una
 cantidad conocida por característica, y el peor caso es la entrada desplazada hacia
 abajo en esa cantidad. En ambos casos es una sola evaluación del modelo, sin búsqueda
 sobre variantes y sin aleatorización.
+
+**Frente a quien puede subir la evidencia, no se pierde nada por exigirla.** Para
+cualquier detector $g$ sobre la evidencia, $g_\downarrow(x) = \min_{y \ge x} g(y)$ es
+monótono y es el mayor detector monótono por debajo de $g$, y un atacante que puede
+mover $x$ a cualquier $y \ge x$ evade $g$ justo donde $g_\downarrow$ calla. Ningún
+detector, se entrene como se entrene, detecta más que uno monótono con no más falsas
+alarmas frente a ese atacante. Con los atacantes que ejecutamos, el mismo modelo sin
+la restricción pierde entre 1,8 y 8 veces más con los planes aditivos (8 veces en
+víctimas con carga). Los umbrales de tasa sobre los mismos contadores son el detector
+monótono más simple y comparten el certificado. Bajo ataque dejan 2,1 veces el daño de
+Proteus en las campañas de los benchmarks, una diferencia que no es significativa en
+la prueba principal del paper (intervalo del 95 % de 0,97 a 4,3, p = 0,08; 2,0 veces,
+de 1,1 a 3,7, contando el más fuerte de sus atacantes en cada ataque) y que se reduce
+con otras semillas de entrenamiento. En la red grande toda la diferencia viene de la
+reutilización de conexiones; en la pequeña ya está con el ataque llano. En víctimas con
+carga la razón es 1,3 (de 0,87 a 1,9) en la red del benchmark y 3,2 (de 1,4 a 8,9) en
+la de un ISP. Proteus da menos alarmas por entidad.
 
 !!! note "Detectores de comparación"
     Los experimentos también entrenan modelos sin restricciones sobre la misma

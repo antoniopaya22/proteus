@@ -138,7 +138,7 @@ Operations that do not re-time flows give an exact guarantee: the evidence of ev
 variant is at least the evidence of the original at every instant. Operations that
 re-time flows need a slack, which the [certificate](certificate.md) accounts for.
 
-Three free operations are *not* in this table because they lower specific counters:
+Some operations that cost the attack nothing are *not* in this table because they lower specific counters:
 
 - **Connection reuse** (several requests in one connection, e.g. HTTP keep-alive)
   lowers per-connection counts (`flows`, `rst`, `noreply`) and saves handshake packets.

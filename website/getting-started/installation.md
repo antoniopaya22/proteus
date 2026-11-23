@@ -63,7 +63,7 @@ Two experiments need extra dependencies:
 uv run pytest
 ```
 
-The suite runs in under a minute and needs no dataset. Besides the usual unit tests,
+The suite runs in about five minutes and needs no dataset. Besides the usual unit tests,
 it checks the properties the guarantee depends on: that decayed counters never
 decrease when events are inserted, that the certificate's slack is computed per time
 scale (with and without a re-scoring timer), that free operations on packets respect
@@ -93,11 +93,11 @@ The experiments were run on an AWS `c6a.4xlarge` instance: 16 vCPU, 32 GB of RAM
 no GPU. Nothing in Proteus uses a GPU.
 
 !!! warning "Memory"
-    Runs that evaluate on CSE-CIC-IDS2018 peak at about 16–18 GB of RAM. On a 32 GB
+    Runs that evaluate on CSE-CIC-IDS-2018 peak at about 16–18 GB of RAM. On a 32 GB
     machine, do not run two of them at the same time. `scripts/reproduce.sh` runs its
     stages one after another for this reason.
 
-Disk space is dominated by the datasets: the corrected CSE-CIC-IDS2018 archive alone is
+Disk space is dominated by the datasets: the corrected CSE-CIC-IDS-2018 archive alone is
 about 9.7 GB compressed, and each converted dataset keeps a cache of evidence features
 next to its Parquet files (`data/processed/<dataset>/evidence*/`).
 

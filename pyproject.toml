@@ -1,7 +1,7 @@
 [project]
 name = "proteus"
 version = "0.1.0"
-description = "Certified network intrusion detection from conserved traffic evidence"
+description = "Monotone network intrusion detection on conserved traffic evidence, with certified alerts"
 readme = "README.md"
 license = "Apache-2.0"
 license-files = ["LICENSE"]

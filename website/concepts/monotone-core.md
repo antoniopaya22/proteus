@@ -83,7 +83,7 @@ The same four sub-cores are trained twice, with different time scales and eviden
 | Detector | Model name | Time scales | Evidence | Behaviour |
 |---|---|---|---|---|
 | Proteus-fast | `proteus` | 10 s, 60 s, 600 s, 1 h, 6 h | every conserved counter | Reacts quickly to bursts. Short-scale features carry a large certification slack, so few of its alerts are certified. |
-| Proteus-cert | `proteus_cert_r` | 600 s, 1 h, 6 h | payload bytes and distinct counts | Slower to react, but its slack is small and connection reuse cannot lower its evidence, so its alerts are usually certified. |
+| Proteus-cert | `proteus_cert_r` | 600 s, 1 h, 6 h | payload bytes and distinct counts | Slower to react, but its slack is small and connection reuse cannot lower its evidence, so its alerts are certified for about half of the campaigns it detects. |
 
 Proteus runs both and alerts when either does: Proteus-fast for timeliness and
 coverage, Proteus-cert as the certified floor. The [Certificate](certificate.md) page
@@ -124,10 +124,10 @@ victims). Rate thresholds on the same counters are the simplest monotone detecto
 share the certificate. Under attack they leave 2.1 times the damage of Proteus on the
 benchmark campaigns, a difference that is not significant in the paper's primary test
 (95% interval 0.97 to 4.3, p = 0.08; 2.0 times, 1.1 to 3.7, counting the strongest of
-its attackers per attack) and shrinks at other training seeds, and that comes mostly
-from connection reuse; 1.3 times on busy victims of the same
-network and 3.2 times (1.4 to 8.9) on busy victims of an ISP network; Proteus raises
-fewer entity alarms.
+its attackers per attack) and shrinks at other training seeds. In the large network the
+whole gap comes from connection reuse; in the small one it is already there for the
+plain attack. On busy victims the ratio is 1.3 (0.87 to 1.9) in the benchmark network
+and 3.2 (1.4 to 8.9) in an ISP network. Proteus raises fewer entity alarms.
 
 !!! note "Comparison detectors"
     The experiments also train unconstrained models on the same evidence

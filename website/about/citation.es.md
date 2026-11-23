@@ -44,6 +44,6 @@ también:
 ## Datasets
 
 Los experimentos usan datasets públicos, cada uno con sus propios requisitos de cita.
-Cita los datasets que utilices, incluidas las versiones corregidas de CIC-IDS2017 y
-CSE-CIC-IDS2018 de Liu et al. (CNS 2022). Las fuentes se enumeran en
+Cita los datasets que utilices, incluidas las versiones corregidas de CIC-IDS-2017 y
+CSE-CIC-IDS-2018 de Liu et al. (CNS 2022). Las fuentes se enumeran en
 [Datasets](../guide/datasets.md).

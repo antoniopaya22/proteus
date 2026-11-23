@@ -150,7 +150,7 @@ variante es, en todo instante, al menos la evidencia del original. Las operacion
 retemporizan flujos necesitan una holgura, que el [certificado](certificate.md) tiene en
 cuenta.
 
-Tres operaciones gratuitas *no* están en esta tabla porque reducen contadores
+Algunas operaciones que no le cuestan nada al ataque *no* están en esta tabla porque reducen contadores
 concretos:
 
 - **La reutilización de conexiones** (varias peticiones en una conexión, p. ej., HTTP

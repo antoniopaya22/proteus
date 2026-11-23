@@ -140,22 +140,27 @@ the payload bytes, so they are not covered and their effect is measured instead.
 
 The certificate holds when:
 
-1. **Bounded accounting delay.** Every packet is accounted in a flow record whose event
-   time is at most $\Delta$ after the packet was sent. This holds for NetFlow/IPFIX
+1. **(A1) Bounded accounting.** Every packet is accounted in a flow record of its
+   connection, with the same initiator, whose event time is at most $\Delta$ after the
+   packet was sent. This holds for NetFlow/IPFIX
    exporters with an active timeout; it does not hold for loggers that emit a long
    connection only when it ends, such as Zeek's `conn.log`.
-2. **Free operations keep the attack.** They keep every packet of the trace with its
-   send time (bursts and pulses re-time packets: a shift of up to $d$ would need the
+2. **(A2) Free operations only add.** They keep every packet of the trace with its
+   send time (bursts re-time packets: a shift of up to $d$ would need the
    slack $(2\Delta + d)/\tau$, which the check as run does not use; checked apart, a shift of up to 60 s leaves every certified alert in place and 300 s loses one of 24 campaigns), addresses, destination port and protocol, and only add weight or packets.
-3. **No merging.** They do not merge the records of different connections. Merging is
+3. **(A3) No merging.** They do not merge the records of different connections. Merging is
    connection reuse, treated as a separate worst case.
-4. **Target-side answers.** The victim resets, or leaves unanswered, the attacker's
+4. **(A4) Unchanged responder.** The victim resets, or leaves unanswered, the attacker's
    flows in the variant whenever it did in the original. This holds when the missing
    answer comes from the target (an absent host, a closed or filtered port), as in
    scans. An attacker who can draw answers by choosing its requests can lower reset and
    unanswered counts, including the unanswered destinations of a source that
    Proteus-cert uses, and an alert that rests only on them is not certified against
    that choice.
+
+The reuse certificate replaces (A2) and (A3) by **(A5) Same requests**: the requests
+carried in a reused connection keep their payload. An attacker that shrinks its requests
+is measured as an attack with minimal requests, not certified.
 
 ## What the certificate does not cover
 

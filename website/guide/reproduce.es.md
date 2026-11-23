@@ -19,7 +19,7 @@ de registro que se muestra en el terminal indica el comando exacto.
 
 | Etapa | Produce | Notas |
 |---|---|---|
-| `data` | Ficheros Parquet de CIC-IDS2017, CSE-CIC-IDS2018, CTU-13, UGR'16 y CIC-DDoS2019 | Los ficheros originales deben estar en `data/raw/<dataset>`; consulta [Datasets](datasets.md) |
+| `data` | Ficheros Parquet de CIC-IDS-2017, CSE-CIC-IDS-2018, CTU-13, UGR'16 y CIC-DDoS-2019 | Los ficheros originales deben estar en `data/raw/<dataset>`; consulta [Datasets](datasets.md) |
 | `h1` | Detección entre redes en ambos sentidos: se ajustan todos los detectores de Proteus y después se evalúan juntos, con los mismos umbrales y presupuestos de alarmas | La ejecución 2017 → 2018 tarda alrededor de 1,5 h y alcanza un pico de unos 16 GB |
 | `baselines` | Los detectores con los que se compara Proteus: KitNET, umbrales de tasa con rasgos seleccionados, Apollon y el clasificador por flujo, TRW y CUSUM | Reutiliza los modelos de `h1` donde puede |
 | `systems` | Alertas por flujo de cada detector, el complemento de fidelidad por ventana y los sistemas candidatos (uniones) que se forman con ellas | Consulta [Experimentos](experiments.md) |
@@ -31,11 +31,11 @@ de registro que se muestra en el terminal indica el comando exacto.
 | `ablation` | Ablación de subnúcleos (`proteus-K` elimina el subnúcleo K) | Reutiliza los modelos de `h1` |
 | `poisoning` | Fronteras bajo envenenamiento de la línea base | |
 | `budget` | Certificados con presupuesto frente a operaciones gratuitas: suavizado aleatorizado reimplementado, y el código publicado de BARS y CertTA | BARS y CertTA necesitan PyTorch, GPU y sus propios entornos |
-| `real` | CTU-13 y UGR'16 (dos particiones cada uno) y CIC-DDoS2019; fronteras del lado del origen en CTU-13 | |
+| `real` | CTU-13 y UGR'16 (dos particiones cada uno) y CIC-DDoS-2019; fronteras del lado del origen en CTU-13 | |
 | `shell` | Ataques basados en decisión y en puntuación contra detectores por flujo; calibración del contador de realimentación | Necesita el extra `attacks` (ART); tarda horas |
-| `robustness` | Más semillas de entrenamiento (nueve en una dirección, dos en la otra), líneas base y calibración solo con días anteriores y sin etiquetas, balance de clases del conjunto de entrenamiento | Vuelve a ajustar los detectores |
-| `packets` | Comprobación del certificado a nivel de paquete sobre el pcap del viernes de CIC-IDS2017, con nuestro exportador y con NFStream | Necesita el pcap y el extra `packets` (`dpkt`, `nfstream`) |
-| `kitsune` | Kitsune tal como se publicó, sobre los paquetes del viernes de CIC-IDS2017, frente a operaciones gratuitas a nivel de paquete | Necesita el pcap y el extra `packets` |
+| `robustness` | Nueve semillas de entrenamiento más en las dos direcciones (el daño se reajusta con las semillas 1 y 2 en 2018→2017), líneas base y calibración solo con días anteriores y sin etiquetas, balance de clases del conjunto de entrenamiento | Vuelve a ajustar los detectores |
+| `packets` | Comprobación del certificado a nivel de paquete sobre el pcap del viernes de CIC-IDS-2017, con nuestro exportador y con NFStream | Necesita el pcap y el extra `packets` (`dpkt`, `nfstream`) |
+| `kitsune` | Kitsune tal como se publicó, sobre los paquetes del viernes de CIC-IDS-2017, frente a operaciones gratuitas a nivel de paquete | Necesita el pcap y el extra `packets` |
 | `cost` | Rendimiento del cálculo de evidencia, rendimiento de la puntuación y estado por entidad | Medido en un núcleo de CPU |
 | `tables` | Ejecuta `scripts/paper_tables.sh` | Usa solo las ejecuciones terminadas |
 
@@ -97,7 +97,7 @@ que cambiar las variables no sobrescribe las cachés anteriores.
 ## Memoria
 
 !!! warning
-    Las ejecuciones que prueban sobre CSE-CIC-IDS2018 alcanzan picos de unos 16–18 GB de
+    Las ejecuciones que prueban sobre CSE-CIC-IDS-2018 alcanzan picos de unos 16–18 GB de
     RAM. En una máquina de 32 GB, no ejecutes nunca dos a la vez. El script ejecuta las
     etapas de forma secuencial; si lanzas etapas a mano en paralelo, comprueba qué
     dataset de prueba usa cada una.

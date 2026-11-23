@@ -19,5 +19,5 @@ sub-cores, certified alerts and harm frontiers, and those terms are defined ther
 
 !!! note "Hardware"
     The unit tests run on a laptop. The full experiments were run on a 16 vCPU machine
-    with 32 GB of RAM, and the runs that evaluate on CSE-CIC-IDS2018 need 16–18 GB each.
+    with 32 GB of RAM, and the runs that evaluate on CSE-CIC-IDS-2018 need 16–18 GB each.
     See [Installation](installation.md#hardware).

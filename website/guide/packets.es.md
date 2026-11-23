@@ -70,7 +70,7 @@ otro puerto de la víctima.
 ## Ejecución
 
 La comprobación necesita el extra `packets` (`dpkt`) y `Friday-WorkingHours.pcap` de la
-captura original de CIC-IDS2017 (consulta [Datasets](datasets.md)). La ventana usada en
+captura original de CIC-IDS-2017 (consulta [Datasets](datasets.md)). La ventana usada en
 el manuscrito cubre el DDoS con LOIC contra el servidor web:
 
 ```bash

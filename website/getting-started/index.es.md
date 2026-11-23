@@ -22,5 +22,5 @@ definen allí.
 !!! note "Hardware"
     Los tests unitarios se ejecutan en un portátil. Los experimentos completos se
     ejecutaron en una máquina de 16 vCPU con 32 GB de RAM, y las ejecuciones que evalúan
-    sobre CSE-CIC-IDS2018 necesitan 16–18 GB cada una.
+    sobre CSE-CIC-IDS-2018 necesitan 16–18 GB cada una.
     Consulta [Instalación](installation.md#hardware).

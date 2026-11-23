@@ -51,7 +51,7 @@ Python ≥ 3.11 (the experiments used 3.12.3).
 
 ```sh
 uv sync --frozen --extra dev --extra attacks --extra packets   # exact versions of the paper (uv.lock)
-uv run pytest                                     # about 175 tests, three minutes
+uv run pytest                                     # about 290 tests, five minutes
 ```
 
 Without the lockfile: `uv venv && uv pip install -e ".[dev,attacks,packets]"` (ART is only needed for
@@ -79,11 +79,11 @@ Datasets are not versioned. How to download and convert them is in
 
 | Dataset | Use | Source |
 |---|---|---|
-| Corrected CIC-IDS2017 and CSE-CIC-IDS2018 (Liu et al., CNS 2022) | detection across networks, frontiers, attacks | [distrinet](https://intrusion-detection.distrinet-research.be/CNS2022/Datasets/) |
-| CIC-IDS2017 Friday pcap | checking the certificate on packets | CIC (download form) |
+| Corrected CIC-IDS-2017 and CSE-CIC-IDS-2018 (Liu et al., CNS 2022) | detection across networks, frontiers, attacks | [distrinet](https://intrusion-detection.distrinet-research.be/CNS2022/Datasets/) |
+| CIC-IDS-2017 Friday pcap | checking the certificate on packets | CIC (download form) |
 | CTU-13 | real traffic with an unlabelled background | Stratosphere Lab (CTU) |
 | UGR'16 | real ISP traffic with injected attacks | see `data/README.md` |
-| CIC-DDoS2019 | a check of detection on reflection and SYN floods | see `data/README.md` |
+| CIC-DDoS-2019 | a check of detection on reflection and SYN floods | see `data/README.md` |
 
 ## Reproducing the experiments
 
@@ -100,7 +100,7 @@ bash scripts/reproduce.sh all         # everything, in order
 Every stage, with what it produces and its memory and time needs, is described in the
 [reproduction guide](https://antoniopaya22.github.io/proteus/guide/reproduce/).
 Experiments ran on an AWS c6a.4xlarge (16 vCPU, 32 GB RAM, no GPU); runs that evaluate
-on CSE-CIC-IDS2018 reach 16–18 GB, so do not launch two at once on 32 GB.
+on CSE-CIC-IDS-2018 reach 16–18 GB, so do not launch two at once on 32 GB.
 
 **Determinism.** Fixed seeds; thresholds are calibrated only on benign traffic of the
 test network (other days), without attack labels.
@@ -113,7 +113,7 @@ Proteus-cert), `PROTEUS_TIMER_S` (re-scoring period δ in the certificate slack)
 
 | Folder | Content |
 |---|---|
-| `src/proteus/datasets` | Readers and conversion to Parquet (CIC, CTU-13, UNSW-NB15, UGR'16, CIC-DDoS2019, CTU-SME-11) |
+| `src/proteus/datasets` | Readers and conversion to Parquet (CIC, CTU-13, UNSW-NB15, UGR'16, CIC-DDoS-2019, CTU-SME-11) |
 | `src/proteus/evidence` | Decayed per-entity counters and per-entity baselines |
 | `src/proteus/core` | Monotonicity, certificate, calibrated maximum, frontier, explanations, rules, poisoning |
 | `src/proteus/packets` | pcap reading, flow exporter and free operations on packets |

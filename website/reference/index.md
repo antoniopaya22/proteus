@@ -6,7 +6,7 @@ the package is described in the table below and in the docstrings of each module
 
 | Package | Contents |
 |---|---|
-| `proteus.datasets` | Readers and conversion to Parquet for CIC-IDS2017, CSE-CIC-IDS2018, CTU-13, UNSW-NB15, UGR'16, CIC-DDoS2019 and CTU-SME-11; canonical labels; staged processing of captures too large for memory |
+| `proteus.datasets` | Readers and conversion to Parquet for CIC-IDS-2017, CSE-CIC-IDS-2018, CTU-13, UNSW-NB15, UGR'16, CIC-DDoS-2019 and CTU-SME-11; canonical labels; staged processing of captures too large for memory |
 | `proteus.evidence` | Decayed per-entity counters and distinct counts (`counters`), evidence features and their conservation class (`features`), per-entity baselines (`baseline`), window-by-window evidence for very large captures (`chunked`) |
 | `proteus.core` | Certificate (`certify`), combination of sub-cores (`combine`), harm frontier (`frontier`), baseline poisoning (`poisoning`), explanations (`explain`), declared rules (`rules`), empirical monotonicity check (`verify`) |
 | `proteus.packets` | pcap reading, a NetFlow/IPFIX-style flow exporter and free operations on packets |

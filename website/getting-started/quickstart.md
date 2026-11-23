@@ -21,7 +21,7 @@ scikit-learn work on your machine.
 ## 2. Convert a dataset
 
 The detection experiments train on one network and test on another. The main pair is
-the corrected CIC-IDS2017 and CSE-CIC-IDS2018 (Liu et al., CNS 2022), distributed by
+the corrected CIC-IDS-2017 and CSE-CIC-IDS-2018 (Liu et al., CNS 2022), distributed by
 the DistriNet group at
 [intrusion-detection.distrinet-research.be/CNS2022/Datasets](https://intrusion-detection.distrinet-research.be/CNS2022/Datasets/).
 
@@ -74,7 +74,7 @@ and `proteus_cert` detectors are only defined on version 3.
 
 !!! warning "Time and memory"
     The 2017 → 2018 direction takes about an hour and a half and peaks at about 16 GB
-    of RAM. Do not start a second run that tests on CSE-CIC-IDS2018 while it is running.
+    of RAM. Do not start a second run that tests on CSE-CIC-IDS-2018 while it is running.
 
 The first run of each direction computes the evidence features and caches them under
 `data/processed/<dataset>/` (`evidence_b_*` directories); later stages reuse that cache and the trained
@@ -101,7 +101,7 @@ tables whose inputs are missing, so you can run it after any subset of stages.
 | `experiments/outputs/packet_check*/`, `experiments/outputs/aml_feature/` | Outputs of the packet-level check and of the attacks on per-flow detectors. |
 
 The run directory name encodes the direction: `csecicids2018__cicids2017__loo_labels__v3`
-was trained on CSE-CIC-IDS2018 and tested on CIC-IDS2017, with leave-one-day-out
+was trained on CSE-CIC-IDS-2018 and tested on CIC-IDS-2017, with leave-one-day-out
 baselines (`loo`) and attack minutes masked out of the baselines (`labels`).
 
 To print the detection results of a run in the terminal:
