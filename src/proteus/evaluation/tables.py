@@ -1039,7 +1039,7 @@ def curves_figure(points: pd.DataFrame, x: str = "entity_alarms_per_hour",
         if d.empty:
             continue
         n = int(d["campaigns"].max())
-        opts = f"title={{{title}}}, ymin=0, ymax={n + 0.5}, ylabel={{campaigns detected (of {n})}}"
+        opts = f"title={{{title}}}, ymin=0, ymax={n + 1}, ylabel={{campaigns detected (of {n})}}"
         if last:  # one legend for both panels
             opts += ", legend to name=curveslegend, legend columns=4"
         lines.append(rf"\nextgroupplot[{opts}]")
@@ -1054,7 +1054,7 @@ def curves_figure(points: pd.DataFrame, x: str = "entity_alarms_per_hour",
             lines.append(rf"\addplot[{style}] coordinates {{{coords}}};")
             if last:
                 lines.append(rf"\addlegendentry{{{label}}}")
-    lines += [r"\end{groupplot}", r"\end{tikzpicture}", "", r"\ref{curveslegend}"]
+    lines += [r"\end{groupplot}", r"\end{tikzpicture}", "", r"\pgfplotslegendfromname{curveslegend}"]
     return "\n".join(lines) + "\n"
 
 
