@@ -15,7 +15,7 @@ from .cic import convert
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--dataset", required=True, choices=["cicids2017", "csecicids2018", "ctu13", "unsw_nb15", "ugr16", "cicddos2019", "ctusme11"])
+    ap.add_argument("--dataset", required=True, choices=["cicids2017", "csecicids2018", "ctu13", "unsw_nb15", "ugr16", "cicddos2019", "ctusme11", "cicids2017nf"])
     ap.add_argument("--raw", type=Path, required=True)
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--sample-rate", type=float, default=0.01, help="ugr16: background kept")
@@ -25,8 +25,17 @@ def main() -> None:
     ap.add_argument("--weeks", nargs="*", default=None, help="ugr16: week files to convert")
     ap.add_argument("--start", default=None,
                     help="ugr16: resume at this UTC time (days before it must already be written)")
+    ap.add_argument("--labels", type=Path, default=None,
+                    help="cicids2017nf: processed CIC-IDS-2017 days whose labels are carried over")
+    ap.add_argument("--active", type=float, default=120.0, help="cicids2017nf: active timeout (s)")
+    ap.add_argument("--idle", type=float, default=120.0, help="cicids2017nf: idle timeout (s)")
     args = ap.parse_args()
-    if args.dataset == "ctu13":
+    if args.dataset == "cicids2017nf":
+        from .reexport import convert as reexport
+
+        summary = reexport(args.raw, args.labels, args.out, active_s=args.active,
+                           idle_s=args.idle)
+    elif args.dataset == "ctu13":
         summary = ctu13.convert(args.raw, args.out)
     elif args.dataset == "ctusme11":
         summary = ctusme11.convert(args.raw, args.out)

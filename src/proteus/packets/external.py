@@ -14,15 +14,18 @@ import numpy as np
 import pandas as pd
 
 
-def export_nfstream(pcap: Path, active_s: float = 120.0, idle_s: float = 60.0) -> pd.DataFrame:
+def export_nfstream(pcap: Path, active_s: float = 120.0, idle_s: float = 60.0,
+                    accounting_mode: int = 2) -> pd.DataFrame:
     """Bidirectional flow records of ``pcap`` by NFStream, with its active and idle
-    timeouts set to ``active_s`` and ``idle_s`` and bytes counted from the transport
-    header on (the ``size`` of our packet table). The initiator of a record is the
-    sender of its first packet, as NFStream reports it."""
+    timeouts set to ``active_s`` and ``idle_s``. Bytes are counted from the transport
+    header on (``accounting_mode`` 2, the ``size`` of our packet table) or as payload
+    (3, as CICFlowMeter's "Total Length of Fwd Packet"). The initiator of a record is
+    the sender of its first packet, as NFStream reports it."""
     from nfstream import NFStreamer
 
     f = NFStreamer(source=str(pcap), decode_tunnels=False, idle_timeout=int(idle_s),
-                   active_timeout=int(active_s), accounting_mode=2, n_dissections=0,
+                   active_timeout=int(active_s), accounting_mode=accounting_mode,
+                   n_dissections=0,
                    statistical_analysis=True, snapshot_length=65535, n_meters=1).to_pandas()
     df = pd.DataFrame({
         "src_ip": f["src_ip"].astype("string"), "src_port": f["src_port"].astype(np.int32),
