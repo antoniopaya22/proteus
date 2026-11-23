@@ -306,24 +306,34 @@ frente a umbrales de tasa y titular con la semilla más favorable; certificado s
 exportador de los datos y mudo en tráfico real; diseño elegido mirando las redes de prueba;
 generalización solo entre dos datasets con las mismas herramientas de ataque.
 
-Discrepancias que señala (texto frente a tablas), pendientes de decisión de Antonio:
+Discrepancias que señala (texto frente a tablas), corregidas el 2026-11-23 a petición de Antonio,
+cada una comprobada antes contra las tablas o los CSV:
 
-- [ ] «681 veces» para Hulk de 2018 sigue en el rango de titular, cuando S7 y la tabla S13 dan
-  unas 140 y 92 veces con otra muestra de calibración (explicado en el texto, no en el titular).
-- [ ] §6.4.2, «the same attacks pass at the rates tried»: cierto solo para Proteus; no para los
-  umbrales (FTP 2017, GoldenEye 2018).
-- [ ] Resumen y contribución 1, «narrows with the training seed»: con la semilla 2 se invierte
-  (15,3 % frente a 13,6 %).
-- [ ] §6.2, clasificador por flujo a FPR 10⁻³: la tabla S8 le da también 6/6 escaneos en 2018 y
-  10 de 11 en 2017; «transfer poorly» no lo recoge.
-- [ ] Tabla S13, SSH 2017, Proteus: 2,7k en negrita como «free shapes», cuando el atacante por
-  consultas solo pasa repartiendo; falta decir de qué atacante sale.
-- [ ] §6.2 y discusión: «calibrated on two days» y «two or three days of history» frente a 2, 3 y
-  4 días anteriores (confianza baja del revisor).
-- [ ] §6.1: CIC-DDoS-2019 «99.8 %» de ataques; con las cifras de S4 sale 99,86 %.
-- [ ] §6.4.2: «2.0 to 4.3 times» para las tres convenciones alternativas; el mínimo entre esas
-  tres en la tabla S12 es 2,07.
-- [ ] §6.1: «about 20,000 hosts» en la red grande, sin definición.
+- [x] «681 veces» (Hulk de 2018): se mantiene, con la salvedad en la tabla de afirmaciones, §6.4.1
+  y «In short»: con la muestra de calibración de la ejecución del atacante por consultas son 140
+  veces frente a Proteus (60k) y 92 frente a Proteus-cert (91k).
+- [x] «the same attacks pass»: ahora solo para Proteus; frente a los umbrales difiere un ataque
+  por red (FTP 2017 pasa solo con las búsquedas; GoldenEye 2018 solo con los planes) y frente a
+  los seleccionados GoldenEye 2018 pasa solo con la búsqueda.
+- [x] «narrows with the training seed» → «reverses at one of three training seeds» (resumen,
+  contribución 1, «In short»). Resumen en 249 palabras.
+- [x] Clasificador por flujo a FPR 10⁻³: 10 de 11 en 2017 (tres con recall 0,04–0,05) y, en 2018,
+  los seis escaneos, GoldenEye y Slowloris; «transfer poorly» → «only at a high cost in alarms».
+  Apollon: detecta escaneos y Slowloris en las dos redes.
+- [x] SSH 2017 en la tabla S13: **la tabla estaba bien y el texto mal.** En
+  `query_attack_b0.5_all.csv` e `_inf.csv` el SSH pasa Proteus con formas libres y un solo origen
+  (2,7k frente a 1,5k real, por reutilización); el superíndice «s» de la tabla S7 marca que la
+  cifra mayor (6,2k) se alcanza repartiendo, no que solo pase repartiendo. Corregido en §6.4.2 y
+  en S7.
+- [x] Días de calibración causal: el primer día no calibra a ningún otro (no tiene línea base
+  propia), así que el jueves descansa en martes y miércoles; la discusión dice «one to three
+  earlier days in the small network».
+- [x] CIC-DDoS-2019: «more than 99.8 %».
+- [x] «2.0 to 4.3» → «2.1 to 4.3» en §6.4.2 (las tres convenciones alternativas). El suplemento
+  dice «under every convention», que incluye la del paper (12,0/6,1 = 2,0), y queda como estaba.
+- [x] «about 20,000 hosts»: cifra sin origen trazable en el registro (solo una mención de paso en
+  docs/06 §6.1) y sin datos locales para recontarla. Sustituida por «thirty times the flows of
+  the small one» (63 M frente a 2,1 M, ya en §6.1).
 
 Cambios de texto que pide para el 7, sin experimentos: enunciar el teorema por clase de evidencia
 y revisar que «mantener viva una conexión» figure como no aditivo; declarar R3 no cumplido en
