@@ -299,6 +299,45 @@ consistencia (sin nota), y aplicación de sus puntos:
   al., Sheatsley et al., ANTIDOTE); «8384k» en las tablas generadas; etiquetas pequeñas de la
   figura 2.
 
+**Revisor independiente de la versión final (2026-11-23, mismo encargo literal que las rondas 12 y
+13): 6/10, revisión mayor.** Teoría correcta, afirmaciones ajustadas a la evidencia y cifras casi
+todas reproducibles desde las tablas. No llega a 7 por lo que ya sabíamos: sin ventaja establecida
+frente a umbrales de tasa y titular con la semilla más favorable; certificado sin validar con el
+exportador de los datos y mudo en tráfico real; diseño elegido mirando las redes de prueba;
+generalización solo entre dos datasets con las mismas herramientas de ataque.
+
+Discrepancias que señala (texto frente a tablas), pendientes de decisión de Antonio:
+
+- [ ] «681 veces» para Hulk de 2018 sigue en el rango de titular, cuando S7 y la tabla S13 dan
+  unas 140 y 92 veces con otra muestra de calibración (explicado en el texto, no en el titular).
+- [ ] §6.4.2, «the same attacks pass at the rates tried»: cierto solo para Proteus; no para los
+  umbrales (FTP 2017, GoldenEye 2018).
+- [ ] Resumen y contribución 1, «narrows with the training seed»: con la semilla 2 se invierte
+  (15,3 % frente a 13,6 %).
+- [ ] §6.2, clasificador por flujo a FPR 10⁻³: la tabla S8 le da también 6/6 escaneos en 2018 y
+  10 de 11 en 2017; «transfer poorly» no lo recoge.
+- [ ] Tabla S13, SSH 2017, Proteus: 2,7k en negrita como «free shapes», cuando el atacante por
+  consultas solo pasa repartiendo; falta decir de qué atacante sale.
+- [ ] §6.2 y discusión: «calibrated on two days» y «two or three days of history» frente a 2, 3 y
+  4 días anteriores (confianza baja del revisor).
+- [ ] §6.1: CIC-DDoS-2019 «99.8 %» de ataques; con las cifras de S4 sale 99,86 %.
+- [ ] §6.4.2: «2.0 to 4.3 times» para las tres convenciones alternativas; el mínimo entre esas
+  tres en la tabla S12 es 2,07.
+- [ ] §6.1: «about 20,000 hosts» en la red grande, sin definición.
+
+Cambios de texto que pide para el 7, sin experimentos: enunciar el teorema por clase de evidencia
+y revisar que «mantener viva una conexión» figure como no aditivo; declarar R3 no cumplido en
+tráfico real y rebajar el resultado de víctimas con carga de UGR'16; desglose de alarmas y
+comparación a igual número de alarmas en la red grande; recortar capa por flujo, Apollon y METIS.
+Con ejecuciones nuevas: semillas del daño en las dos direcciones (titular con la mediana), una
+muestra de calibración fija por detector con varianza, cobertura certificada sobre los pcap
+reexportados (es R14-2) y planes aditivos en las víctimas de UGR'16. Para el 8: captura fuera de
+toda decisión de diseño, alertas certificadas en tráfico real con exportador conocido, línea base
+sin restricción entrenada con variantes aditivas y atacante de caja blanca.
+
+- [x] Frase de Apollon al presupuesto de alarmas suavizada a petición de Antonio (§6.2): «An
+  alarm budget does not suit it… no threshold meets the budget», con las mismas cifras.
+
 ### Revisión 12 (2026-11-22 02:40, al cerrar la ronda 11)
 
 Nota **5/10** (revisión mayor), baja de 6 con un texto mejor: la dispersión entre revisores es de
