@@ -347,6 +347,11 @@ sin restricción entrenada con variantes aditivas y atacante de caja blanca.
 
 - [x] Frase de Apollon al presupuesto de alarmas suavizada a petición de Antonio (§6.2): «An
   alarm budget does not suit it… no threshold meets the budget», con las mismas cifras.
+- [x] Carpeta de envío `paper/submission-cose/` (2026-11-23), con el modelo de `submission-jisa`
+  del repositorio de AML: manuscrito en las dos maquetas, suplemento, fuentes LaTeX que compilan
+  solas, figuras sueltas, página de título, highlights y biografías en Word, declaración de
+  intereses, resumen para el formulario y borrador de carta. `rebuild.sh` lo regenera todo. Lo
+  pendiente antes de enviar está en su `README.md`.
 
 ### Revisión 12 (2026-11-22 02:40, al cerrar la ronda 11)
 
