@@ -231,6 +231,24 @@ extrapole (saturación), atacante conjunto con puntuaciones y núcleo aumentado,
   alarmas deduplicadas; calibración causal en daño; envenenamiento en 17 → 18; KitNET al
   presupuesto en 17 → 18.
 
+### Ronda 14 (decidida con Antonio el 2026-11-23): certificado sobre CIC-IDS-2017 reexportado
+
+Antonio: «la captura real en una red real no la hace ningún paper». De acuerdo: la objeción no es
+la procedencia de los datos sino que el certificado depende de un exportador que no conocemos
+(CICFlowMeter). Se responde con datos publicados: los pcap de CIC-IDS-2017 por NFStream con Δ y
+timeout de inactividad que fijamos nosotros, bytes de carga útil como CICFlowMeter.
+
+- [x] **R14-1. Código.** (23-nov: `datasets/reexport.py`, `prepare --dataset cicids2017nf`,
+  `export_nfstream(accounting_mode=3)`; etiquetas de los registros CIC corregidos por 5-tupla y
+  solapamiento temporal, desfase de reloj estimado por día; tests; commit 3badd86.)
+- [ ] **R14-2. Máquina.** Bajar los cinco pcap (52 GB; espejo HF `bencorn/CICIDS2017` con sha256 o
+  enlace oficial por formulario), NFStream 6.6 con Δ = 120 s e inactividad 120 s, cobertura de
+  etiquetas (parte emparejada, ataques frente a CIC), y la evaluación 2018 → 2017nf como la r2
+  principal: detección al presupuesto, alertas certificadas con Δ conocido, comparación con
+  2018 → 2017 sobre CICFlowMeter.
+- [ ] **R14-3. Paper.** Si certifica: alertas certificadas sobre registros cuyo exportador
+  conocemos en §6.3, contribución 2, resumen y amenazas; si no, decirlo igual.
+
 ### Revisión 12 (2026-11-22 02:40, al cerrar la ronda 11)
 
 Nota **5/10** (revisión mayor), baja de 6 con un texto mejor: la dispersión entre revisores es de
