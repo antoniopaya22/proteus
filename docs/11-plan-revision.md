@@ -246,6 +246,12 @@ timeout de inactividad que fijamos nosotros, bytes de carga útil como CICFlowMe
   etiquetas (parte emparejada, ataques frente a CIC), y la evaluación 2018 → 2017nf como la r2
   principal: detección al presupuesto, alertas certificadas con Δ conocido, comparación con
   2018 → 2017 sobre CICFlowMeter.
+- **Solución desde cero (pedida por Antonio el 23-nov): no hay ninguna que merezca máquina.** La
+  candidata (detectar por el efecto en la víctima: clientes legítimos sin respuesta, evidencia que el
+  atacante no escribe) se comprobó en local y no se puede evaluar: en CIC-IDS-2017 nadie más usa el
+  servicio atacado (docs/06 §6.158). Las demás ya estaban medidas o valoradas en la revisión 8
+  (daño residual: falló; envolvente monótona: ya en §5.3; resto 1–3 sobre 10). Con la calibración
+  del revisor (Apollon 3, BARS 4), la recomendación sigue siendo no perseguir el 8 con máquina.
 - [ ] **R14-3. Paper.** Si certifica: alertas certificadas sobre registros cuyo exportador
   conocemos en §6.3, contribución 2, resumen y amenazas; si no, decirlo igual.
 

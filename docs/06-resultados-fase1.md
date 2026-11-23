@@ -3685,3 +3685,26 @@ bootstrap en dos etapas, ataques y luego víctimas, 5.000 réplicas) frente al s
 Primera ventaja frente a umbrales que aguanta la agrupación por ataque (víctimas del ISP);
 en 2017 no. Sin planes aditivos el núcleo sin restricción gana en UGR'16. Al paper: §6.3
 (víctimas con carga) y S9.5.
+
+## 6.158 ¿Se ve el daño en los demás clientes de la víctima? No, en CIC-IDS-2017 (2026-11-23)
+
+Antonio pidió pensar una solución desde cero que merezca horas de máquina. La candidata era detectar
+por el efecto en la víctima en vez de por el tráfico del atacante: contar los clientes legítimos cuyas
+peticiones al servicio atacado quedan sin respuesta, evidencia que el atacante no escribe. Comprobada
+en local sobre los CSV corregidos de CIC-IDS-2017 (`CICIDS2017_improved.zip`), sin máquina.
+
+- **Miércoles (DoS contra 192.168.10.50:80).** Flujos hacia la víctima: 171.634 de ataque, 5.876
+  «Attempted» y 2.576 benignos. Los benignos van a los puertos 22 (1.060), 21 (532) y 139 (412); al
+  puerto 80, 12 en todo el día. Por ventana de 10 minutos hay 30–76 flujos benignos de 8–13 orígenes,
+  antes, durante y después de los ataques, y ninguno queda sin respuesta durante ellos (0 sin paquetes
+  de vuelta; sin carga útil de vuelta 5–11, igual que el resto del día).
+- **Viernes (DDoS LOIT contra el mismo servidor).** Lo mismo: 23 flujos benignos al puerto 80 en todo
+  el día y ningún cambio durante el ataque.
+- **Las conexiones sin respuesta de §6.104 b** (650–1.340 cada 10 minutos durante los DoS lentos) son
+  los flujos «Attempted» del propio atacante (204–1.339 sin respuesta por ventana), no clientes
+  legítimos.
+
+**Conclusión.** En el banco de CIC nadie más usa el servicio atacado, así que el daño a terceros no
+está en los datos y un detector por efecto no se puede evaluar con ellos; los flujos sin respuesta que
+hay los escribe el atacante, que puede evitarlos. Haría falta un banco con clientes legítimos, dirección
+que Antonio descartó. La idea queda como trabajo futuro y no se gasta máquina en ella.
