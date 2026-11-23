@@ -255,6 +255,50 @@ timeout de inactividad que fijamos nosotros, bytes de carga útil como CICFlowMe
 - [ ] **R14-3. Paper.** Si certifica: alertas certificadas sobre registros cuyo exportador
   conocemos en §6.3, contribución 2, resumen y amenazas; si no, decirlo igual.
 
+### Revisión final (decidida por Antonio el 2026-11-23: «pasa a la revisión final, perfecciona el paper al máximo»)
+
+Bucle horario cancelado. La ronda 14 queda con R14-2 y R14-3 sin hacer (la máquina no se encendió):
+el paper sigue diciendo que (A1) no se comprobó con CICFlowMeter; el código de la reexportación
+queda en el repositorio. Dos lecturas independientes del manuscrito, una editorial y otra de
+consistencia (sin nota), y aplicación de sus puntos:
+
+- [x] **Definiciones.** «Free operations» con un solo sentido (las aditivas; las demás se
+  nombran); «harm frontier» definido una vez con sus tres medidas (llana, certificada, daño) y
+  «kept»; redes «small» y «large»; criterio estricto; alarmas por destino y minuto; los tres
+  atacantes (adaptativo, por consultas, informado) ligados a los niveles de conocimiento.
+- [x] **Supuestos.** (A1) con conexión e iniciador también en el apéndice; (A6) en la tabla 3;
+  ρ con una sola definición (el algoritmo restaba la holgura dos veces en la notación); caso sin
+  retemporización demostrado; (A4) declarado sin probar en amenazas a la validez.
+- [x] **Afirmaciones.** La brecha frente a umbrales viene de la reutilización solo en la red
+  grande (en la pequeña ya está con el ataque llano: 6,1 % frente a 2,6 %); la conclusión cita
+  también los dos análisis secundarios que no favorecen (víctimas con carga de 2017, semilla 2);
+  «half an alarm» como calibración, con las alarmas realizadas; umbrales seleccionados robustos en
+  la red grande; requisitos R1–R3 cerrados en la conclusión; referencias hacia delante sin
+  resolver eliminadas o resueltas (duraciones en S9.4; FPR 15–50 % fuera).
+- [x] **Estructura de la evaluación.** Cobertura del certificado en §6.3 (RQ3); víctimas con
+  carga en subsección propia con la tabla S12 subida al texto (con el núcleo sin restricción y
+  las razones con intervalo); tabla de calibración con lo que tiene un despliegue; tabla por
+  atacante; párrafo central partido en cuatro; «In short» en §6.4 y §6.5; envenenamiento y capa
+  por flujo separados; comparación de detectores al final; recuento por tipo e intervalos de
+  Wilson y frontera de los bots de CTU-13 de la discusión a la evaluación.
+- [x] **Resumen (unas 250 palabras), highlights, palabras clave, introducción (idea clave
+  primero; contribución 1 sin lista de cifras; límites del certificado como contribución
+  aparte) y conclusión (tres párrafos).**
+- [x] **Figuras, tablas y bibliografía.** Leyenda de la figura 3 sin caja de enlace y marcadores
+  sin recortar (también en `tables.py`); pies de las tablas 11–14 y de la figura 4; ocho DOI
+  verificados en Crossref, congresos con un solo nombre, entrada sin citar fuera; registros de
+  compilación sin avisos (hyperref tras algorithm, prefijo `M-` para las referencias al
+  manuscrito desde el suplemento).
+- [x] **Formato.** Dos maquetas desde las mismas fuentes: dos columnas (`main.pdf`, 29 páginas)
+  y copia de revisión a una columna y doble espacio (`main-review.pdf`, 101 páginas; tablas
+  anchas ajustadas con `adjustbox`), las dos sin overfull; suplemento 16 páginas.
+- [x] **Web, README y metadatos.** Nombres de datasets como en el paper, supuestos (A1)–(A5)
+  con los mismos nombres, origen de la brecha, datasets usados, semillas, `README.es.md`
+  regenerado, descripción del paquete y del sitio; la web compila en modo estricto.
+- Sin hacer, a propósito: DOI de cuatro entradas que Crossref no confirmó (Lowd y Meek, Dalvi et
+  al., Sheatsley et al., ANTIDOTE); «8384k» en las tablas generadas; etiquetas pequeñas de la
+  figura 2.
+
 ### Revisión 12 (2026-11-22 02:40, al cerrar la ronda 11)
 
 Nota **5/10** (revisión mayor), baja de 6 con un texto mejor: la dispersión entre revisores es de
